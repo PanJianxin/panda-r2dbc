@@ -15,9 +15,9 @@
  */
 package com.jxpanda.r2dbc.spring.data.config;
 
-import com.jxpanda.r2dbc.spring.data.core.DefaultReactiveDataAccessStrategy;
+import org.springframework.r2dbc.core.DefaultReactiveDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.ReactiveDataAccessStrategy;
+import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.mapping.R2dbcMappingContext;
 import com.jxpanda.r2dbc.spring.data.repository.config.EnableR2dbcRepositories;
 import io.r2dbc.spi.ConnectionFactory;

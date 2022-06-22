@@ -5,7 +5,7 @@ import com.jxpanda.commons.constant.DateTimeConstant;
 import com.jxpanda.commons.constant.StringConstant;
 import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.commons.toolkit.json.JsonKit;
-import demo.TableColumn;
+import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
 import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;

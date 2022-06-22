@@ -1,8 +1,8 @@
 package demo.model;
 
 
-import demo.EnumValue;
-import demo.TableColumn;
+import com.jxpanda.r2dbc.spring.data.mapping.annotation.EnumValue;
+import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

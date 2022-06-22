@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
+package org.springframework.r2dbc.core;
 
 import org.springframework.data.util.Streamable;
 import org.springframework.lang.Nullable;

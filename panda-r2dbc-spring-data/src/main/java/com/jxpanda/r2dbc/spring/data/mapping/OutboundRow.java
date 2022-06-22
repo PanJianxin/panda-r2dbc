@@ -16,16 +16,16 @@
 package com.jxpanda.r2dbc.spring.data.mapping;
 
 import io.r2dbc.spi.Row;
+import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.lang.Nullable;
+import org.springframework.r2dbc.core.Parameter;
+import org.springframework.util.Assert;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-
-import org.springframework.data.relational.core.sql.SqlIdentifier;
-import org.springframework.r2dbc.core.Parameter;
-import org.springframework.util.Assert;
 
 /**
  * Representation of a {@link Row} to be written through a {@code INSERT} or {@code UPDATE} statement. Row keys are
@@ -148,6 +148,7 @@ public class OutboundRow implements Map<SqlIdentifier, Parameter>, Cloneable {
 	 * @see java.lang.Object#clone()
 	 */
 	@Override
+	@SuppressWarnings({"MethodDoesntCallSuperMethod", "CloneDoesntDeclareCloneNotSupportedException"})
 	protected OutboundRow clone() {
 		return new OutboundRow(this);
 	}
@@ -183,6 +184,7 @@ public class OutboundRow implements Map<SqlIdentifier, Parameter>, Cloneable {
 	 * (non-Javadoc)
 	 * @see java.util.Map#put(java.lang.Object, java.lang.Object)
 	 */
+	@Nullable
 	public Parameter put(String key, Parameter value) {
 		return put(SqlIdentifier.unquoted(key), value);
 	}

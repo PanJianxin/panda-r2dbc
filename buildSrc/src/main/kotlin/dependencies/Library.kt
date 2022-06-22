@@ -1,3 +1,5 @@
+
+
 object Version {
     const val GUAVA = "29.0-jre"
     const val FAST_JSON = "1.2.76"
@@ -14,33 +16,8 @@ object Version {
 
     const val SPRING = "2.7.0"
 
-}
+    const val KOTLIN_COROUTINES = "1.6.3"
 
-
-/**
- * 能使用Bom管理的包，由于一般只有一行，所以不单独抽离版本号了
- * */
-object Bom {
-    const val R2DBC = "io.r2dbc:r2dbc-bom:Borca-SR1"
-    const val REACTOR = "io.projectreactor:reactor-bom:2020.0.19"
-    const val NETTY = "io.netty:netty-bom:4.1.77.Final"
-}
-
-/**
- * 使用BOM管理的依赖， 不需要写版本号
- * */
-object BomLibrary {
-    /**
-     * https://mvnrepository.com/artifact/io.projectreactor/reactor-core
-     * */
-    const val REACTOR = "io.projectreactor:reactor-core"
-    const val REACTOR_NETTY = "io.projectreactor.netty:reactor-netty"
-
-    const val R2DBC_SPI = "io.r2dbc:r2dbc-spi"
-    const val R2DBC_POOL = "io.r2dbc:r2dbc-pool"
-    const val R2DBC_PROXY = "io.r2dbc:r2dbc-proxy"
-
-    const val NETTY_HANDLER = "io.netty:netty-handler"
 }
 
 
@@ -78,23 +55,4 @@ object Library {
     // https://mvnrepository.com/artifact/io.r2dbc/r2dbc-postgresql
     const val R2DBC_POSTGRESQL = "io.r2dbc:r2dbc-postgresql:${Version.R2DBC_POSTGRESQL}"
 
-}
-
-
-object SpringVersion {
-    const val SPRING_DATA_RELATIONAL = "2.4.0"
-    const val SPRING_R2DBC = "5.3.20"
-}
-
-object SpringLibrary {
-    const val SPRING_BOOT = "org.springframework.boot:spring-boot-starter:${Version.SPRING}"
-
-    const val CONFIGURATION_PROCESSOR = "org.springframework.boot:spring-boot-configuration-processor:${Version.SPRING}"
-
-    // https://mvnrepository.com/artifact/org.springframework.data/spring-data-relational
-    const val SPRING_DATA_RELATIONAL =
-        "org.springframework.data:spring-data-relational:${SpringVersion.SPRING_DATA_RELATIONAL}"
-
-    // https://mvnrepository.com/artifact/org.springframework/spring-r2dbc
-    const val SPRING_R2DBC = "org.springframework:spring-r2dbc:${SpringVersion.SPRING_R2DBC}"
 }

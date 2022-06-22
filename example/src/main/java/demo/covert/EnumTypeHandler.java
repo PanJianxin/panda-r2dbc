@@ -1,7 +1,7 @@
 package demo.covert;
 
 import com.baomidou.mybatisplus.core.toolkit.ReflectionKit;
-import demo.EnumValue;
+import com.jxpanda.r2dbc.spring.data.mapping.annotation.EnumValue;
 import demo.model.Order;
 
 import java.lang.reflect.Field;

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.jxpanda.r2dbc.spring.data.core.ReactiveDataAccessStrategy;
+import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.core.StatementMapper;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

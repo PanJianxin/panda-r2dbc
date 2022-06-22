@@ -37,8 +37,7 @@ public class R2dbcSimpleTypeHolder extends SimpleTypeHolder {
 	/**
 	 * Set of R2DBC simple types.
 	 */
-	public static final Set<Class<?>> R2DBC_SIMPLE_TYPES = Collections.unmodifiableSet(
-			new HashSet<>(Arrays.asList(OutboundRow.class, Row.class, BigInteger.class, BigDecimal.class, UUID.class)));
+	public static final Set<Class<?>> R2DBC_SIMPLE_TYPES = Set.of(OutboundRow.class, Row.class, BigInteger.class, BigDecimal.class, UUID.class);
 
 	public static final SimpleTypeHolder HOLDER = new R2dbcSimpleTypeHolder();
 

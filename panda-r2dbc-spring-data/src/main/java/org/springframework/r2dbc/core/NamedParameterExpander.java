@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
+package org.springframework.r2dbc.core;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,7 +22,6 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.binding.BindMarkersFactory;
 
 /**
@@ -40,7 +39,8 @@ import org.springframework.r2dbc.core.binding.BindMarkersFactory;
  * deprecated since 1.2, without replacement.
  */
 //@Deprecated
-class NamedParameterExpander {
+@SuppressWarnings("unused")
+public class NamedParameterExpander {
 
 	/**
 	 * Default maximum number of entries for the SQL cache: 256.
@@ -54,7 +54,7 @@ class NamedParameterExpander {
 	/**
 	 * Cache of original SQL String to ParsedSql representation.
 	 */
-	@SuppressWarnings("serial") private final Map<String, ParsedSql> parsedSqlCache = new LinkedHashMap<String, ParsedSql>(
+	private final Map<String, ParsedSql> parsedSqlCache = new LinkedHashMap<>(
 			DEFAULT_CACHE_LIMIT, 0.75f, true) {
 		@Override
 		protected boolean removeEldestEntry(Map.Entry<String, ParsedSql> eldest) {

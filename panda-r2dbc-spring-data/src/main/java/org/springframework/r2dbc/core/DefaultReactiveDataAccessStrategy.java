@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
+package org.springframework.r2dbc.core;
 
+import com.jxpanda.r2dbc.spring.data.core.DefaultStatementMapper;
+import com.jxpanda.r2dbc.spring.data.core.StatementMapper;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 
@@ -44,8 +46,6 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentEnti
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
-import org.springframework.r2dbc.core.Parameter;
-import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;

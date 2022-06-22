@@ -17,7 +17,7 @@ package com.jxpanda.r2dbc.spring.data.repository.support;
 
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.ReactiveDataAccessStrategy;
+import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveSelectOperation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

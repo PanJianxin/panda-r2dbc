@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.ReactiveDataAccessStrategy;
+import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;

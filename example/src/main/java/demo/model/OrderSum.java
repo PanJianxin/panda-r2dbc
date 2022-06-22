@@ -1,6 +1,6 @@
 package demo.model;
 
-import demo.TableColumn;
+import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
 import lombok.Data;
 import org.springframework.data.relational.core.mapping.Table;
 

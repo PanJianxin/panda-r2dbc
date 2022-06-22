@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
+package org.springframework.r2dbc.core;
 
+import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
+import com.jxpanda.r2dbc.spring.data.core.StatementMapper;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
 import com.jxpanda.r2dbc.spring.data.query.UpdateMapper;
 import io.r2dbc.spi.Row;

@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
-import com.jxpanda.r2dbc.spring.data.core.ReactiveDataAccessStrategy;
+import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.dialect.BindTargetBinder;
 import org.springframework.data.relational.repository.query.RelationalParameterAccessor;
 import org.springframework.data.repository.query.Parameter;

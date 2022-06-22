@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.r2dbc.core
+package com.jxpanda.r2dbc.spring.data.core
 
 import kotlinx.coroutines.reactive.awaitSingle
-import org.springframework.data.relational.core.query.Update
+import com.jxpanda.r2dbc.spring.data.core.ReactiveInsertOperation
 
 /**
- * Extensions for [ReactiveUpdateOperation].
+ * Extensions for [ReactiveInsertOperation].
  *
  * @author Mark Paluch
  * @since 1.1
  */
 
 /**
- * Extension for [ReactiveUpdateOperation.update] leveraging reified type parameters.
+ * Extension for [ReactiveInsertOperation.insert] leveraging reified type parameters.
  */
-inline fun <reified T : Any> ReactiveUpdateOperation.update(): ReactiveUpdateOperation.ReactiveUpdate =
-		update(T::class.java)
+inline fun <reified T : Any> ReactiveInsertOperation.insert(): ReactiveInsertOperation.ReactiveInsert<T> =
+		insert(T::class.java)
 
 /**
- * Coroutines variant of [ReactiveUpdateOperation.TerminatingUpdate.apply].
+ * Coroutines variant of [ReactiveInsertOperation.TerminatingInsert.using].
  */
-suspend fun ReactiveUpdateOperation.TerminatingUpdate.applyAndAwait(update: Update): Long = apply(update).awaitSingle()
+suspend inline fun <reified T : Any> ReactiveInsertOperation.TerminatingInsert<T>.usingAndAwait(o: T): T =
+		using(o).awaitSingle()

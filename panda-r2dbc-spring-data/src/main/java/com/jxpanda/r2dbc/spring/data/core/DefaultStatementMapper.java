@@ -47,7 +47,7 @@ import org.springframework.util.Assert;
  * @author Mingyuan Wu
  * @author Diego Krupitza
  */
-class DefaultStatementMapper implements StatementMapper {
+public class DefaultStatementMapper implements StatementMapper {
 
 	private final R2dbcDialect dialect;
 	private final RenderContext renderContext;
@@ -64,7 +64,7 @@ class DefaultStatementMapper implements StatementMapper {
 		this.mappingContext = converter.getMappingContext();
 	}
 
-	DefaultStatementMapper(R2dbcDialect dialect, RenderContext renderContext, UpdateMapper updateMapper,
+	public DefaultStatementMapper(R2dbcDialect dialect, RenderContext renderContext, UpdateMapper updateMapper,
 			MappingContext<RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext) {
 		this.dialect = dialect;
 		this.renderContext = renderContext;

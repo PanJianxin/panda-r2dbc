@@ -2,22 +2,13 @@ package demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jxpanda.commons.toolkit.json.JsonKit;
-import com.jxpanda.r2dbc.spring.data.config.AbstractR2dbcConfiguration;
 import com.jxpanda.r2dbc.spring.data.convert.MappingR2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.mapping.R2dbcMappingContext;
-import com.jxpanda.r2dbc.spring.data.mapping.R2dbcSimpleTypeHolder;
 import demo.covert.MysqlR2dbcConverter;
-import io.r2dbc.spi.ConnectionFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 @Configuration
 public class Config   {

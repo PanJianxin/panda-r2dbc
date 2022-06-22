@@ -15,6 +15,8 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
+import com.jxpanda.r2dbc.spring.data.core.*;
+
 /**
  * Stripped down interface providing access to a fluent API that specifies a basic set of reactive R2DBC operations.
  *

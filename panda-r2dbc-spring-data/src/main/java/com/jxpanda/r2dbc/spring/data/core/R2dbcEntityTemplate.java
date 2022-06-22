@@ -18,6 +18,7 @@ package com.jxpanda.r2dbc.spring.data.core;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
+import org.springframework.r2dbc.core.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -69,10 +70,6 @@ import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.data.relational.core.sql.Table;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.lang.Nullable;
-import org.springframework.r2dbc.core.DatabaseClient;
-import org.springframework.r2dbc.core.Parameter;
-import org.springframework.r2dbc.core.PreparedOperation;
-import org.springframework.r2dbc.core.RowsFetchSpec;
 import org.springframework.util.Assert;
 
 /**

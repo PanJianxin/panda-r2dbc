@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.r2dbc.core
+package com.jxpanda.r2dbc.spring.data.core
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
+import com.jxpanda.r2dbc.spring.data.core.ReactiveSelectOperation
 
 /**
  * Extensions for [ReactiveSelectOperation].

@@ -12,11 +12,13 @@ repositories {
 }
 
 dependencies {
+
     implementation(project(ProjectDependency.PANDA_R2DBC_SPRING_BOOT_STARTER))
 //    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation(project(ProjectDependency.MYSQL_CONNECTOR))
-//    implementation("dev.miku:r2dbc-mysql:0.8.2.RELEASE")
+    //    implementation("dev.miku:r2dbc-mysql:0.8.2.RELEASE")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+
     implementation("com.jxpanda.commons:commons-base:1.2.6")
     implementation("com.jxpanda.commons:commons-toolkit:1.2.6")
     implementation("io.projectreactor.addons:reactor-extra")

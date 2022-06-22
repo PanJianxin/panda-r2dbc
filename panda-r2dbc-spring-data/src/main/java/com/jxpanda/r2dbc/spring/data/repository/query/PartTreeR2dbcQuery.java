@@ -16,7 +16,7 @@
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
-import com.jxpanda.r2dbc.spring.data.core.ReactiveDataAccessStrategy;
+import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
