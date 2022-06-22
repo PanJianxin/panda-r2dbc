@@ -1,0 +1,13 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+panda:
+  r2dbc:
+    url: r2dbc:pool:pool:mysql://mysql.jxpanda.com:2333/hydrogen
+    username: Panda
+    password: Panda2022@)@@
+
+#logging:
+#  level:
+#    root: debug
