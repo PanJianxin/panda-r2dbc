@@ -1,13 +1,15 @@
 
 object SpringVersion {
-    const val SPRING_DATA_RELATIONAL = "2.4.0"
-    const val SPRING_R2DBC = "5.3.20"
+    const val SPRING = "2.7.2"
+    const val SPRING_DATA_RELATIONAL = "2.4.2"
+    const val SPRING_R2DBC = "5.3.22"
 }
 
-object SpringLibrary {
-    const val SPRING_BOOT = "org.springframework.boot:spring-boot-starter:${Version.SPRING}"
 
-    const val CONFIGURATION_PROCESSOR = "org.springframework.boot:spring-boot-configuration-processor:${Version.SPRING}"
+object SpringLibrary {
+    const val SPRING_BOOT = "org.springframework.boot:spring-boot-starter:${SpringVersion.SPRING}"
+
+    const val CONFIGURATION_PROCESSOR = "org.springframework.boot:spring-boot-configuration-processor:${SpringVersion.SPRING}"
 
     // https://mvnrepository.com/artifact/org.springframework.data/spring-data-relational
     const val SPRING_DATA_RELATIONAL =

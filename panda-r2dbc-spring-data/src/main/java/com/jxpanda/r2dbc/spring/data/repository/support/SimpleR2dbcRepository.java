@@ -15,10 +15,10 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.support;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcEntityOperations;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
-import com.jxpanda.r2dbc.spring.data.core.ReactiveSelectOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveSelectOperation;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -94,7 +94,7 @@ public class SimpleR2dbcRepository<T, ID> implements R2dbcRepository<T, ID> {
 	 * @since 1.2
 	 */
 	public SimpleR2dbcRepository(RelationalEntityInformation<T, ID> entity, DatabaseClient databaseClient,
-			R2dbcConverter converter, ReactiveDataAccessStrategy accessStrategy) {
+			R2dbcConverter converter, R2dbcDataAccessStrategy accessStrategy) {
 
 		this.entity = entity;
 		this.entityOperations = new R2dbcEntityTemplate(databaseClient, accessStrategy);

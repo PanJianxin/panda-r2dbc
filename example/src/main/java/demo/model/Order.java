@@ -11,6 +11,7 @@ import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.List;
 @Table(value = "`order`")
 public class Order extends Entity {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @TableColumn("`parent_id`")
@@ -98,6 +100,10 @@ public class Order extends Entity {
          * 安卓
          */
         ANDROID(1, "安卓"),
+        /**
+         * IOS
+         * */
+        IOS(2,"IOS"),
         /**
          * 微信小程序
          */

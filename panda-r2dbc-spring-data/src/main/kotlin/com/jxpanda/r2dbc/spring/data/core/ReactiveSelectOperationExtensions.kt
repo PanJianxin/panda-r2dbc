@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.awaitSingle
-import com.jxpanda.r2dbc.spring.data.core.ReactiveSelectOperation
+import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveSelectOperation
 
 /**
  * Extensions for [ReactiveSelectOperation].

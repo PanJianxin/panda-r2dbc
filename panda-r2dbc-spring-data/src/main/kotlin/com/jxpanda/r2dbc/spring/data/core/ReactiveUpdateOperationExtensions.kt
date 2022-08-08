@@ -17,7 +17,7 @@ package com.jxpanda.r2dbc.spring.data.core
 
 import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.data.relational.core.query.Update
-import com.jxpanda.r2dbc.spring.data.core.ReactiveUpdateOperation
+import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveUpdateOperation
 
 /**
  * Extensions for [ReactiveUpdateOperation].

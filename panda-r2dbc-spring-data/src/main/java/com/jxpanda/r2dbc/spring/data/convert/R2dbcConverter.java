@@ -56,9 +56,8 @@ public interface R2dbcConverter extends EntityReader<Object, Row>, EntityWriter<
      * Convert a {@code value} into an array representation according to {@link ArrayColumns}.
      *
      * @param arrayColumns dialect-specific array handling configuration.
-     * @param property
-     * @param value
-     * @return
+     * @param property property
+     * @param value value
      */
     Object getArrayValue(ArrayColumns arrayColumns, RelationalPersistentProperty property, Object value);
 
@@ -66,10 +65,9 @@ public interface R2dbcConverter extends EntityReader<Object, Row>, EntityWriter<
      * Return the target type for a value considering registered converters.
      *
      * @param valueType must not be {@literal null}.
-     * @return
      * @since 1.1
      */
-    Class<?> getTargetType(Class<?> valueType);
+     Class<?> getTargetType(Class<?> valueType);
 
     /**
      * Return whether the {@code type} is a simple type. Simple types are database primitives or types with a custom
@@ -87,7 +85,6 @@ public interface R2dbcConverter extends EntityReader<Object, Row>, EntityWriter<
      * {@link Row}.
      *
      * @param object must not be {@literal null}.
-     * @return
      */
     <T> BiFunction<Row, RowMetadata, T> populateIdIfNecessary(T object);
 
@@ -97,7 +94,6 @@ public interface R2dbcConverter extends EntityReader<Object, Row>, EntityWriter<
      * @param type     they type to convert the given source to.
      * @param source   the source to create an object of the given type from.
      * @param metadata the {@link RowMetadata}.
-     * @return
      */
     <R> R read(Class<R> type, Row source, RowMetadata metadata);
 

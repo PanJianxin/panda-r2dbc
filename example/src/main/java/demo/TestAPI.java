@@ -20,12 +20,14 @@ import java.time.LocalDateTime;
 @RequestMapping("test")
 public class TestAPI {
 
-//    @Resource
-//    private UserRepository userRepository;
+    @Resource
+    private UserRepository userRepository;
 
     @Resource
     private R2dbcEntityTemplate r2dbcEntityTemplate;
 
+    @Resource
+    private OrderRepository orderRepository;
 
     @Resource
     private OrderService orderService;
@@ -43,10 +45,10 @@ public class TestAPI {
 //                });
 //    }
 
-//    @GetMapping("{userId}")
-//    public Mono<User> getUser(@PathVariable("userId") String userId) {
-//        return userRepository.findById(userId);
-//    }
+    @GetMapping("{userId}")
+    public Mono<User> getUser(@PathVariable("userId") String userId) {
+        return userRepository.findById(userId);
+    }
 
     @GetMapping(path = "select", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<User> selectUser() {
@@ -61,8 +63,9 @@ public class TestAPI {
     public Mono<Order> getOrder(@PathVariable("id") String id) {
 //        return r2dbcEntityTemplate.selectOne(Query.query(Criteria.where(Order.ID).is(id)), Order.class)
 //                .log();
-        return orderService.selectById(id)
-                .log();
+//        return orderService.selectById(id)
+//                .log();
+        return orderRepository.findById(id).log();
     }
 
     @GetMapping("/order/sum")
@@ -90,6 +93,10 @@ public class TestAPI {
 //                .extend(Collections.emptyList())
 //                .amountChanges(new ArrayList<>())
                 .build();
+
+        r2dbcEntityTemplate.update(user).map(user1 -> {
+            return user1;
+        });
 
         return Flux.merge(r2dbcEntityTemplate.insert(user),
                         r2dbcEntityTemplate.insert(order))

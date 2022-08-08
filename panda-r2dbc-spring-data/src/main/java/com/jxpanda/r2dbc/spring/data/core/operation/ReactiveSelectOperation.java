@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
+package com.jxpanda.r2dbc.spring.data.core.operation;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

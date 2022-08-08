@@ -15,17 +15,17 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
-
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.dialect.BindTargetBinder;
 import org.springframework.data.relational.repository.query.RelationalParameterAccessor;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.r2dbc.core.binding.BindTarget;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * {@link ExpressionEvaluatingParameterBinder} allows to evaluate, convert and bind parameters to placeholders within a
@@ -38,7 +38,7 @@ class ExpressionEvaluatingParameterBinder {
 
 	private final ExpressionQuery expressionQuery;
 
-	private final ReactiveDataAccessStrategy dataAccessStrategy;
+	private final R2dbcDataAccessStrategy dataAccessStrategy;
 
 	private final Map<String, Boolean> namedParameters = new ConcurrentHashMap<>();
 
@@ -48,7 +48,7 @@ class ExpressionEvaluatingParameterBinder {
 	 * @param expressionQuery must not be {@literal null}.
 	 * @param dataAccessStrategy must not be {@literal null}.
 	 */
-	ExpressionEvaluatingParameterBinder(ExpressionQuery expressionQuery, ReactiveDataAccessStrategy dataAccessStrategy) {
+	ExpressionEvaluatingParameterBinder(ExpressionQuery expressionQuery, R2dbcDataAccessStrategy dataAccessStrategy) {
 		this.expressionQuery = expressionQuery;
 		this.dataAccessStrategy = dataAccessStrategy;
 	}

@@ -15,7 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcEntityOperations;
 import reactor.core.publisher.Mono;
 
 import org.reactivestreams.Publisher;

@@ -4,9 +4,9 @@ spring:
 
 panda:
   r2dbc:
-    url: r2dbc:pool:pool:mysql://mysql.jxpanda.com:2333/hydrogen
-    username: Panda
-    password: Panda2022@)@@
+    url: r2dbc:pool:pool:mysql://mysql.ynjunke.cn:32333/hydrogen
+    username: root
+    password: Root2021@)@!
 
 #logging:
 #  level:

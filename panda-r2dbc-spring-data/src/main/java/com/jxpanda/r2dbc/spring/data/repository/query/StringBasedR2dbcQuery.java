@@ -15,8 +15,8 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcEntityOperations;
 import com.jxpanda.r2dbc.spring.data.repository.Query;
 import org.springframework.lang.NonNull;
 import reactor.core.publisher.Mono;
@@ -52,222 +52,220 @@ import org.springframework.util.Assert;
  */
 public class StringBasedR2dbcQuery extends AbstractR2dbcQuery {
 
-	private final ExpressionQuery expressionQuery;
-	private final ExpressionEvaluatingParameterBinder binder;
-	private final ExpressionParser expressionParser;
-	private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
-	private final ExpressionDependencies expressionDependencies;
-	private final ReactiveDataAccessStrategy dataAccessStrategy;
+    private final ExpressionQuery expressionQuery;
+    private final ExpressionEvaluatingParameterBinder binder;
+    private final ExpressionParser expressionParser;
+    private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
+    private final ExpressionDependencies expressionDependencies;
+    private final R2dbcDataAccessStrategy dataAccessStrategy;
 
-	/**
-	 * Creates a new {@link StringBasedR2dbcQuery} for the given {@link StringBasedR2dbcQuery}, {@link DatabaseClient},
-	 * {@link SpelExpressionParser}, and {@link QueryMethodEvaluationContextProvider}.
-	 *
-	 * @param queryMethod must not be {@literal null}.
-	 * @param entityOperations must not be {@literal null}.
-	 * @param converter must not be {@literal null}.
-	 * @param dataAccessStrategy must not be {@literal null}.
-	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}.
-	 */
-	public StringBasedR2dbcQuery(R2dbcQueryMethod queryMethod, R2dbcEntityOperations entityOperations,
-			R2dbcConverter converter, ReactiveDataAccessStrategy dataAccessStrategy, ExpressionParser expressionParser,
-			ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
-		this(queryMethod.getRequiredAnnotatedQuery(), queryMethod, entityOperations, converter, dataAccessStrategy,
-				expressionParser, evaluationContextProvider);
-	}
+    /**
+     * Creates a new {@link StringBasedR2dbcQuery} for the given {@link StringBasedR2dbcQuery}, {@link DatabaseClient},
+     * {@link SpelExpressionParser}, and {@link QueryMethodEvaluationContextProvider}.
+     *
+     * @param queryMethod               must not be {@literal null}.
+     * @param entityOperations          must not be {@literal null}.
+     * @param converter                 must not be {@literal null}.
+     * @param dataAccessStrategy        must not be {@literal null}.
+     * @param expressionParser          must not be {@literal null}.
+     * @param evaluationContextProvider must not be {@literal null}.
+     */
+    public StringBasedR2dbcQuery(R2dbcQueryMethod queryMethod, R2dbcEntityOperations entityOperations,
+                                 R2dbcConverter converter, R2dbcDataAccessStrategy dataAccessStrategy, ExpressionParser expressionParser,
+                                 ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
+        this(queryMethod.getRequiredAnnotatedQuery(), queryMethod, entityOperations, converter, dataAccessStrategy,
+                expressionParser, evaluationContextProvider);
+    }
 
-	/**
-	 * Create a new {@link StringBasedR2dbcQuery} for the given {@code query}, {@link R2dbcQueryMethod},
-	 * {@link DatabaseClient}, {@link SpelExpressionParser}, and {@link QueryMethodEvaluationContextProvider}.
-	 *
-	 * @param method must not be {@literal null}.
-	 * @param entityOperations must not be {@literal null}.
-	 * @param converter must not be {@literal null}.
-	 * @param dataAccessStrategy must not be {@literal null}.
-	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}.
-	 */
-	public StringBasedR2dbcQuery(String query, R2dbcQueryMethod method, R2dbcEntityOperations entityOperations,
-			R2dbcConverter converter, ReactiveDataAccessStrategy dataAccessStrategy, ExpressionParser expressionParser,
-			ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
+    /**
+     * Create a new {@link StringBasedR2dbcQuery} for the given {@code query}, {@link R2dbcQueryMethod},
+     * {@link DatabaseClient}, {@link SpelExpressionParser}, and {@link QueryMethodEvaluationContextProvider}.
+     *
+     * @param method                    must not be {@literal null}.
+     * @param entityOperations          must not be {@literal null}.
+     * @param converter                 must not be {@literal null}.
+     * @param dataAccessStrategy        must not be {@literal null}.
+     * @param expressionParser          must not be {@literal null}.
+     * @param evaluationContextProvider must not be {@literal null}.
+     */
+    public StringBasedR2dbcQuery(String query, R2dbcQueryMethod method, R2dbcEntityOperations entityOperations,
+                                 R2dbcConverter converter, R2dbcDataAccessStrategy dataAccessStrategy, ExpressionParser expressionParser,
+                                 ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider) {
 
-		super(method, entityOperations, converter);
-		this.expressionParser = expressionParser;
-		this.evaluationContextProvider = evaluationContextProvider;
+        super(method, entityOperations, converter);
+        this.expressionParser = expressionParser;
+        this.evaluationContextProvider = evaluationContextProvider;
 
-		Assert.hasText(query, "Query must not be empty");
+        Assert.hasText(query, "Query must not be empty");
 
-		this.dataAccessStrategy = dataAccessStrategy;
-		this.expressionQuery = ExpressionQuery.create(query);
-		this.binder = new ExpressionEvaluatingParameterBinder(expressionQuery, dataAccessStrategy);
-		this.expressionDependencies = createExpressionDependencies();
-	}
+        this.dataAccessStrategy = dataAccessStrategy;
+        this.expressionQuery = ExpressionQuery.create(query);
+        this.binder = new ExpressionEvaluatingParameterBinder(expressionQuery, dataAccessStrategy);
+        this.expressionDependencies = createExpressionDependencies();
+    }
 
-	private ExpressionDependencies createExpressionDependencies() {
+    private ExpressionDependencies createExpressionDependencies() {
 
-		if (expressionQuery.getBindings().isEmpty()) {
-			return ExpressionDependencies.none();
-		}
+        if (expressionQuery.getBindings().isEmpty()) {
+            return ExpressionDependencies.none();
+        }
 
-		List<ExpressionDependencies> dependencies = new ArrayList<>();
+        List<ExpressionDependencies> dependencies = new ArrayList<>();
 
-		for (ExpressionQuery.ParameterBinding binding : expressionQuery.getBindings()) {
-			dependencies.add(ExpressionDependencies.discover(expressionParser.parseExpression(binding.getExpression())));
-		}
+        for (ExpressionQuery.ParameterBinding binding : expressionQuery.getBindings()) {
+            dependencies.add(ExpressionDependencies.discover(expressionParser.parseExpression(binding.getExpression())));
+        }
 
-		return ExpressionDependencies.merged(dependencies);
-	}
+        return ExpressionDependencies.merged(dependencies);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#isModifyingQuery()
-	 */
-	@Override
-	protected boolean isModifyingQuery() {
-		return getQueryMethod().isModifyingQuery();
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#isModifyingQuery()
+     */
+    @Override
+    protected boolean isModifyingQuery() {
+        return getQueryMethod().isModifyingQuery();
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#isCountQuery()
-	 */
-	@Override
-	protected boolean isCountQuery() {
-		return false;
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#isCountQuery()
+     */
+    @Override
+    protected boolean isCountQuery() {
+        return false;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#isExistsQuery()
-	 */
-	@Override
-	protected boolean isExistsQuery() {
-		return false;
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#isExistsQuery()
+     */
+    @Override
+    protected boolean isExistsQuery() {
+        return false;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#createQuery(org.springframework.data.relational.repository.query.RelationalParameterAccessor)
-	 */
-	@Override
-	protected Mono<PreparedOperation<?>> createQuery(RelationalParameterAccessor accessor) {
-		return getSpelEvaluator(accessor).map(evaluator -> new ExpandedQuery(accessor, evaluator));
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.data.r2dbc.repository.query.AbstractR2dbcQuery#createQuery(org.springframework.data.relational.repository.query.RelationalParameterAccessor)
+     */
+    @Override
+    protected Mono<PreparedOperation<?>> createQuery(RelationalParameterAccessor accessor) {
+        return getSpelEvaluator(accessor).map(evaluator -> new ExpandedQuery(accessor, evaluator));
+    }
 
-	@Override
-	Class<?> resolveResultType(ResultProcessor resultProcessor) {
+    @Override
+    Class<?> resolveResultType(ResultProcessor resultProcessor) {
 
-		Class<?> returnedType = resultProcessor.getReturnedType().getReturnedType();
-		return !returnedType.isInterface() ? returnedType : super.resolveResultType(resultProcessor);
-	}
+        Class<?> returnedType = resultProcessor.getReturnedType().getReturnedType();
+        return !returnedType.isInterface() ? returnedType : super.resolveResultType(resultProcessor);
+    }
 
-	private Mono<R2dbcSpELExpressionEvaluator> getSpelEvaluator(RelationalParameterAccessor accessor) {
+    private Mono<R2dbcSpELExpressionEvaluator> getSpelEvaluator(RelationalParameterAccessor accessor) {
 
-		return evaluationContextProvider
-				.getEvaluationContextLater(getQueryMethod().getParameters(), accessor.getValues(), expressionDependencies)
-				.<R2dbcSpELExpressionEvaluator> map(
-						context -> new DefaultR2dbcSpELExpressionEvaluator(expressionParser, context))
-				.defaultIfEmpty(DefaultR2dbcSpELExpressionEvaluator.unsupported());
-	}
+        return evaluationContextProvider
+                .getEvaluationContextLater(getQueryMethod().getParameters(), accessor.getValues(), expressionDependencies)
+                .<R2dbcSpELExpressionEvaluator>map(
+                        context -> new DefaultR2dbcSpELExpressionEvaluator(expressionParser, context))
+                .defaultIfEmpty(DefaultR2dbcSpELExpressionEvaluator.unsupported());
+    }
 
-	@Override
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append(getClass().getSimpleName());
-		sb.append(" [").append(expressionQuery.getQuery());
-		sb.append(']');
-		return sb.toString();
-	}
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() +
+                " [" + expressionQuery.getQuery() +
+                ']';
+    }
 
-	private class ExpandedQuery implements PreparedOperation<String> {
+    private class ExpandedQuery implements PreparedOperation<String> {
 
-		private final BindTargetRecorder recordedBindings;
+        private final BindTargetRecorder recordedBindings;
 
-		private final PreparedOperation<?> expanded;
+        private final PreparedOperation<?> expanded;
 
-		private final Map<String, Parameter> remainderByName;
+        private final Map<String, Parameter> remainderByName;
 
-		private final Map<Integer, Parameter> remainderByIndex;
+        private final Map<Integer, Parameter> remainderByIndex;
 
-		public ExpandedQuery(RelationalParameterAccessor accessor, R2dbcSpELExpressionEvaluator evaluator) {
+        public ExpandedQuery(RelationalParameterAccessor accessor, R2dbcSpELExpressionEvaluator evaluator) {
 
-			this.recordedBindings = new BindTargetRecorder();
-			binder.bind(recordedBindings, accessor, evaluator);
+            this.recordedBindings = new BindTargetRecorder();
+            binder.bind(recordedBindings, accessor, evaluator);
 
-			remainderByName = new LinkedHashMap<>(recordedBindings.byName);
-			remainderByIndex = new LinkedHashMap<>(recordedBindings.byIndex);
-			expanded = dataAccessStrategy.processNamedParameters(expressionQuery.getQuery(), (index, name) -> {
+            remainderByName = new LinkedHashMap<>(recordedBindings.byName);
+            remainderByIndex = new LinkedHashMap<>(recordedBindings.byIndex);
+            expanded = dataAccessStrategy.processNamedParameters(expressionQuery.getQuery(), (index, name) -> {
 
-				if (recordedBindings.byName.containsKey(name)) {
-					remainderByName.remove(name);
-					return recordedBindings.byName.get(name);
-				}
+                if (recordedBindings.byName.containsKey(name)) {
+                    remainderByName.remove(name);
+                    return recordedBindings.byName.get(name);
+                }
 
-				if (recordedBindings.byIndex.containsKey(index)) {
-					remainderByIndex.remove(index);
-					return recordedBindings.byIndex.get(index);
-				}
+                if (recordedBindings.byIndex.containsKey(index)) {
+                    remainderByIndex.remove(index);
+                    return recordedBindings.byIndex.get(index);
+                }
 
-				return null;
-			});
-		}
+                return null;
+            });
+        }
 
-		@Override
-		public String getSource() {
-			return expressionQuery.getQuery();
-		}
+        @Override
+        public String getSource() {
+            return expressionQuery.getQuery();
+        }
 
-		@Override
-		public void bindTo(BindTarget target) {
+        @Override
+        public void bindTo(BindTarget target) {
 
-			BindTargetBinder binder = new BindTargetBinder(target);
-			expanded.bindTo(target);
+            BindTargetBinder binder = new BindTargetBinder(target);
+            expanded.bindTo(target);
 
-			remainderByName.forEach(binder::bind);
-			remainderByIndex.forEach(binder::bind);
-		}
+            remainderByName.forEach(binder::bind);
+            remainderByIndex.forEach(binder::bind);
+        }
 
-		@Override
-		public String toQuery() {
-			return expanded.toQuery();
-		}
+        @Override
+        public String toQuery() {
+            return expanded.toQuery();
+        }
 
-		@Override
-		public String toString() {
-			return String.format("Original: [%s], Expanded: [%s]", expressionQuery.getQuery(), expanded.toQuery());
-		}
-	}
+        @Override
+        public String toString() {
+            return String.format("Original: [%s], Expanded: [%s]", expressionQuery.getQuery(), expanded.toQuery());
+        }
+    }
 
-	private static class BindTargetRecorder implements BindTarget {
+    private static class BindTargetRecorder implements BindTarget {
 
-		final Map<Integer, Parameter> byIndex = new LinkedHashMap<>();
+        final Map<Integer, Parameter> byIndex = new LinkedHashMap<>();
 
-		final Map<String, Parameter> byName = new LinkedHashMap<>();
+        final Map<String, Parameter> byName = new LinkedHashMap<>();
 
-		@Override
-		public void bind(String identifier, Object value) {
-			byName.put(identifier, toParameter(value));
-		}
+        @Override
+        public void bind(String identifier, Object value) {
+            byName.put(identifier, toParameter(value));
+        }
 
-		@NonNull
-		private Parameter toParameter(Object value) {
-			return value instanceof Parameter ? (Parameter) value : Parameter.from(value);
-		}
+        @NonNull
+        private Parameter toParameter(Object value) {
+            return value instanceof Parameter ? (Parameter) value : Parameter.from(value);
+        }
 
-		@Override
-		public void bind(int index, Object value) {
-			byIndex.put(index, toParameter(value));
-		}
+        @Override
+        public void bind(int index, Object value) {
+            byIndex.put(index, toParameter(value));
+        }
 
-		@Override
-		public void bindNull(String identifier, Class<?> type) {
-			byName.put(identifier, Parameter.empty(type));
-		}
+        @Override
+        public void bindNull(String identifier, Class<?> type) {
+            byName.put(identifier, Parameter.empty(type));
+        }
 
-		@Override
-		public void bindNull(int index, Class<?> type) {
-			byIndex.put(index, Parameter.empty(type));
-		}
-	}
+        @Override
+        public void bindNull(int index, Class<?> type) {
+            byIndex.put(index, Parameter.empty(type));
+        }
+    }
 }

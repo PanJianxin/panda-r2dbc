@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
+package com.jxpanda.r2dbc.spring.data.core.operation;
 
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.r2dbc.core.PreparedOperation;
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import org.springframework.r2dbc.core.RowsFetchSpec;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -43,6 +44,7 @@ import org.springframework.util.Assert;
  * @since 1.1
  * @see DatabaseClient
  */
+@SuppressWarnings("JavadocReference")
 public interface R2dbcEntityOperations extends FluentR2dbcOperations {
 
 	/**
@@ -63,7 +65,7 @@ public interface R2dbcEntityOperations extends FluentR2dbcOperations {
 	 *             release.
 	 */
 	@Deprecated
-	ReactiveDataAccessStrategy getDataAccessStrategy();
+	R2dbcDataAccessStrategy getDataAccessStrategy();
 
 	/**
 	 * Return the underlying {@link R2dbcConverter}.

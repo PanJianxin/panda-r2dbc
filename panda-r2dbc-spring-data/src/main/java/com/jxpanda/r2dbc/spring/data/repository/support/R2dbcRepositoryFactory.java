@@ -18,9 +18,9 @@ package com.jxpanda.r2dbc.spring.data.repository.support;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcEntityOperations;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
@@ -57,7 +57,7 @@ public class R2dbcRepositoryFactory extends ReactiveRepositoryFactorySupport {
 	private static final SpelExpressionParser EXPRESSION_PARSER = new SpelExpressionParser();
 
 	private final DatabaseClient databaseClient;
-	private final ReactiveDataAccessStrategy dataAccessStrategy;
+	private final R2dbcDataAccessStrategy dataAccessStrategy;
 	private final MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext;
 	private final R2dbcConverter converter;
 	private final R2dbcEntityOperations operations;
@@ -68,7 +68,7 @@ public class R2dbcRepositoryFactory extends ReactiveRepositoryFactorySupport {
 	 * @param databaseClient must not be {@literal null}.
 	 * @param dataAccessStrategy must not be {@literal null}.
 	 */
-	public R2dbcRepositoryFactory(DatabaseClient databaseClient, ReactiveDataAccessStrategy dataAccessStrategy) {
+	public R2dbcRepositoryFactory(DatabaseClient databaseClient, R2dbcDataAccessStrategy dataAccessStrategy) {
 
 		Assert.notNull(databaseClient, "DatabaseClient must not be null!");
 //		Assert.notNull(dataAccessStrategy, "ReactiveDataAccessStrategy must not be null!");
@@ -161,12 +161,12 @@ public class R2dbcRepositoryFactory extends ReactiveRepositoryFactorySupport {
 		private final R2dbcEntityOperations entityOperations;
 		private final ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider;
 		private final R2dbcConverter converter;
-		private final ReactiveDataAccessStrategy dataAccessStrategy;
+		private final R2dbcDataAccessStrategy dataAccessStrategy;
 		private final ExpressionParser parser = new CachingExpressionParser(EXPRESSION_PARSER);
 
 		R2dbcQueryLookupStrategy(R2dbcEntityOperations entityOperations,
 				ReactiveQueryMethodEvaluationContextProvider evaluationContextProvider, R2dbcConverter converter,
-				ReactiveDataAccessStrategy dataAccessStrategy) {
+								 R2dbcDataAccessStrategy dataAccessStrategy) {
 			this.entityOperations = entityOperations;
 			this.evaluationContextProvider = evaluationContextProvider;
 			this.converter = converter;

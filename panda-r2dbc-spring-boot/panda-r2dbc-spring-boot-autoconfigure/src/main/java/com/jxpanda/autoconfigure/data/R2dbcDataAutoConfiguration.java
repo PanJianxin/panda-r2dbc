@@ -78,7 +78,7 @@ public class R2dbcDataAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public MappingR2dbcConverter r2dbcConverter(R2dbcMappingContext mappingContext,
+	public R2dbcConverter r2dbcConverter(R2dbcMappingContext mappingContext,
 												R2dbcCustomConversions r2dbcCustomConversions) {
 		return new MappingR2dbcConverter(mappingContext, r2dbcCustomConversions);
 	}

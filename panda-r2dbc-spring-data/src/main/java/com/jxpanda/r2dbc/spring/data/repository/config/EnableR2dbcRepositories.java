@@ -22,7 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcEntityOperations;
 import com.jxpanda.r2dbc.spring.data.repository.support.R2dbcRepositoryFactoryBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan.Filter;

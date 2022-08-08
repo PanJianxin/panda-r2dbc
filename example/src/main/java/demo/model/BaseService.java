@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.ClassUtils;
 import com.baomidou.mybatisplus.core.toolkit.reflect.GenericTypeUtils;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 //import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveSelectOperation;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import reactor.core.publisher.Mono;
@@ -20,10 +21,9 @@ public class BaseService<T extends Entity> {
 
     public Mono<T> selectById(String id) {
 //        r2dbcEntityTemplate.select(Query.query(Criteria.where("sum()")))
-//        r2dbcEntityTemplate.select(Order.class)
-//                .matching()
-        return r2dbcEntityTemplate.selectOne(Query.query(Criteria.where(T.ID).is(id)), clazz)
-                .log();
+        return r2dbcEntityTemplate.select(clazz).matching(Query.query(Criteria.where(T.ID).is(id))).one();
+//        return r2dbcEntityTemplate.selectOne(Query.query(Criteria.where(T.ID).is(id)), clazz)
+//                .log();
     }
 
     public static Class<?> getSuperClassGenericType(final Class<?> clazz, final Class<?> genericIfc, final int index) {

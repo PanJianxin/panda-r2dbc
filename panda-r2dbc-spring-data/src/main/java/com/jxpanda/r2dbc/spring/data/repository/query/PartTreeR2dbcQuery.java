@@ -15,8 +15,8 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcEntityOperations;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -45,13 +45,13 @@ import org.springframework.r2dbc.core.PreparedOperation;
 public class PartTreeR2dbcQuery extends AbstractR2dbcQuery {
 
 	private final ResultProcessor processor;
-	private final ReactiveDataAccessStrategy dataAccessStrategy;
+	private final R2dbcDataAccessStrategy dataAccessStrategy;
 	private final RelationalParameters parameters;
 	private final PartTree tree;
 
 	/**
 	 * Creates new instance of this class with the given {@link R2dbcQueryMethod}, {@link DatabaseClient},
-	 * {@link R2dbcConverter} and {@link ReactiveDataAccessStrategy}.
+	 * {@link R2dbcConverter} and {@link R2dbcDataAccessStrategy}.
 	 *
 	 * @param method query method, must not be {@literal null}.
 	 * @param entityOperations entity operations, must not be {@literal null}.
@@ -59,7 +59,7 @@ public class PartTreeR2dbcQuery extends AbstractR2dbcQuery {
 	 * @param dataAccessStrategy data access strategy, must not be {@literal null}.
 	 */
 	public PartTreeR2dbcQuery(R2dbcQueryMethod method, R2dbcEntityOperations entityOperations, R2dbcConverter converter,
-							  ReactiveDataAccessStrategy dataAccessStrategy) {
+							  R2dbcDataAccessStrategy dataAccessStrategy) {
 		super(method, entityOperations, converter);
 
 		this.processor = method.getResultProcessor();

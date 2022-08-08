@@ -1,5 +1,3 @@
-
-
 object Version {
     const val GUAVA = "29.0-jre"
     const val FAST_JSON = "1.2.76"
@@ -13,8 +11,6 @@ object Version {
     const val PANDA_COMMONS = "1.2.6"
 
     const val R2DBC_POSTGRESQL = "0.8.12.RELEASE"
-
-    const val SPRING = "2.7.0"
 
     const val KOTLIN_COROUTINES = "1.6.3"
 

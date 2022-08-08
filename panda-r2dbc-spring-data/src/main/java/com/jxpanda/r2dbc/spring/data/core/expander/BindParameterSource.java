@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.r2dbc.core;
+package com.jxpanda.r2dbc.spring.data.core.expander;
 
 import org.springframework.data.util.Streamable;
 import org.springframework.lang.Nullable;
@@ -29,9 +29,7 @@ import org.springframework.lang.Nullable;
  *
  * @author Mark Paluch
  * @see MapBindParameterSource
- * deprecated since 1.2, without replacement.
- */
-//@Deprecated
+ **/
 interface BindParameterSource {
 
 	/**

@@ -18,9 +18,8 @@ package com.jxpanda.r2dbc.spring.data.repository.support;
 import java.io.Serializable;
 import java.util.Optional;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityOperations;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcEntityOperations;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.repository.R2dbcRepository;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -34,12 +33,13 @@ import org.springframework.data.repository.query.QueryMethodEvaluationContextPro
 import org.springframework.data.repository.query.ReactiveExtensionAwareQueryMethodEvaluationContextProvider;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
 import org.springframework.util.Assert;
 
 /**
  * {@link org.springframework.beans.factory.FactoryBean} to create
  * {@link R2dbcRepository} instances. Can be either configured with
- * {@link R2dbcEntityOperations} or {@link DatabaseClient} with {@link ReactiveDataAccessStrategy}.
+ * {@link R2dbcEntityOperations} or {@link DatabaseClient} with {@link R2dbcDataAccessStrategy}.
  *
  * @author Mark Paluch
  * @author Christoph Strobl
@@ -49,7 +49,7 @@ public class R2dbcRepositoryFactoryBean<T extends Repository<S, ID>, S, ID exten
 		extends RepositoryFactoryBeanSupport<T, S, ID> implements ApplicationContextAware {
 
 	private @Nullable DatabaseClient client;
-	private @Nullable ReactiveDataAccessStrategy dataAccessStrategy;
+	private @Nullable R2dbcDataAccessStrategy dataAccessStrategy;
 	private @Nullable R2dbcEntityOperations operations;
 	private @Nullable ApplicationContext applicationContext;
 
@@ -73,7 +73,7 @@ public class R2dbcRepositoryFactoryBean<T extends Repository<S, ID>, S, ID exten
 		this.client = client;
 	}
 
-	public void setDataAccessStrategy(ReactiveDataAccessStrategy dataAccessStrategy) {
+	public void setDataAccessStrategy(R2dbcDataAccessStrategy dataAccessStrategy) {
 		this.dataAccessStrategy = dataAccessStrategy;
 	}
 
@@ -125,7 +125,7 @@ public class R2dbcRepositoryFactoryBean<T extends Repository<S, ID>, S, ID exten
 	 * @return new instance of {@link RepositoryFactorySupport}.
 	 */
 	protected RepositoryFactorySupport getFactoryInstance(DatabaseClient client,
-			ReactiveDataAccessStrategy dataAccessStrategy) {
+														  R2dbcDataAccessStrategy dataAccessStrategy) {
 		return new R2dbcRepositoryFactory(client, dataAccessStrategy);
 	}
 

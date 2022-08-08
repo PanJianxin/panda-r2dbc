@@ -15,18 +15,15 @@
  */
 package com.jxpanda.r2dbc.spring.data.config;
 
-import org.springframework.r2dbc.core.DefaultReactiveDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.convert.MappingR2dbcConverter;
+import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
+import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
+import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
+import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
 import com.jxpanda.r2dbc.spring.data.mapping.R2dbcMappingContext;
 import com.jxpanda.r2dbc.spring.data.repository.config.EnableR2dbcRepositories;
 import io.r2dbc.spi.ConnectionFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -35,16 +32,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.CustomConversions.StoreConversions;
-import com.jxpanda.r2dbc.spring.data.convert.MappingR2dbcConverter;
-import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
-import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
-import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
-import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
 import org.springframework.data.relational.core.conversion.BasicRelationalConverter;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
 import org.springframework.util.Assert;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Base class for Spring Data R2DBC configuration containing bean declarations that must be registered for Spring Data
@@ -93,7 +91,7 @@ public abstract class AbstractR2dbcConfiguration implements ApplicationContextAw
 	}
 
 	/**
-	 * Register a {@link DatabaseClient} using {@link #connectionFactory()} and {@link ReactiveDataAccessStrategy}.
+	 * Register a {@link DatabaseClient} using {@link #connectionFactory()} and {@link R2dbcDataAccessStrategy}.
 	 *
 	 * @return must not be {@literal null}.
 	 * @throws IllegalArgumentException if any of the required args is {@literal null}.
@@ -119,7 +117,7 @@ public abstract class AbstractR2dbcConfiguration implements ApplicationContextAw
 	 */
 	@Bean
 	public R2dbcEntityTemplate r2dbcEntityTemplate(DatabaseClient databaseClient,
-			ReactiveDataAccessStrategy dataAccessStrategy) {
+												   R2dbcDataAccessStrategy dataAccessStrategy) {
 
 		Assert.notNull(databaseClient, "DatabaseClient must not be null!");
 		Assert.notNull(dataAccessStrategy, "ReactiveDataAccessStrategy must not be null!");
@@ -148,7 +146,7 @@ public abstract class AbstractR2dbcConfiguration implements ApplicationContextAw
 	}
 
 	/**
-	 * Creates a {@link ReactiveDataAccessStrategy} using the configured
+	 * Creates a {@link R2dbcDataAccessStrategy} using the configured
 	 * {@link #r2dbcConverter(R2dbcMappingContext, R2dbcCustomConversions) R2dbcConverter}.
 	 *
 	 * @param converter the configured {@link R2dbcConverter}.
@@ -158,11 +156,11 @@ public abstract class AbstractR2dbcConfiguration implements ApplicationContextAw
 	 * @throws IllegalArgumentException if any of the {@literal mappingContext} is {@literal null}.
 	 */
 	@Bean
-	public ReactiveDataAccessStrategy reactiveDataAccessStrategy(R2dbcConverter converter) {
+	public R2dbcDataAccessStrategy reactiveDataAccessStrategy(R2dbcConverter converter) {
 
 		Assert.notNull(converter, "MappingContext must not be null!");
 
-		return new DefaultReactiveDataAccessStrategy(getDialect(lookupConnectionFactory()), converter);
+		return new R2dbcDataAccessStrategy(getDialect(lookupConnectionFactory()), converter);
 	}
 
 	/**

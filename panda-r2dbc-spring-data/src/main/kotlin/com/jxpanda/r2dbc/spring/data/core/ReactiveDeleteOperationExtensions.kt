@@ -16,7 +16,7 @@
 package com.jxpanda.r2dbc.spring.data.core
 
 import kotlinx.coroutines.reactive.awaitSingle
-import com.jxpanda.r2dbc.spring.data.core.ReactiveDeleteOperation
+import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveDeleteOperation
 
 /**
  * Extensions for [ReactiveDeleteOperation].

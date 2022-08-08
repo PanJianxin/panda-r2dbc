@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
-
-import com.jxpanda.r2dbc.spring.data.core.*;
+package com.jxpanda.r2dbc.spring.data.core.operation;
 
 /**
  * Stripped down interface providing access to a fluent API that specifies a basic set of reactive R2DBC operations.

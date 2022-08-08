@@ -1,8 +1,8 @@
 
 
 object KotlinVersion {
-    const val KOTLIN = "1.7.0"
-    const val COROUTINES = "1.6.3"
+    const val KOTLIN = "1.7.10"
+    const val COROUTINES = "1.6.4"
 }
 
 object KotlinLibrary {

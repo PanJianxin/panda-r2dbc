@@ -15,21 +15,14 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.springframework.r2dbc.core.ReactiveDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.core.StatementMapper;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.relational.repository.Lock;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.sql.*;
+import org.springframework.data.relational.repository.Lock;
 import org.springframework.data.relational.repository.query.RelationalEntityMetadata;
 import org.springframework.data.relational.repository.query.RelationalParameterAccessor;
 import org.springframework.data.relational.repository.query.RelationalQueryCreator;
@@ -37,6 +30,13 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.PreparedOperation;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link AbstractQueryCreator} that creates {@link PreparedOperation} from a {@link PartTree}.
@@ -52,14 +52,14 @@ class R2dbcQueryCreator extends RelationalQueryCreator<PreparedOperation<?>> {
 
 	private final PartTree tree;
 	private final RelationalParameterAccessor accessor;
-	private final ReactiveDataAccessStrategy dataAccessStrategy;
+	private final R2dbcDataAccessStrategy dataAccessStrategy;
 	private final RelationalEntityMetadata<?> entityMetadata;
 	private final List<String> projectedProperties;
 	private final Class<?> entityToRead;
 	private final Optional<Lock> lock;
 
 	/**
-	 * Creates new instance of this class with the given {@link PartTree}, {@link ReactiveDataAccessStrategy},
+	 * Creates new instance of this class with the given {@link PartTree}, {@link R2dbcDataAccessStrategy},
 	 * {@link RelationalEntityMetadata} and {@link RelationalParameterAccessor}.
 	 *
 	 * @param tree part tree, must not be {@literal null}.
@@ -68,7 +68,7 @@ class R2dbcQueryCreator extends RelationalQueryCreator<PreparedOperation<?>> {
 	 * @param accessor parameter metadata provider, must not be {@literal null}.
 	 * @param projectedProperties properties to project, must not be {@literal null}.
 	 */
-	public R2dbcQueryCreator(PartTree tree, ReactiveDataAccessStrategy dataAccessStrategy,
+	public R2dbcQueryCreator(PartTree tree, R2dbcDataAccessStrategy dataAccessStrategy,
 			RelationalEntityMetadata<?> entityMetadata, RelationalParameterAccessor accessor,
 			List<String> projectedProperties, Optional<Lock> lock) {
 		super(tree, accessor);
