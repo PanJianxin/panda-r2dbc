@@ -36,224 +36,252 @@ import java.util.UUID;
 @ConfigurationProperties(prefix = "panda.r2dbc")
 public class R2dbcProperties {
 
-	/**
-	 * Database name. Set if no name is specified in the url. Default to "testdb" when
-	 * using an embedded database.
-	 */
-	private String name;
+    /**
+     * Database name. Set if no name is specified in the url. Default to "testdb" when
+     * using an embedded database.
+     */
+    private String name;
 
-	/**
-	 * Whether to generate a random database name. Ignore any configured name when
-	 * enabled.
-	 */
-	private boolean generateUniqueName;
+    /**
+     * Whether to generate a random database name. Ignore any configured name when
+     * enabled.
+     */
+    private boolean generateUniqueName;
 
-	/**
-	 * R2DBC URL of the database. database name, username, password and pooling options
-	 * specified in the url take precedence over individual options.
-	 */
-	private String url;
+    /**
+     * R2DBC URL of the database. database name, username, password and pooling options
+     * specified in the url take precedence over individual options.
+     */
+    private String url;
 
-	/**
-	 * Login username of the database. Set if no username is specified in the url.
-	 */
-	private String username;
+    /**
+     * Login username of the database. Set if no username is specified in the url.
+     */
+    private String username;
 
-	/**
-	 * Login password of the database. Set if no password is specified in the url.
-	 */
-	private String password;
+    /**
+     * Login password of the database. Set if no password is specified in the url.
+     */
+    private String password;
 
-	/**
-	 * Additional R2DBC options.
-	 */
-	private final Map<String, String> properties = new LinkedHashMap<>();
+    /**
+     * Additional R2DBC options.
+     */
+    private final Map<String, String> properties = new LinkedHashMap<>();
 
-	private final Pool pool = new Pool();
+    /**
+     * 映射关系相关配置
+     */
+    private final Mapping mapping = new Mapping();
 
-	private String uniqueName;
+    private final Pool pool = new Pool();
 
-	public String getName() {
-		return this.name;
-	}
+    private String uniqueName;
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return this.name;
+    }
 
-	public boolean isGenerateUniqueName() {
-		return this.generateUniqueName;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setGenerateUniqueName(boolean generateUniqueName) {
-		this.generateUniqueName = generateUniqueName;
-	}
+    public boolean isGenerateUniqueName() {
+        return this.generateUniqueName;
+    }
 
-	public String getUrl() {
-		return this.url;
-	}
+    public void setGenerateUniqueName(boolean generateUniqueName) {
+        this.generateUniqueName = generateUniqueName;
+    }
 
-	public void setUrl(String url) {
-		this.url = url;
-	}
+    public String getUrl() {
+        return this.url;
+    }
 
-	public String getUsername() {
-		return this.username;
-	}
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public String getUsername() {
+        return this.username;
+    }
 
-	public String getPassword() {
-		return this.password;
-	}
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+    public String getPassword() {
+        return this.password;
+    }
 
-	public Map<String, String> getProperties() {
-		return this.properties;
-	}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-	public Pool getPool() {
-		return this.pool;
-	}
+    public Map<String, String> getProperties() {
+        return this.properties;
+    }
 
-	/**
-	 * Provide a unique name specific to this instance. Calling this method several times
-	 * return the same unique name.
-	 * @return a unique name for this instance
-	 */
-	public String determineUniqueName() {
-		if (this.uniqueName == null) {
-			this.uniqueName = UUID.randomUUID().toString();
-		}
-		return this.uniqueName;
-	}
+    public Pool getPool() {
+        return this.pool;
+    }
 
-	public static class Pool {
+    public Mapping getMapping() {
+        return mapping;
+    }
 
-		/**
-		 * Maximum amount of time that a connection is allowed to sit idle in the pool.
-		 */
-		private Duration maxIdleTime = Duration.ofMinutes(30);
+    /**
+     * Provide a unique name specific to this instance. Calling this method several times
+     * return the same unique name.
+     *
+     * @return a unique name for this instance
+     */
+    public String determineUniqueName() {
+        if (this.uniqueName == null) {
+            this.uniqueName = UUID.randomUUID().toString();
+        }
+        return this.uniqueName;
+    }
 
-		/**
-		 * Maximum lifetime of a connection in the pool. By default, connections have an
-		 * infinite lifetime.
-		 */
-		private Duration maxLifeTime;
+    public static class Pool {
 
-		/**
-		 * Maximum time to acquire a connection from the pool. By default, wait
-		 * indefinitely.
-		 */
-		private Duration maxAcquireTime;
+        /**
+         * Maximum amount of time that a connection is allowed to sit idle in the pool.
+         */
+        private Duration maxIdleTime = Duration.ofMinutes(30);
 
-		/**
-		 * Maximum time to wait to create a new connection. By default, wait indefinitely.
-		 */
-		private Duration maxCreateConnectionTime;
+        /**
+         * Maximum lifetime of a connection in the pool. By default, connections have an
+         * infinite lifetime.
+         */
+        private Duration maxLifeTime;
 
-		/**
-		 * Initial connection pool size.
-		 */
-		private int initialSize = 10;
+        /**
+         * Maximum time to acquire a connection from the pool. By default, wait
+         * indefinitely.
+         */
+        private Duration maxAcquireTime;
 
-		/**
-		 * Maximal connection pool size.
-		 */
-		private int maxSize = 10;
+        /**
+         * Maximum time to wait to create a new connection. By default, wait indefinitely.
+         */
+        private Duration maxCreateConnectionTime;
 
-		/**
-		 * Validation query.
-		 */
-		private String validationQuery;
+        /**
+         * Initial connection pool size.
+         */
+        private int initialSize = 10;
 
-		/**
-		 * Validation depth.
-		 */
-		private ValidationDepth validationDepth = ValidationDepth.LOCAL;
+        /**
+         * Maximal connection pool size.
+         */
+        private int maxSize = 10;
 
-		/**
-		 * Whether pooling is enabled. Requires r2dbc-pool.
-		 */
-		private boolean enabled = true;
+        /**
+         * Validation query.
+         */
+        private String validationQuery;
 
-		public Duration getMaxIdleTime() {
-			return this.maxIdleTime;
-		}
+        /**
+         * Validation depth.
+         */
+        private ValidationDepth validationDepth = ValidationDepth.LOCAL;
 
-		public void setMaxIdleTime(Duration maxIdleTime) {
-			this.maxIdleTime = maxIdleTime;
-		}
+        /**
+         * Whether pooling is enabled. Requires r2dbc-pool.
+         */
+        private boolean enabled = true;
 
-		public Duration getMaxLifeTime() {
-			return this.maxLifeTime;
-		}
+        public Duration getMaxIdleTime() {
+            return this.maxIdleTime;
+        }
 
-		public void setMaxLifeTime(Duration maxLifeTime) {
-			this.maxLifeTime = maxLifeTime;
-		}
+        public void setMaxIdleTime(Duration maxIdleTime) {
+            this.maxIdleTime = maxIdleTime;
+        }
 
-		public Duration getMaxAcquireTime() {
-			return this.maxAcquireTime;
-		}
+        public Duration getMaxLifeTime() {
+            return this.maxLifeTime;
+        }
 
-		public void setMaxAcquireTime(Duration maxAcquireTime) {
-			this.maxAcquireTime = maxAcquireTime;
-		}
+        public void setMaxLifeTime(Duration maxLifeTime) {
+            this.maxLifeTime = maxLifeTime;
+        }
 
-		public Duration getMaxCreateConnectionTime() {
-			return this.maxCreateConnectionTime;
-		}
+        public Duration getMaxAcquireTime() {
+            return this.maxAcquireTime;
+        }
 
-		public void setMaxCreateConnectionTime(Duration maxCreateConnectionTime) {
-			this.maxCreateConnectionTime = maxCreateConnectionTime;
-		}
+        public void setMaxAcquireTime(Duration maxAcquireTime) {
+            this.maxAcquireTime = maxAcquireTime;
+        }
 
-		public int getInitialSize() {
-			return this.initialSize;
-		}
+        public Duration getMaxCreateConnectionTime() {
+            return this.maxCreateConnectionTime;
+        }
 
-		public void setInitialSize(int initialSize) {
-			this.initialSize = initialSize;
-		}
+        public void setMaxCreateConnectionTime(Duration maxCreateConnectionTime) {
+            this.maxCreateConnectionTime = maxCreateConnectionTime;
+        }
 
-		public int getMaxSize() {
-			return this.maxSize;
-		}
+        public int getInitialSize() {
+            return this.initialSize;
+        }
 
-		public void setMaxSize(int maxSize) {
-			this.maxSize = maxSize;
-		}
+        public void setInitialSize(int initialSize) {
+            this.initialSize = initialSize;
+        }
 
-		public String getValidationQuery() {
-			return this.validationQuery;
-		}
+        public int getMaxSize() {
+            return this.maxSize;
+        }
 
-		public void setValidationQuery(String validationQuery) {
-			this.validationQuery = validationQuery;
-		}
+        public void setMaxSize(int maxSize) {
+            this.maxSize = maxSize;
+        }
 
-		public ValidationDepth getValidationDepth() {
-			return this.validationDepth;
-		}
+        public String getValidationQuery() {
+            return this.validationQuery;
+        }
 
-		public void setValidationDepth(ValidationDepth validationDepth) {
-			this.validationDepth = validationDepth;
-		}
+        public void setValidationQuery(String validationQuery) {
+            this.validationQuery = validationQuery;
+        }
 
-		public boolean isEnabled() {
-			return this.enabled;
-		}
+        public ValidationDepth getValidationDepth() {
+            return this.validationDepth;
+        }
 
-		public void setEnabled(boolean enabled) {
-			this.enabled = enabled;
-		}
+        public void setValidationDepth(ValidationDepth validationDepth) {
+            this.validationDepth = validationDepth;
+        }
 
-	}
+        public boolean isEnabled() {
+            return this.enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+    }
+
+    public static class Mapping {
+        /**
+         * 是否在对象映射的过程中强制加上引用符
+         * 例如：在MySQL中，使用反引号'`'来做引用标识符，则注入SQL：SELECT XXX FROM order 会变为 SELECT XXX FROM `order`
+         * 使用此配置可以一定程度上避免SQL语句中出现关键字而导致的BAD SQL错误
+         * 默认是true
+         */
+        private boolean forceQuote = true;
+
+        public boolean isForceQuote() {
+            return forceQuote;
+        }
+
+        public void setForceQuote(boolean forceQuote) {
+            this.forceQuote = forceQuote;
+        }
+    }
 
 }

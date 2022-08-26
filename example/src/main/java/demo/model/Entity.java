@@ -40,14 +40,14 @@ public class Entity implements Serializable {
     /**
      * 数据创建时间
      */
-    @TableColumn("`created_date`")
+    @TableColumn(name = "`created_date`")
     private LocalDateTime createdDate;
 
     /**
      * 数据更新时间
      */
     @Builder.Default
-    @TableColumn("`updated_date`")
+    @TableColumn(name = "`updated_date`")
     private LocalDateTime updatedDate = LocalDateTime.now();
 
     /**
@@ -55,27 +55,27 @@ public class Entity implements Serializable {
      */
     @JsonIgnore
     @Builder.Default
-    @TableColumn("`deleted_date`")
+    @TableColumn(name = "`deleted_date`")
     private LocalDateTime deletedDate = DateTimeConstant.DELETED_DATE;
 
     /**
      * 数据版本（乐观锁控制使用）
      */
     @Version
-    @TableColumn("`version`")
+    @TableColumn(name = "`version`")
     private Long version;
 
     /**
      * 创建数据的人（staffId）的ID
      */
-    @TableColumn("`creator_id`")
+    @TableColumn(name = "`creator_id`")
     private String creatorId;
 
 
     /**
      * 数据最后更新的人（staffId）的ID
      */
-    @TableColumn("`updater_id`")
+    @TableColumn(name = "`updater_id`")
     private String updaterId;
 
     /**

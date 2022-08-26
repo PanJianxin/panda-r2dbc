@@ -17,6 +17,7 @@
 package com.jxpanda.autoconfigure.data;
 
 import com.jxpanda.autoconfigure.r2dbc.R2dbcAutoConfiguration;
+import com.jxpanda.autoconfigure.r2dbc.R2dbcProperties;
 import com.jxpanda.r2dbc.spring.data.convert.MappingR2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
@@ -35,6 +36,7 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.r2dbc.core.DatabaseClient;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,9 +57,12 @@ public class R2dbcDataAutoConfiguration {
 
 	private final R2dbcDialect dialect;
 
-	public R2dbcDataAutoConfiguration(DatabaseClient databaseClient) {
+	private final R2dbcProperties r2dbcProperties;
+
+	public R2dbcDataAutoConfiguration(DatabaseClient databaseClient,R2dbcProperties r2dbcProperties) {
 		this.databaseClient = databaseClient;
 		this.dialect = DialectResolver.getDialect(this.databaseClient.getConnectionFactory());
+		this.r2dbcProperties = r2dbcProperties;
 	}
 
 	@Bean
@@ -72,6 +77,7 @@ public class R2dbcDataAutoConfiguration {
 												   R2dbcCustomConversions r2dbcCustomConversions) {
 		R2dbcMappingContext relationalMappingContext = new R2dbcMappingContext(
 				namingStrategy.getIfAvailable(() -> NamingStrategy.INSTANCE));
+		relationalMappingContext.setForceQuote(r2dbcProperties.getMapping().isForceQuote());
 		relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
 		return relationalMappingContext;
 	}

@@ -8,10 +8,10 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table("`order`")
 public class OrderSum {
 
-    @TableColumn(value = "count(*)")
+    @TableColumn(name = "count(*)")
     private Integer count;
 
-    @TableColumn(value = "sum(amount)")
+    @TableColumn(name = "sum(amount)")
     private Integer totalAmount;
 
 }

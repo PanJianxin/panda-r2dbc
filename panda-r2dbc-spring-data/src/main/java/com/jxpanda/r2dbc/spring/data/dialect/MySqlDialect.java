@@ -18,13 +18,10 @@ package com.jxpanda.r2dbc.spring.data.dialect;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+import com.jxpanda.r2dbc.spring.data.mapping.handler.EnumTypeHandler;
+import com.jxpanda.r2dbc.spring.data.mapping.handler.TypeHandler;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
@@ -38,92 +35,92 @@ import org.springframework.r2dbc.core.binding.BindMarkersFactory;
  * @author Jens Schauder
  */
 public class MySqlDialect extends org.springframework.data.relational.core.dialect.MySqlDialect
-		implements R2dbcDialect {
+        implements R2dbcDialect {
 
-	private static final Set<Class<?>> SIMPLE_TYPES = new HashSet<>(
-			Arrays.asList(UUID.class, URL.class, URI.class, InetAddress.class));
+    private static final Set<Class<?>> SIMPLE_TYPES = new HashSet<>(
+            Arrays.asList(UUID.class, URL.class, URI.class, InetAddress.class));
 
-	/**
-	 * Singleton instance.
-	 */
-	public static final MySqlDialect INSTANCE = new MySqlDialect();
+    /**
+     * Singleton instance.
+     */
+    public static final MySqlDialect INSTANCE = new MySqlDialect();
 
-	private static final BindMarkersFactory ANONYMOUS = BindMarkersFactory.anonymous("?");
+    private static final BindMarkersFactory ANONYMOUS = BindMarkersFactory.anonymous("?");
 
-	/**
-	 * MySQL specific converters.
-	 */
-	private static final List<Object> CONVERTERS = Arrays.asList(ByteToBooleanConverter.INSTANCE,
-			BooleanToByteConverter.INSTANCE);
+    /**
+     * MySQL specific converters.
+     */
+    private static final List<Object> CONVERTERS = Arrays.asList(ByteToBooleanConverter.INSTANCE,
+            BooleanToByteConverter.INSTANCE);
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.r2dbc.dialect.Dialect#getBindMarkersFactory()
-	 */
-	@Override
-	public BindMarkersFactory getBindMarkersFactory() {
-		return ANONYMOUS;
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.data.r2dbc.dialect.Dialect#getBindMarkersFactory()
+     */
+    @Override
+    public BindMarkersFactory getBindMarkersFactory() {
+        return ANONYMOUS;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.r2dbc.dialect.Dialect#getSimpleTypesKeys()
-	 */
-	@Override
-	public Collection<? extends Class<?>> getSimpleTypes() {
-		return SIMPLE_TYPES;
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.data.r2dbc.dialect.Dialect#getSimpleTypesKeys()
+     */
+    @Override
+    public Collection<? extends Class<?>> getSimpleTypes() {
+        return SIMPLE_TYPES;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.r2dbc.dialect.R2dbcDialect#getConverters()
-	 */
-	@Override
-	public Collection<Object> getConverters() {
-		return CONVERTERS;
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.data.r2dbc.dialect.R2dbcDialect#getConverters()
+     */
+    @Override
+    public Collection<Object> getConverters() {
+        return CONVERTERS;
+    }
 
-	/**
-	 * Simple singleton to convert {@link Byte}s to their {@link Boolean} representation. MySQL does not have a built-in
-	 * boolean type by default, so relies on using a byte instead. Non-zero values represent {@literal true}.
-	 *
-	 * @author Michael Berry
-	 */
-	@ReadingConverter
-	public enum ByteToBooleanConverter implements Converter<Byte, Boolean> {
+    /**
+     * Simple singleton to convert {@link Byte}s to their {@link Boolean} representation. MySQL does not have a built-in
+     * boolean type by default, so relies on using a byte instead. Non-zero values represent {@literal true}.
+     *
+     * @author Michael Berry
+     */
+    @ReadingConverter
+    public enum ByteToBooleanConverter implements Converter<Byte, Boolean> {
 
-		INSTANCE;
+        INSTANCE;
 
-		@Override
-		public Boolean convert(Byte s) {
+        @Override
+        public Boolean convert(Byte s) {
 
-			if (s == null) {
-				return null;
-			}
+            if (s == null) {
+                return null;
+            }
 
-			return s != 0;
-		}
-	}
+            return s != 0;
+        }
+    }
 
-	@Override
-	public String renderForGeneratedValues(SqlIdentifier identifier) {
-		return identifier.getReference(getIdentifierProcessing());
-	}
+    @Override
+    public String renderForGeneratedValues(SqlIdentifier identifier) {
+        return identifier.getReference(getIdentifierProcessing());
+    }
 
-	/**
-	 * Simple singleton to convert {@link Boolean}s to their {@link Byte} representation. MySQL does not have a built-in
-	 * boolean type by default, so relies on using a byte instead. {@literal true} maps to {@code 1}.
-	 *
-	 * @author Mark Paluch
-	 */
-	@WritingConverter
-	public enum BooleanToByteConverter implements Converter<Boolean, Byte> {
+    /**
+     * Simple singleton to convert {@link Boolean}s to their {@link Byte} representation. MySQL does not have a built-in
+     * boolean type by default, so relies on using a byte instead. {@literal true} maps to {@code 1}.
+     *
+     * @author Mark Paluch
+     */
+    @WritingConverter
+    public enum BooleanToByteConverter implements Converter<Boolean, Byte> {
 
-		INSTANCE;
+        INSTANCE;
 
-		@Override
-		public Byte convert(Boolean s) {
-			return (byte) (s.booleanValue() ? 1 : 0);
-		}
-	}
+        @Override
+        public Byte convert(Boolean s) {
+            return (byte) (s.booleanValue() ? 1 : 0);
+        }
+    }
 }

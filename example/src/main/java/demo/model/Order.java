@@ -3,13 +3,15 @@ package demo.model;
 
 import com.jxpanda.r2dbc.spring.data.mapping.annotation.EnumValue;
 import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.mapping.handler.EnumTypeHandler;
+import com.jxpanda.r2dbc.spring.data.mapping.handler.StandardEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.io.Serial;
 import java.math.BigDecimal;
@@ -29,69 +31,69 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@Table(value = "`order`")
+@TableEntity(name = "order")
 public class Order extends Entity {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @TableColumn("`parent_id`")
+    @TableColumn(name = "parent_id")
     private String parentId;
 
-    @TableColumn("`store_id`")
+    @TableColumn(name = "store_id")
     private String storeId;
 
-    @TableColumn("`number`")
+    @TableColumn(name = "number")
     private String number;
 
-    @TableColumn("`device`")
+    @TableColumn(name = "device")
     private Device device;
 
-    @TableColumn("`seller_id`")
+    @TableColumn(name = "seller_id")
     private String sellerId;
 
-    @TableColumn("`user_id`")
+    @TableColumn(name = "user_id")
     private String userId;
 
-    @TableColumn("`phone`")
+    @TableColumn(name = "phone")
     private String phone;
 
-    @TableColumn("`type`")
+    @TableColumn(name = "type")
     private Type type;
 
-    @TableColumn("`status`")
+    @TableColumn(name = "status")
     private Status status;
 
-    @TableColumn("`payment_date`")
+    @TableColumn(name = "payment_date")
     private LocalDateTime paymentDate;
 
-    @TableColumn("`finish_date`")
+    @TableColumn(name = "finish_date")
     private LocalDateTime finishDate;
 
-    @TableColumn("`cost_amount`")
+    @TableColumn(name = "cost_amount")
     private BigDecimal costAmount;
 
-    @TableColumn("`original_amount`")
+    @TableColumn(name = "original_amount")
     private BigDecimal originalAmount;
 
-    @TableColumn("`discount_amount`")
+    @TableColumn(name = "discount_amount")
     private BigDecimal discountAmount;
 
-    @TableColumn("`amount`")
+    @TableColumn(name = "amount")
     private BigDecimal amount;
 
-    @TableColumn("`remark`")
+    @TableColumn(name = "remark")
     private String remark;
 
-    @TableColumn(value = "`extend`", isJson = true)
+    @TableColumn(name = "extend", isJson = true)
     private List<Extend> extend;
 
-    @TableColumn(value = "`amount_changes`", isJson = true)
+    @TableColumn(name = "amount_changes", isJson = true)
     private List<AmountChange> amountChange;
 
     @Getter
     @AllArgsConstructor
-    public enum Device {
+    public enum Device implements StandardEnum {
         /**
          * 未知
          */
@@ -102,8 +104,8 @@ public class Order extends Entity {
         ANDROID(1, "安卓"),
         /**
          * IOS
-         * */
-        IOS(2,"IOS"),
+         */
+        IOS(2, "IOS"),
         /**
          * 微信小程序
          */
@@ -149,7 +151,7 @@ public class Order extends Entity {
 
     @Getter
     @AllArgsConstructor
-    public enum Status {
+    public enum Status  {
         /**
          * 未知
          */
@@ -183,9 +185,21 @@ public class Order extends Entity {
          */
         REFUNDED(7, "已退款");
 
-        @EnumValue
+//        @EnumValue
         private final Integer code;
         private final String description;
+    }
+
+
+    public static void main(String[] args) {
+        EnumTypeHandler enumTypeHandler = new EnumTypeHandler();
+        System.out.println(enumTypeHandler.serialize(Status.class, Status.CLOSED));
+        System.out.println(enumTypeHandler.serialize(Status.class, Status.PAID));
+        System.out.println(enumTypeHandler.serialize(Type.class, Type.HALL));
+
+        System.out.println(enumTypeHandler.deserialize(Status.class, 1));
+        System.out.println(enumTypeHandler.deserialize(Status.class, 2));
+        System.out.println(enumTypeHandler.deserialize(Type.class, 2));
     }
 
     @Getter
@@ -209,23 +223,23 @@ public class Order extends Entity {
         private BigDecimal value;
     }
 
-    public static final String PARENT_ID = "`parent_id`";
-    public static final String STORE_ID = "`store_id`";
-    public static final String NUMBER = "`number`";
-    public static final String DEVICE = "`device`";
-    public static final String SELLER_ID = "`seller_id`";
-    public static final String USER_ID = "`user_id`";
-    public static final String PHONE = "`phone`";
-    public static final String TYPE = "`type`";
-    public static final String STATUS = "`status`";
-    public static final String PAYMENT_DATE = "`payment_date`";
-    public static final String FINISH_DATE = "`finish_date`";
-    public static final String COST_AMOUNT = "`cost_amount`";
-    public static final String ORIGINAL_AMOUNT = "`original_amount`";
-    public static final String DISCOUNT_AMOUNT = "`discount_amount`";
-    public static final String AMOUNT = "`amount`";
-    public static final String REMARK = "`remark`";
-    public static final String EXTEND = "`extend`";
-    public static final String AMOUNT_CHANGES = "`amount_changes`";
+    public static final String PARENT_ID = "parent_id";
+    public static final String STORE_ID = "store_id";
+    public static final String NUMBER = "number";
+    public static final String DEVICE = "device";
+    public static final String SELLER_ID = "seller_id";
+    public static final String USER_ID = "user_id";
+    public static final String PHONE = "phone";
+    public static final String TYPE = "type";
+    public static final String STATUS = "status";
+    public static final String PAYMENT_DATE = "payment_date";
+    public static final String FINISH_DATE = "finish_date";
+    public static final String COST_AMOUNT = "cost_amount";
+    public static final String ORIGINAL_AMOUNT = "original_amount";
+    public static final String DISCOUNT_AMOUNT = "discount_amount";
+    public static final String AMOUNT = "amount";
+    public static final String REMARK = "remark";
+    public static final String EXTEND = "extend";
+    public static final String AMOUNT_CHANGES = "amount_changes";
 
 }

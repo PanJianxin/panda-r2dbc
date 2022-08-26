@@ -16,6 +16,8 @@
 package com.jxpanda.r2dbc.spring.data.convert;
 
 import com.jxpanda.r2dbc.spring.data.mapping.OutboundRow;
+import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.mapping.handler.EnumTypeHandler;
 import com.jxpanda.r2dbc.spring.data.support.ArrayUtils;
 import io.r2dbc.spi.ColumnMetadata;
 import io.r2dbc.spi.Row;
@@ -272,7 +274,6 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
     }
 
     @Nullable
-
     @SuppressWarnings("unchecked")
     private <S> S readEntityFrom(Row row, @Nullable RowMetadata metadata, PersistentProperty<?> property) {
 
