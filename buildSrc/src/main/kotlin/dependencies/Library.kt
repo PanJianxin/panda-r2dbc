@@ -1,14 +1,14 @@
 object Version {
     const val GUAVA = "29.0-jre"
     const val FAST_JSON = "1.2.76"
-    const val JACKSON = "2.12.5"
+    const val JACKSON = "2.13.3"
     const val DOM4J = "2.1.3"
     const val LOG4J2 = "2.15.0"
     const val LOGBACK = "1.2.7"
     const val SLF4J = "1.7.32"
     const val REACTOR = "3.4.18"
 
-    const val PANDA_COMMONS = "1.2.6"
+    const val PANDA_COMMONS = "1.2.8"
 
     const val R2DBC_POSTGRESQL = "0.8.12.RELEASE"
 

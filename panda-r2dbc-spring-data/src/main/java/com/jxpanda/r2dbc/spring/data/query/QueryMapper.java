@@ -15,21 +15,14 @@
  */
 package com.jxpanda.r2dbc.spring.data.query;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
+import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
+import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.data.mapping.context.MappingContext;
-import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
-import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
 import org.springframework.data.relational.core.dialect.Escaper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -49,6 +42,9 @@ import org.springframework.r2dbc.core.binding.Bindings;
 import org.springframework.r2dbc.core.binding.MutableBindings;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Maps {@link CriteriaDefinition} and {@link Sort} objects considering mapping metadata and dialect-specific

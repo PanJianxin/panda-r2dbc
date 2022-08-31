@@ -15,11 +15,10 @@
  */
 package com.jxpanda.r2dbc.spring.data.core.operation;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * The {@link ReactiveSelectOperation} interface allows creation and execution of {@code SELECT} operations in a fluent

@@ -15,9 +15,9 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
-import java.util.function.Supplier;
-
 import org.springframework.r2dbc.core.DatabaseClient;
+
+import java.util.function.Supplier;
 
 /**
  * Interface declaring a query that supplies SQL and can bind parameters to a {@link DatabaseClient.GenericExecuteSpec}.

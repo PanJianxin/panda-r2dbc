@@ -15,11 +15,11 @@
  */
 package com.jxpanda.r2dbc.spring.data.query;
 
-import java.util.List;
-
 import org.springframework.data.relational.core.sql.Assignment;
 import org.springframework.r2dbc.core.binding.Bindings;
 import org.springframework.util.Assert;
+
+import java.util.List;
 
 /**
  * Value object representing {@link Assignment}s with their {@link Bindings}.

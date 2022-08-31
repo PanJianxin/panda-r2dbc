@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.mapping.annotation;
 
+import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcTypeHandler;
 import com.jxpanda.r2dbc.spring.data.mapping.policy.NullPolicy;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.relational.core.mapping.Column;
@@ -55,5 +56,10 @@ public @interface TableColumn {
      * 优先级大于TableColumn注解上的策略
      */
     NullPolicy nullPolicy() default NullPolicy.NULLABLE;
+
+    /**
+     * 类型处理器，默认是不处理
+     */
+    Class<? extends R2dbcTypeHandler<?,?>> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
 
 }

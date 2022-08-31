@@ -19,6 +19,7 @@ import com.jxpanda.r2dbc.spring.data.convert.MappingR2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
 import com.jxpanda.r2dbc.spring.data.mapping.R2dbcMappingContext;
@@ -36,7 +37,6 @@ import org.springframework.data.relational.core.conversion.BasicRelationalConver
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
-import com.jxpanda.r2dbc.spring.data.core.expander.R2dbcDataAccessStrategy;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
@@ -56,186 +56,187 @@ import java.util.Optional;
 @Configuration(proxyBeanMethods = false)
 public abstract class AbstractR2dbcConfiguration implements ApplicationContextAware {
 
-	private static final String CONNECTION_FACTORY_BEAN_NAME = "connectionFactory";
+    private static final String CONNECTION_FACTORY_BEAN_NAME = "connectionFactory";
 
-	private @Nullable ApplicationContext context;
+    private @Nullable ApplicationContext context;
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
-	 */
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.context = applicationContext;
-	}
+    /*
+     * (non-Javadoc)
+     * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
+     */
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.context = applicationContext;
+    }
 
-	/**
-	 * Return a R2DBC {@link ConnectionFactory}. Annotate with {@link Bean} in case you want to expose a
-	 * {@link ConnectionFactory} instance to the {@link org.springframework.context.ApplicationContext}.
-	 *
-	 * @return the configured {@link ConnectionFactory}.
-	 */
-	public abstract ConnectionFactory connectionFactory();
+    /**
+     * Return a R2DBC {@link ConnectionFactory}. Annotate with {@link Bean} in case you want to expose a
+     * {@link ConnectionFactory} instance to the {@link org.springframework.context.ApplicationContext}.
+     *
+     * @return the configured {@link ConnectionFactory}.
+     */
+    public abstract ConnectionFactory connectionFactory();
 
-	/**
-	 * Return a {@link R2dbcDialect} for the given {@link ConnectionFactory}. This method attempts to resolve a
-	 * {@link R2dbcDialect} from {@link io.r2dbc.spi.ConnectionFactoryMetadata}. Override this method to specify a dialect
-	 * instead of attempting to resolve one.
-	 *
-	 * @param connectionFactory the configured {@link ConnectionFactory}.
-	 * @return the resolved {@link R2dbcDialect}.
-	 * @throws DialectResolver.NoDialectException if the {@link R2dbcDialect} cannot be determined.
-	 */
-	public R2dbcDialect getDialect(ConnectionFactory connectionFactory) {
-		return DialectResolver.getDialect(connectionFactory);
-	}
+    /**
+     * Return a {@link R2dbcDialect} for the given {@link ConnectionFactory}. This method attempts to resolve a
+     * {@link R2dbcDialect} from {@link io.r2dbc.spi.ConnectionFactoryMetadata}. Override this method to specify a dialect
+     * instead of attempting to resolve one.
+     *
+     * @param connectionFactory the configured {@link ConnectionFactory}.
+     * @return the resolved {@link R2dbcDialect}.
+     * @throws DialectResolver.NoDialectException if the {@link R2dbcDialect} cannot be determined.
+     */
+    public R2dbcDialect getDialect(ConnectionFactory connectionFactory) {
+        return DialectResolver.getDialect(connectionFactory);
+    }
 
-	/**
-	 * Register a {@link DatabaseClient} using {@link #connectionFactory()} and {@link R2dbcDataAccessStrategy}.
-	 *
-	 * @return must not be {@literal null}.
-	 * @throws IllegalArgumentException if any of the required args is {@literal null}.
-	 */
-	@Bean({ "r2dbcDatabaseClient", "databaseClient" })
-	public DatabaseClient databaseClient() {
+    /**
+     * Register a {@link DatabaseClient} using {@link #connectionFactory()} and {@link R2dbcDataAccessStrategy}.
+     *
+     * @return must not be {@literal null}.
+     * @throws IllegalArgumentException if any of the required args is {@literal null}.
+     */
+    @Bean({"r2dbcDatabaseClient", "databaseClient"})
+    public DatabaseClient databaseClient() {
 
-		ConnectionFactory connectionFactory = lookupConnectionFactory();
+        ConnectionFactory connectionFactory = lookupConnectionFactory();
 
-		return DatabaseClient.builder() //
-				.connectionFactory(connectionFactory) //
-				.bindMarkers(getDialect(connectionFactory).getBindMarkersFactory()) //
-				.build();
-	}
+        return DatabaseClient.builder() //
+                .connectionFactory(connectionFactory) //
+                .bindMarkers(getDialect(connectionFactory).getBindMarkersFactory()) //
+                .build();
+    }
 
-	/**
-	 * Register {@link R2dbcEntityTemplate} using {@link #databaseClient()} and {@link #connectionFactory()}.
-	 *
-	 * @param databaseClient must not be {@literal null}.
-	 * @param dataAccessStrategy must not be {@literal null}.
-	 * @return
-	 * @since 1.2
-	 */
-	@Bean
-	public R2dbcEntityTemplate r2dbcEntityTemplate(DatabaseClient databaseClient,
-												   R2dbcDataAccessStrategy dataAccessStrategy) {
+    /**
+     * Register {@link R2dbcEntityTemplate} using {@link #databaseClient()} and {@link #connectionFactory()}.
+     *
+     * @param databaseClient     must not be {@literal null}.
+     * @param dataAccessStrategy must not be {@literal null}.
+     * @return R2dbcEntityTemplate
+     * @since 1.2
+     */
+    @Bean
+    public R2dbcEntityTemplate r2dbcEntityTemplate(DatabaseClient databaseClient,
+                                                   R2dbcDataAccessStrategy dataAccessStrategy) {
 
-		Assert.notNull(databaseClient, "DatabaseClient must not be null!");
-		Assert.notNull(dataAccessStrategy, "ReactiveDataAccessStrategy must not be null!");
+        Assert.notNull(databaseClient, "DatabaseClient must not be null!");
+        Assert.notNull(dataAccessStrategy, "ReactiveDataAccessStrategy must not be null!");
 
-		return new R2dbcEntityTemplate(databaseClient, dataAccessStrategy);
-	}
+        return new R2dbcEntityTemplate(databaseClient, dataAccessStrategy);
+    }
 
-	/**
-	 * Register a {@link R2dbcMappingContext} and apply an optional {@link NamingStrategy}.
-	 *
-	 * @param namingStrategy optional {@link NamingStrategy}. Use {@link NamingStrategy#INSTANCE} as fallback.
-	 * @param r2dbcCustomConversions customized R2DBC conversions.
-	 * @return must not be {@literal null}.
-	 * @throws IllegalArgumentException if any of the required args is {@literal null}.
-	 */
-	@Bean
-	public R2dbcMappingContext r2dbcMappingContext(Optional<NamingStrategy> namingStrategy,
-			R2dbcCustomConversions r2dbcCustomConversions) {
+    /**
+     * Register a {@link R2dbcMappingContext} and apply an optional {@link NamingStrategy}.
+     *
+     * @param namingStrategy         optional {@link NamingStrategy}. Use {@link NamingStrategy#INSTANCE} as fallback.
+     * @param r2dbcCustomConversions customized R2DBC conversions.
+     * @return must not be {@literal null}.
+     * @throws IllegalArgumentException if any of the required args is {@literal null}.
+     */
+    @Bean
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    public R2dbcMappingContext r2dbcMappingContext(Optional<NamingStrategy> namingStrategy,
+                                                   R2dbcCustomConversions r2dbcCustomConversions) {
 
-		Assert.notNull(namingStrategy, "NamingStrategy must not be null!");
+        Assert.notNull(namingStrategy, "NamingStrategy must not be null!");
 
-		R2dbcMappingContext context = new R2dbcMappingContext(namingStrategy.orElse(NamingStrategy.INSTANCE));
-		context.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
+        R2dbcMappingContext context = new R2dbcMappingContext(namingStrategy.orElse(NamingStrategy.INSTANCE));
+        context.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
 
-		return context;
-	}
+        return context;
+    }
 
-	/**
-	 * Creates a {@link R2dbcDataAccessStrategy} using the configured
-	 * {@link #r2dbcConverter(R2dbcMappingContext, R2dbcCustomConversions) R2dbcConverter}.
-	 *
-	 * @param converter the configured {@link R2dbcConverter}.
-	 * @return must not be {@literal null}.
-	 * @see #r2dbcConverter(R2dbcMappingContext, R2dbcCustomConversions)
-	 * @see #getDialect(ConnectionFactory)
-	 * @throws IllegalArgumentException if any of the {@literal mappingContext} is {@literal null}.
-	 */
-	@Bean
-	public R2dbcDataAccessStrategy reactiveDataAccessStrategy(R2dbcConverter converter) {
+    /**
+     * Creates a {@link R2dbcDataAccessStrategy} using the configured
+     * {@link #r2dbcConverter(R2dbcMappingContext, R2dbcCustomConversions) R2dbcConverter}.
+     *
+     * @param converter the configured {@link R2dbcConverter}.
+     * @return must not be {@literal null}.
+     * @throws IllegalArgumentException if any of the {@literal mappingContext} is {@literal null}.
+     * @see #r2dbcConverter(R2dbcMappingContext, R2dbcCustomConversions)
+     * @see #getDialect(ConnectionFactory)
+     */
+    @Bean
+    public R2dbcDataAccessStrategy reactiveDataAccessStrategy(R2dbcConverter converter) {
 
-		Assert.notNull(converter, "MappingContext must not be null!");
+        Assert.notNull(converter, "MappingContext must not be null!");
 
-		return new R2dbcDataAccessStrategy(getDialect(lookupConnectionFactory()), converter);
-	}
+        return new R2dbcDataAccessStrategy(getDialect(lookupConnectionFactory()), converter);
+    }
 
-	/**
-	 * Creates a {@link R2dbcConverter} using the configured
-	 * {@link #r2dbcMappingContext(Optional, R2dbcCustomConversions)} R2dbcMappingContext}.
-	 *
-	 * @param mappingContext the configured {@link R2dbcMappingContext}.
-	 * @param r2dbcCustomConversions customized R2DBC conversions.
-	 * @return must not be {@literal null}.
-	 * @see #r2dbcMappingContext(Optional, R2dbcCustomConversions)
-	 * @see #getDialect(ConnectionFactory)
-	 * @throws IllegalArgumentException if any of the {@literal mappingContext} is {@literal null}.
-	 * @since 1.2
-	 */
-	@Bean
-	public MappingR2dbcConverter r2dbcConverter(R2dbcMappingContext mappingContext,
-			R2dbcCustomConversions r2dbcCustomConversions) {
+    /**
+     * Creates a {@link R2dbcConverter} using the configured
+     * {@link #r2dbcMappingContext(Optional, R2dbcCustomConversions)} R2dbcMappingContext}.
+     *
+     * @param mappingContext         the configured {@link R2dbcMappingContext}.
+     * @param r2dbcCustomConversions customized R2DBC conversions.
+     * @return must not be {@literal null}.
+     * @throws IllegalArgumentException if any of the {@literal mappingContext} is {@literal null}.
+     * @see #r2dbcMappingContext(Optional, R2dbcCustomConversions)
+     * @see #getDialect(ConnectionFactory)
+     * @since 1.2
+     */
+    @Bean
+    public MappingR2dbcConverter r2dbcConverter(R2dbcMappingContext mappingContext,
+                                                R2dbcCustomConversions r2dbcCustomConversions) {
 
-		Assert.notNull(mappingContext, "MappingContext must not be null!");
+        Assert.notNull(mappingContext, "MappingContext must not be null!");
 
-		return new MappingR2dbcConverter(mappingContext, r2dbcCustomConversions);
-	}
+        return new MappingR2dbcConverter(mappingContext, r2dbcCustomConversions);
+    }
 
-	/**
-	 * Register custom {@link Converter}s in a {@link CustomConversions} object if required. These
-	 * {@link CustomConversions} will be registered with the {@link BasicRelationalConverter} and
-	 * {@link #r2dbcMappingContext(Optional, R2dbcCustomConversions)}. Returns an empty {@link R2dbcCustomConversions}
-	 * instance by default. Override {@link #getCustomConverters()} to supply custom converters.
-	 *
-	 * @return must not be {@literal null}.
-	 * @see #getCustomConverters()
-	 */
-	@Bean
-	public R2dbcCustomConversions r2dbcCustomConversions() {
-		return new R2dbcCustomConversions(getStoreConversions(), getCustomConverters());
-	}
+    /**
+     * Register custom {@link Converter}s in a {@link CustomConversions} object if required. These
+     * {@link CustomConversions} will be registered with the {@link BasicRelationalConverter} and
+     * {@link #r2dbcMappingContext(Optional, R2dbcCustomConversions)}. Returns an empty {@link R2dbcCustomConversions}
+     * instance by default. Override {@link #getCustomConverters()} to supply custom converters.
+     *
+     * @return must not be {@literal null}.
+     * @see #getCustomConverters()
+     */
+    @Bean
+    public R2dbcCustomConversions r2dbcCustomConversions() {
+        return new R2dbcCustomConversions(getStoreConversions(), getCustomConverters());
+    }
 
-	/**
-	 * Customization hook to return custom converters.
-	 *
-	 * @return return custom converters.
-	 */
-	protected List<Object> getCustomConverters() {
-		return Collections.emptyList();
-	}
+    /**
+     * Customization hook to return custom converters.
+     *
+     * @return return custom converters.
+     */
+    protected List<Object> getCustomConverters() {
+        return Collections.emptyList();
+    }
 
-	/**
-	 * Returns the {@link R2dbcDialect}-specific {@link StoreConversions}.
-	 *
-	 * @return the {@link R2dbcDialect}-specific {@link StoreConversions}.
-	 */
-	protected StoreConversions getStoreConversions() {
+    /**
+     * Returns the {@link R2dbcDialect}-specific {@link StoreConversions}.
+     *
+     * @return the {@link R2dbcDialect}-specific {@link StoreConversions}.
+     */
+    protected StoreConversions getStoreConversions() {
 
-		R2dbcDialect dialect = getDialect(lookupConnectionFactory());
+        R2dbcDialect dialect = getDialect(lookupConnectionFactory());
 
-		List<Object> converters = new ArrayList<>(dialect.getConverters());
-		converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS);
+        List<Object> converters = new ArrayList<>(dialect.getConverters());
+        converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS);
 
-		return StoreConversions.of(dialect.getSimpleTypeHolder(), converters);
-	}
+        return StoreConversions.of(dialect.getSimpleTypeHolder(), converters);
+    }
 
-	ConnectionFactory lookupConnectionFactory() {
+    ConnectionFactory lookupConnectionFactory() {
 
-		ApplicationContext context = this.context;
-		Assert.notNull(context, "ApplicationContext is not yet initialized");
+        ApplicationContext context = this.context;
+        Assert.notNull(context, "ApplicationContext is not yet initialized");
 
-		String[] beanNamesForType = context.getBeanNamesForType(ConnectionFactory.class);
+        String[] beanNamesForType = context.getBeanNamesForType(ConnectionFactory.class);
 
-		for (String beanName : beanNamesForType) {
+        for (String beanName : beanNamesForType) {
 
-			if (beanName.equals(CONNECTION_FACTORY_BEAN_NAME)) {
-				return context.getBean(CONNECTION_FACTORY_BEAN_NAME, ConnectionFactory.class);
-			}
-		}
+            if (beanName.equals(CONNECTION_FACTORY_BEAN_NAME)) {
+                return context.getBean(CONNECTION_FACTORY_BEAN_NAME, ConnectionFactory.class);
+            }
+        }
 
-		return connectionFactory();
-	}
+        return connectionFactory();
+    }
 }

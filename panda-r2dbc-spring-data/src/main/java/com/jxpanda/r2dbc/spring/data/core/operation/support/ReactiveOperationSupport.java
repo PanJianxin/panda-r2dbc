@@ -7,7 +7,6 @@ import com.jxpanda.r2dbc.spring.data.core.StatementMapper;
 import com.jxpanda.r2dbc.spring.data.mapping.event.AfterConvertCallback;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
-import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;

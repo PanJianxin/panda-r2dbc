@@ -1,16 +1,15 @@
 package com.jxpanda.r2dbc.spring.data.dialect;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import com.jxpanda.r2dbc.spring.data.mapping.R2dbcSimpleTypeHolder;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.TypeHandler;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.relational.core.dialect.Dialect;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.r2dbc.core.binding.BindMarkersFactory;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * R2DBC-specific extension to {@link Dialect}. Represents a dialect that is implemented by a particular database.
@@ -20,6 +19,7 @@ import org.springframework.r2dbc.core.binding.BindMarkersFactory;
  * @author Michael Berry
  */
 public interface R2dbcDialect extends Dialect {
+
 
     /**
      * Returns the {@link BindMarkersFactory} used by this dialect.
@@ -73,15 +73,6 @@ public interface R2dbcDialect extends Dialect {
      */
     default String renderForGeneratedValues(SqlIdentifier identifier) {
         return identifier.toSql(getIdentifierProcessing());
-    }
-
-    /**
-     * Return a collection of handlers for this dialect.
-     * 返回一个类型处理器，理论上可以通过扩展getSimpleTypes()来实现功能
-     * 但是为了不过多的侵入原有的设计，选择独立扩展一个接口
-     */
-    default Collection<TypeHandler> getTypeHandlers() {
-        return Collections.emptySet();
     }
 
 }

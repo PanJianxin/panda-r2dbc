@@ -15,18 +15,16 @@
  */
 package com.jxpanda.r2dbc.spring.data.dialect;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URL;
-import java.util.*;
-
-import com.jxpanda.r2dbc.spring.data.mapping.handler.EnumTypeHandler;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.TypeHandler;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.r2dbc.core.binding.BindMarkersFactory;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URL;
+import java.util.*;
 
 /**
  * An SQL dialect for MySQL.
@@ -94,10 +92,6 @@ public class MySqlDialect extends org.springframework.data.relational.core.diale
         @Override
         public Boolean convert(Byte s) {
 
-            if (s == null) {
-                return null;
-            }
-
             return s != 0;
         }
     }
@@ -120,7 +114,8 @@ public class MySqlDialect extends org.springframework.data.relational.core.diale
 
         @Override
         public Byte convert(Boolean s) {
-            return (byte) (s.booleanValue() ? 1 : 0);
+            return (byte) (s ? 1 : 0);
         }
     }
+
 }

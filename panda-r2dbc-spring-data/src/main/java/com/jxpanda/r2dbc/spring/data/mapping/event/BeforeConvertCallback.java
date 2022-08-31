@@ -16,7 +16,6 @@
 package com.jxpanda.r2dbc.spring.data.mapping.event;
 
 import org.reactivestreams.Publisher;
-
 import org.springframework.data.mapping.callback.EntityCallback;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 

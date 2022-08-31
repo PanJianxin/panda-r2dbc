@@ -17,16 +17,15 @@ package com.jxpanda.r2dbc.spring.data.dialect;
 
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryMetadata;
+import org.springframework.core.io.support.SpringFactoriesLoader;
+import org.springframework.dao.NonTransientDataAccessException;
+import org.springframework.data.util.Optionals;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-
-import org.springframework.core.io.support.SpringFactoriesLoader;
-import org.springframework.dao.NonTransientDataAccessException;
-import org.springframework.data.util.Optionals;
-import org.springframework.util.LinkedCaseInsensitiveMap;
 
 /**
  * Resolves a {@link R2dbcDialect} from a {@link ConnectionFactory} using {@link R2dbcDialectProvider}. Dialect
@@ -54,15 +53,13 @@ public class DialectResolver {
 	 */
 	public static R2dbcDialect getDialect(ConnectionFactory connectionFactory) {
 
-		return DETECTORS.stream() //
-				.map(it -> it.getDialect(connectionFactory)) //
-				.flatMap(Optionals::toStream) //
-				.findFirst() //
-				.orElseThrow(() -> {
-					return new NoDialectException(
-							String.format("Cannot determine a dialect for %s using %s. Please provide a Dialect.",
-									connectionFactory.getMetadata().getName(), connectionFactory));
-				});
+		return DETECTORS.stream()
+				.map(it -> it.getDialect(connectionFactory))
+				.flatMap(Optionals::toStream)
+				.findFirst()
+				.orElseThrow(() -> new NoDialectException(
+						String.format("Cannot determine a dialect for %s using %s. Please provide a Dialect.",
+								connectionFactory.getMetadata().getName(), connectionFactory)));
 	}
 
 	/**
@@ -129,9 +126,9 @@ public class DialectResolver {
 				return Optional.of(r2dbcDialect);
 			}
 
-			return BUILTIN.keySet().stream() //
-					.filter(it -> metadata.getName().contains(it)) //
-					.map(BUILTIN::get) //
+			return BUILTIN.keySet().stream()
+					.filter(it -> metadata.getName().contains(it))
+					.map(BUILTIN::get)
 					.findFirst();
 		}
 	}

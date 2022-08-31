@@ -2,6 +2,7 @@ package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
 //import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
+import com.jxpanda.commons.toolkit.json.JsonKit;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import demo.model.*;
 
@@ -65,7 +66,12 @@ public class TestAPI {
 //                .log();
 //        return orderService.selectById(id)
 //                .log();
-        return orderRepository.findById(id).log();
+        return orderRepository.findById(id)
+                .map(it->{
+                    System.out.println(it);
+                    return it;
+                })
+                .log();
     }
 
     @GetMapping("/order/sum")

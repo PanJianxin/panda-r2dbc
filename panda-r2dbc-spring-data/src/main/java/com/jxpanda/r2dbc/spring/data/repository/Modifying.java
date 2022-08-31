@@ -15,11 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Indicates a query method should be considered a modifying query that returns nothing or the number of rows affected

@@ -17,11 +17,10 @@ package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveInsertOperation;
-import reactor.core.publisher.Mono;
-
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Mono;
 
 /**
  * Implementation of {@link ReactiveInsertOperation}.

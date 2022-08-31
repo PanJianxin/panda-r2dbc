@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.mapping.handler;
 
 import com.jxpanda.r2dbc.spring.data.mapping.annotation.EnumValue;
+import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -11,13 +12,14 @@ import java.util.stream.Collectors;
 /**
  * 枚举处理器
  */
-public final class EnumTypeHandler extends TypeHandler<Enum<?>, Object> {
+public enum R2dbcEnumTypeHandler implements R2dbcTypeHandler<Enum<?>, Object> {
 
-    private static final Map<Class<? extends Enum<?>>, Map<Object, Enum<?>>> ENUM_CACHE = new HashMap<>();
+    INSTANCE;
 
+    private static final Map<Class<? extends Enum<?>>, Map<String, Enum<?>>> ENUM_CACHE = new HashMap<>();
 
     @Override
-    public Serialize<Enum<?>, Object> getSerializer(Class<? extends Enum<?>> objectClass) {
+    public Writer<Object, Enum<?>> getWriter(RelationalPersistentProperty property) {
         return (enumConstant) -> {
 
             // 如果实现了StandardEnum接口，直接返回code
@@ -26,7 +28,7 @@ public final class EnumTypeHandler extends TypeHandler<Enum<?>, Object> {
             }
 
             // 否则找@EnumValue注解标识的字段，返回该字段的值
-            Field field = Arrays.stream(objectClass.getDeclaredFields()).filter(it -> it.isAnnotationPresent(EnumValue.class))
+            Field field = Arrays.stream(property.getType().getDeclaredFields()).filter(it -> it.isAnnotationPresent(EnumValue.class))
                     .findFirst().orElse(null);
 
             if (field != null) {
@@ -44,17 +46,19 @@ public final class EnumTypeHandler extends TypeHandler<Enum<?>, Object> {
     }
 
     @Override
-    public Deserializer<Enum<?>, Object> getDeserializer(Class<? extends Enum<?>> objectClass) {
+    public Reader<Enum<?>, Object> getReader(RelationalPersistentProperty property) {
         return (value) -> {
-            Map<Object, Enum<?>> enumMap = getEnumMap(objectClass);
-            return enumMap.getOrDefault(value, enumMap.get(0));
+            Map<String, Enum<?>> enumMap = getEnumMap(property);
+            return enumMap.getOrDefault(value.toString(), enumMap.get("0"));
         };
     }
 
 
-    private Map<Object, Enum<?>> getEnumMap(Class<? extends Enum<?>> objectClass) {
+    @SuppressWarnings("unchecked")
+    private Map<String, Enum<?>> getEnumMap(RelationalPersistentProperty property) {
+        Class<? extends Enum<?>> objectClass = (Class<? extends Enum<?>>) property.getType();
         return ENUM_CACHE.computeIfAbsent(objectClass, (k) -> Arrays.stream(objectClass.getEnumConstants())
-                .collect(Collectors.toMap(it -> serialize(objectClass, it), it -> it)));
+                .collect(Collectors.toMap(it -> write(it, property).toString(), it -> it)));
     }
 
 }

@@ -1,16 +1,10 @@
 package com.jxpanda.r2dbc.spring.data.convert;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-
-import com.jxpanda.r2dbc.spring.data.mapping.R2dbcSimpleTypeHolder;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.TypeHandler;
-import org.springframework.data.convert.CustomConversions;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
+import com.jxpanda.r2dbc.spring.data.mapping.R2dbcSimpleTypeHolder;
+import org.springframework.data.convert.CustomConversions;
+
+import java.util.*;
 
 /**
  * Value object to capture custom conversion. {@link R2dbcCustomConversions} also act as factory for

@@ -15,23 +15,13 @@
  */
 package com.jxpanda.r2dbc.spring.data.query;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
 import org.springframework.data.relational.core.dialect.Escaper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.query.ValueFunction;
-import org.springframework.data.relational.core.sql.AssignValue;
-import org.springframework.data.relational.core.sql.Assignment;
-import org.springframework.data.relational.core.sql.Assignments;
-import org.springframework.data.relational.core.sql.Column;
-import org.springframework.data.relational.core.sql.SQL;
-import org.springframework.data.relational.core.sql.SqlIdentifier;
-import org.springframework.data.relational.core.sql.Table;
+import org.springframework.data.relational.core.sql.*;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.Parameter;
@@ -40,6 +30,10 @@ import org.springframework.r2dbc.core.binding.BindMarkers;
 import org.springframework.r2dbc.core.binding.Bindings;
 import org.springframework.r2dbc.core.binding.MutableBindings;
 import org.springframework.util.Assert;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A subclass of {@link QueryMapper} that maps {@link Update} to update assignments.

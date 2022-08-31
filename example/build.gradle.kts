@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.springframework.boot") version "2.7.0"
+    id("org.springframework.boot") version "2.7.2"
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
 }
 
@@ -19,8 +19,7 @@ dependencies {
     //    implementation("dev.miku:r2dbc-mysql:0.8.2.RELEASE")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-    implementation("com.jxpanda.commons:commons-base:1.2.6")
-    implementation("com.jxpanda.commons:commons-toolkit:1.2.6")
+    implementation(Library.PANDA_COMMONS)
     implementation("io.projectreactor.addons:reactor-extra")
 
     // https://mvnrepository.com/artifact/io.r2dbc/r2dbc-spi

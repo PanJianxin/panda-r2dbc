@@ -15,10 +15,10 @@
  */
 package com.jxpanda.r2dbc.spring.data.support;
 
+import org.springframework.util.Assert;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
-
-import org.springframework.util.Assert;
 
 /**
  * Utilities for array interaction.

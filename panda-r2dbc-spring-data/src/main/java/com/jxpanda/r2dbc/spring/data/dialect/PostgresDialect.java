@@ -1,22 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.dialect;
 
 import io.r2dbc.postgresql.codec.Json;
-
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
@@ -30,6 +14,13 @@ import org.springframework.data.util.Lazy;
 import org.springframework.lang.NonNull;
 import org.springframework.r2dbc.core.binding.BindMarkersFactory;
 import org.springframework.util.ClassUtils;
+
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URL;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * An SQL dialect for Postgres.

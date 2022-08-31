@@ -15,8 +15,8 @@
  */
 package com.jxpanda.r2dbc.spring.data.query;
 
-import org.springframework.r2dbc.core.binding.Bindings;
 import org.springframework.data.relational.core.sql.Condition;
+import org.springframework.r2dbc.core.binding.Bindings;
 import org.springframework.util.Assert;
 
 /**

@@ -16,28 +16,17 @@
 package com.jxpanda.r2dbc.spring.data.convert;
 
 import com.jxpanda.r2dbc.spring.data.mapping.OutboundRow;
-import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.EnumTypeHandler;
 import com.jxpanda.r2dbc.spring.data.support.ArrayUtils;
 import io.r2dbc.spi.ColumnMetadata;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
-
-import java.util.*;
-import java.util.function.BiFunction;
-
 import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.mapping.*;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
-import org.springframework.data.mapping.model.DefaultSpELExpressionEvaluator;
-import org.springframework.data.mapping.model.ParameterValueProvider;
-import org.springframework.data.mapping.model.SpELContext;
-import org.springframework.data.mapping.model.SpELExpressionEvaluator;
-import org.springframework.data.mapping.model.SpELExpressionParameterValueProvider;
+import org.springframework.data.mapping.model.*;
 import org.springframework.data.relational.core.conversion.BasicRelationalConverter;
 import org.springframework.data.relational.core.conversion.RelationalConverter;
 import org.springframework.data.relational.core.dialect.ArrayColumns;
@@ -51,6 +40,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
+import java.util.*;
+import java.util.function.BiFunction;
+
 /**
  * Converter for R2DBC.
  *
@@ -60,6 +52,8 @@ import org.springframework.util.CollectionUtils;
 //@SuppressWarnings("DuplicatedCode")
 public class MappingR2dbcConverter extends BasicRelationalConverter implements R2dbcConverter {
 
+    private final R2dbcCustomTypeHandlers typeHandlers;
+
     /**
      * Creates a new {@link MappingR2dbcConverter} given {@link MappingContext}.
      *
@@ -68,17 +62,38 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
     public MappingR2dbcConverter(
             MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context) {
         super(context, new R2dbcCustomConversions(R2dbcCustomConversions.STORE_CONVERSIONS, Collections.emptyList()));
+        this.typeHandlers = new R2dbcCustomTypeHandlers();
     }
 
     /**
      * Creates a new {@link MappingR2dbcConverter} given {@link MappingContext} and {@link CustomConversions}.
      *
-     * @param context must not be {@literal null}.
+     * @param context     must not be {@literal null}.
+     * @param conversions must not be {@literal null}.
      */
     public MappingR2dbcConverter(
             MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context,
             CustomConversions conversions) {
         super(context, conversions);
+        this.typeHandlers = new R2dbcCustomTypeHandlers();
+    }
+
+    /**
+     * Creates a new {@link MappingR2dbcConverter} given {@link MappingContext} and {@link CustomConversions} and {@link R2dbcCustomTypeHandlers}.
+     *
+     * @param context      must not be {@literal null}.
+     * @param conversions  must not be {@literal null}.
+     * @param typeHandlers must not be {@literal null}.
+     */
+    public MappingR2dbcConverter(
+            MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context,
+            CustomConversions conversions, R2dbcCustomTypeHandlers typeHandlers) {
+        super(context, conversions);
+        this.typeHandlers = typeHandlers;
+    }
+
+    public R2dbcCustomTypeHandlers getTypeHandlers() {
+        return typeHandlers;
     }
 
     // ----------------------------------
@@ -169,6 +184,12 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
                 return null;
             }
 
+            // handler的优先级高于conversions
+            // handler是通过TableColumn注解来指定的，因此优先级应该高于全局的conversions
+            if (getTypeHandlers().hasCustomReadTarget(property)) {
+                return getTypeHandlers().read(value, property);
+            }
+
             if (getConversions().hasCustomReadTarget(value.getClass(), property.getType())) {
                 return readValue(value, property.getTypeInformation());
             }
@@ -186,6 +207,7 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
     }
 
 
+    @Override
     public Object readValue(@Nullable Object value, TypeInformation<?> type) {
 
         if (null == value) {

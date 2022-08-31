@@ -21,6 +21,7 @@ import com.jxpanda.autoconfigure.r2dbc.R2dbcProperties;
 import com.jxpanda.r2dbc.spring.data.convert.MappingR2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
+import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
@@ -36,7 +37,6 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.r2dbc.core.DatabaseClient;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,54 +49,61 @@ import java.util.List;
  * @since 2.3.0
  */
 @AutoConfiguration(after = R2dbcAutoConfiguration.class)
-@ConditionalOnClass({ DatabaseClient.class, R2dbcEntityTemplate.class })
+@ConditionalOnClass({DatabaseClient.class, R2dbcEntityTemplate.class})
 @ConditionalOnSingleCandidate(DatabaseClient.class)
 public class R2dbcDataAutoConfiguration {
 
-	private final DatabaseClient databaseClient;
+    private final DatabaseClient databaseClient;
 
-	private final R2dbcDialect dialect;
+    private final R2dbcDialect dialect;
 
-	private final R2dbcProperties r2dbcProperties;
+    private final R2dbcProperties r2dbcProperties;
 
-	public R2dbcDataAutoConfiguration(DatabaseClient databaseClient,R2dbcProperties r2dbcProperties) {
-		this.databaseClient = databaseClient;
-		this.dialect = DialectResolver.getDialect(this.databaseClient.getConnectionFactory());
-		this.r2dbcProperties = r2dbcProperties;
-	}
+    public R2dbcDataAutoConfiguration(DatabaseClient databaseClient, R2dbcProperties r2dbcProperties) {
+        this.databaseClient = databaseClient;
+        this.dialect = DialectResolver.getDialect(this.databaseClient.getConnectionFactory());
+        this.r2dbcProperties = r2dbcProperties;
+    }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public R2dbcEntityTemplate r2dbcEntityTemplate(R2dbcConverter r2dbcConverter) {
-		return new R2dbcEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
-	}
+    @Bean
+    @ConditionalOnMissingBean
+    public R2dbcEntityTemplate r2dbcEntityTemplate(R2dbcConverter r2dbcConverter) {
+        return new R2dbcEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
+    }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public R2dbcMappingContext r2dbcMappingContext(ObjectProvider<NamingStrategy> namingStrategy,
-												   R2dbcCustomConversions r2dbcCustomConversions) {
-		R2dbcMappingContext relationalMappingContext = new R2dbcMappingContext(
-				namingStrategy.getIfAvailable(() -> NamingStrategy.INSTANCE));
-		relationalMappingContext.setForceQuote(r2dbcProperties.getMapping().isForceQuote());
-		relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
-		return relationalMappingContext;
-	}
+    @Bean
+    @ConditionalOnMissingBean
+    public R2dbcMappingContext r2dbcMappingContext(ObjectProvider<NamingStrategy> namingStrategy,
+                                                   R2dbcCustomConversions r2dbcCustomConversions) {
+        R2dbcMappingContext relationalMappingContext = new R2dbcMappingContext(
+                namingStrategy.getIfAvailable(() -> NamingStrategy.INSTANCE));
+        relationalMappingContext.setForceQuote(r2dbcProperties.getMapping().isForceQuote());
+        relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
+        return relationalMappingContext;
+    }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public R2dbcConverter r2dbcConverter(R2dbcMappingContext mappingContext,
-												R2dbcCustomConversions r2dbcCustomConversions) {
-		return new MappingR2dbcConverter(mappingContext, r2dbcCustomConversions);
-	}
+    @Bean
+    @ConditionalOnMissingBean
+    public R2dbcConverter r2dbcConverter(R2dbcMappingContext mappingContext,
+                                         R2dbcCustomConversions r2dbcCustomConversions,
+                                         R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
+        return new MappingR2dbcConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
+    }
 
-	@Bean
-	@ConditionalOnMissingBean
-	public R2dbcCustomConversions r2dbcCustomConversions() {
-		List<Object> converters = new ArrayList<>(this.dialect.getConverters());
-		converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS);
-		return new R2dbcCustomConversions(
-				CustomConversions.StoreConversions.of(this.dialect.getSimpleTypeHolder(), converters),
-				Collections.emptyList());
-	}
+    @Bean
+    @ConditionalOnMissingBean
+    public R2dbcCustomConversions r2dbcCustomConversions() {
+        List<Object> converters = new ArrayList<>(this.dialect.getConverters());
+        converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS);
+        return new R2dbcCustomConversions(
+                CustomConversions.StoreConversions.of(this.dialect.getSimpleTypeHolder(), converters),
+                Collections.emptyList());
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers() {
+        return new R2dbcCustomTypeHandlers();
+    }
 
 }

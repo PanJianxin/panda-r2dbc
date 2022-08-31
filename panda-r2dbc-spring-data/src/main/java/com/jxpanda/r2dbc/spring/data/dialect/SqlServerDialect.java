@@ -1,12 +1,8 @@
 package com.jxpanda.r2dbc.spring.data.dialect;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
 import org.springframework.r2dbc.core.binding.BindMarkersFactory;
+
+import java.util.*;
 
 /**
  * An SQL dialect for Microsoft SQL Server.

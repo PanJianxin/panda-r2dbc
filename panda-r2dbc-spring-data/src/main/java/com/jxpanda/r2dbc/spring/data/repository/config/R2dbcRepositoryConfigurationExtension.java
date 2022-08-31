@@ -15,10 +15,6 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.config;
 
-import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.Collections;
-
 import com.jxpanda.r2dbc.spring.data.repository.R2dbcRepository;
 import com.jxpanda.r2dbc.spring.data.repository.support.R2dbcRepositoryFactoryBean;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -29,6 +25,10 @@ import org.springframework.data.repository.config.RepositoryConfigurationExtensi
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport;
 import org.springframework.data.repository.config.XmlRepositoryConfigurationSource;
 import org.springframework.data.repository.core.RepositoryMetadata;
+
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Reactive {@link RepositoryConfigurationExtension} for R2DBC.

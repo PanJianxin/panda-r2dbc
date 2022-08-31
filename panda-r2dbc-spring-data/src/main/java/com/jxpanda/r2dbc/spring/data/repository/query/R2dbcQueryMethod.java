@@ -15,11 +15,6 @@
  */
 package com.jxpanda.r2dbc.spring.data.repository.query;
 
-import static org.springframework.data.repository.util.ClassUtils.*;
-
-import java.lang.reflect.Method;
-import java.util.Optional;
-
 import com.jxpanda.r2dbc.spring.data.repository.Modifying;
 import com.jxpanda.r2dbc.spring.data.repository.Query;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -30,9 +25,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
-import org.springframework.data.relational.repository.Lock;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
+import org.springframework.data.relational.repository.Lock;
 import org.springframework.data.relational.repository.query.RelationalEntityMetadata;
 import org.springframework.data.relational.repository.query.RelationalParameters;
 import org.springframework.data.relational.repository.query.SimpleRelationalEntityMetadata;
@@ -48,6 +43,11 @@ import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+
+import java.lang.reflect.Method;
+import java.util.Optional;
+
+import static org.springframework.data.repository.util.ClassUtils.hasParameterOfType;
 
 /**
  * Reactive specific implementation of {@link QueryMethod}.

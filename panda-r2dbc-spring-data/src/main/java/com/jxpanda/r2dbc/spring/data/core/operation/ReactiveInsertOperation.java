@@ -15,9 +15,8 @@
  */
 package com.jxpanda.r2dbc.spring.data.core.operation;
 
-import reactor.core.publisher.Mono;
-
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import reactor.core.publisher.Mono;
 
 /**
  * The {@link ReactiveInsertOperation} interface allows creation and execution of {@code INSERT} operations in a fluent

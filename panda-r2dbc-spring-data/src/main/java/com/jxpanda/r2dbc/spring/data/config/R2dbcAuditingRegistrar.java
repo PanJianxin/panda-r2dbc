@@ -15,8 +15,6 @@
  */
 package com.jxpanda.r2dbc.spring.data.config;
 
-import java.lang.annotation.Annotation;
-
 import com.jxpanda.r2dbc.spring.data.mapping.event.ReactiveAuditingEntityCallback;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -28,6 +26,8 @@ import org.springframework.data.auditing.config.AuditingBeanDefinitionRegistrarS
 import org.springframework.data.auditing.config.AuditingConfiguration;
 import org.springframework.data.config.ParsingUtils;
 import org.springframework.util.Assert;
+
+import java.lang.annotation.Annotation;
 
 /**
  * {@link ImportBeanDefinitionRegistrar} to enable {@link EnableR2dbcAuditing} annotation.

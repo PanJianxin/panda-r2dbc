@@ -37,7 +37,8 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentEnti
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
-import org.springframework.r2dbc.core.*;
+import org.springframework.r2dbc.core.Parameter;
+import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;

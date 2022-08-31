@@ -15,21 +15,10 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.sql.Expression;
@@ -41,6 +30,11 @@ import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.Parameter;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
+
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Mapper for statement specifications to {@link PreparedOperation}. Statement mapping applies a

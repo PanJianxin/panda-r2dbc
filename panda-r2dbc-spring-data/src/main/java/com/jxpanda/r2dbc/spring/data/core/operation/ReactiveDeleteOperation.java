@@ -15,10 +15,9 @@
  */
 package com.jxpanda.r2dbc.spring.data.core.operation;
 
-import reactor.core.publisher.Mono;
-
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import reactor.core.publisher.Mono;
 
 /**
  * The {@link ReactiveDeleteOperation} interface allows creation and execution of {@code DELETE} operations in a fluent

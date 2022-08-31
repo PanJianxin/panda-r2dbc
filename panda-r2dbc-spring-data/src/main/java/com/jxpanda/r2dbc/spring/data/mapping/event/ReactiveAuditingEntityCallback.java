@@ -16,7 +16,6 @@
 package com.jxpanda.r2dbc.spring.data.mapping.event;
 
 import org.reactivestreams.Publisher;
-
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.core.Ordered;
 import org.springframework.data.auditing.AuditingHandler;

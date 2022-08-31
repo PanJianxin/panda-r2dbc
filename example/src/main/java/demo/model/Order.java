@@ -1,10 +1,14 @@
 package demo.model;
 
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
+import com.jxpanda.commons.toolkit.json.JsonKit;
 import com.jxpanda.r2dbc.spring.data.mapping.annotation.EnumValue;
 import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableEntity;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.EnumTypeHandler;
+import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcJacksonTypeHandler;
+import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcJsonTypeHandler;
 import com.jxpanda.r2dbc.spring.data.mapping.handler.StandardEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -151,7 +155,7 @@ public class Order extends Entity {
 
     @Getter
     @AllArgsConstructor
-    public enum Status  {
+    public enum Status {
         /**
          * 未知
          */
@@ -185,21 +189,9 @@ public class Order extends Entity {
          */
         REFUNDED(7, "已退款");
 
-//        @EnumValue
+        //        @EnumValue
         private final Integer code;
         private final String description;
-    }
-
-
-    public static void main(String[] args) {
-        EnumTypeHandler enumTypeHandler = new EnumTypeHandler();
-        System.out.println(enumTypeHandler.serialize(Status.class, Status.CLOSED));
-        System.out.println(enumTypeHandler.serialize(Status.class, Status.PAID));
-        System.out.println(enumTypeHandler.serialize(Type.class, Type.HALL));
-
-        System.out.println(enumTypeHandler.deserialize(Status.class, 1));
-        System.out.println(enumTypeHandler.deserialize(Status.class, 2));
-        System.out.println(enumTypeHandler.deserialize(Type.class, 2));
     }
 
     @Getter

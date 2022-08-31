@@ -15,16 +15,11 @@
  */
 package com.jxpanda.r2dbc.spring.data.config;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 import org.springframework.context.annotation.Import;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.domain.ReactiveAuditorAware;
+
+import java.lang.annotation.*;
 
 /**
  * Annotation to enable auditing in R2DBC via annotation configuration.
