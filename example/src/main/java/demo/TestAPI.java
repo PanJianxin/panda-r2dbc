@@ -64,14 +64,14 @@ public class TestAPI {
     public Mono<Order> getOrder(@PathVariable("id") String id) {
 //        return r2dbcEntityTemplate.selectOne(Query.query(Criteria.where(Order.ID).is(id)), Order.class)
 //                .log();
-//        return orderService.selectById(id)
-//                .log();
-        return orderRepository.findById(id)
-                .map(it->{
-                    System.out.println(it);
-                    return it;
-                })
+        return orderService.selectById(id)
                 .log();
+//        return orderRepository.findById(id)
+//                .map(it->{
+//                    System.out.println(it);
+//                    return it;
+//                })
+//                .log();
     }
 
     @GetMapping("/order/sum")

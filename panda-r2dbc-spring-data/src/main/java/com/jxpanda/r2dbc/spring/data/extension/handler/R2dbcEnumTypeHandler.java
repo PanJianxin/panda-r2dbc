@@ -1,6 +1,7 @@
-package com.jxpanda.r2dbc.spring.data.mapping.handler;
+package com.jxpanda.r2dbc.spring.data.extension.handler;
 
-import com.jxpanda.r2dbc.spring.data.mapping.annotation.EnumValue;
+import com.jxpanda.r2dbc.spring.data.extension.StandardEnum;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.EnumValue;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 import java.lang.reflect.Field;

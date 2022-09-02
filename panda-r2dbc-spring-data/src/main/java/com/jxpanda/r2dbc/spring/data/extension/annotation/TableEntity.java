@@ -1,6 +1,6 @@
-package com.jxpanda.r2dbc.spring.data.mapping.annotation;
+package com.jxpanda.r2dbc.spring.data.extension.annotation;
 
-import com.jxpanda.r2dbc.spring.data.mapping.policy.NullPolicy;
+import com.jxpanda.r2dbc.spring.data.extension.policy.NullPolicy;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.relational.core.mapping.Table;
 

@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.mapping.handler;
+package com.jxpanda.r2dbc.spring.data.extension.handler;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;

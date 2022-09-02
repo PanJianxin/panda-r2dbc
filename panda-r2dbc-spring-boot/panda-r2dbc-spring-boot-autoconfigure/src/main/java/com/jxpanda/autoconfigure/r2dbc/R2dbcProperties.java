@@ -17,6 +17,8 @@
 package com.jxpanda.autoconfigure.r2dbc;
 
 import io.r2dbc.spi.ValidationDepth;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -266,6 +268,8 @@ public class R2dbcProperties {
 
     }
 
+    @Getter
+    @Setter
     public static class Mapping {
         /**
          * 是否在对象映射的过程中强制加上引用符
@@ -275,13 +279,37 @@ public class R2dbcProperties {
          */
         private boolean forceQuote = true;
 
-        public boolean isForceQuote() {
-            return forceQuote;
-        }
+        /**
+         * 数据中心ID，影响雪花算法ID生成规则，如果不使用雪花算法，这个配置不生效
+         */
+        private int dataCenterId = 0;
 
-        public void setForceQuote(boolean forceQuote) {
-            this.forceQuote = forceQuote;
-        }
+        /**
+         * 工作节点ID，影响雪花算法ID生成规则，如果不使用雪花算法，这个配置不生效
+         */
+        private int workerId = 0;
+
+    }
+
+    @Getter
+    @Setter
+    private static class Entity {
+
+        /**
+         * 是否启用逻辑删除
+         */
+        private boolean logicDeletion = false;
+        /**
+         * 如果配置了任何一个逻辑删除值，则全局开启逻辑删除
+         * 逻辑删除「正常值」的标记
+         */
+        private String logicNormalValue = "";
+        /**
+         * 如果配置了任何一个逻辑删除值，则全局开启逻辑删除
+         * 逻辑删除「删除值」的标记
+         */
+        private String logicDeleteValue = "";
+
     }
 
 }

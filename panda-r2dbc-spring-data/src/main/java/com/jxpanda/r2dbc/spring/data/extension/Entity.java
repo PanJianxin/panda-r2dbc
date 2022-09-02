@@ -1,15 +1,14 @@
-package demo.model;
+package com.jxpanda.r2dbc.spring.data.extension;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jxpanda.commons.constant.DateTimeConstant;
-import com.jxpanda.commons.constant.StringConstant;
-import com.jxpanda.commons.toolkit.IdentifierKit;
-import com.jxpanda.commons.toolkit.json.JsonKit;
-import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableId;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.extension.constant.DateTimeConstant;
+import com.jxpanda.r2dbc.spring.data.extension.support.IdKit;
 import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 
 import java.io.Serializable;
@@ -28,54 +27,55 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(of = {"id"})
-public class Entity implements Serializable {
+@SuppressWarnings("BooleanMethodIsAlwaysInverted")
+public class Entity<ID> implements Serializable {
+
 
     /**
      * 主键ID
      */
-    @Id
-    @Builder.Default
-    private String id = StringConstant.BLANK;
+    @TableId
+    private ID id;
 
     /**
      * 数据创建时间
      */
-    @TableColumn(name = "`created_date`")
+    @TableColumn
     private LocalDateTime createdDate;
 
     /**
      * 数据更新时间
      */
+    @TableColumn
     @Builder.Default
-    @TableColumn(name = "`updated_date`")
     private LocalDateTime updatedDate = LocalDateTime.now();
 
     /**
      * 数据删除时间
      */
-    @JsonIgnore
+    @TableLogic
+    @TableColumn
     @Builder.Default
-    @TableColumn(name = "`deleted_date`")
     private LocalDateTime deletedDate = DateTimeConstant.DELETED_DATE;
 
     /**
      * 数据版本（乐观锁控制使用）
      */
     @Version
-    @TableColumn(name = "`version`")
+    @TableColumn
     private Long version;
 
     /**
      * 创建数据的人（staffId）的ID
      */
-    @TableColumn(name = "`creator_id`")
+    @TableColumn
     private String creatorId;
 
 
     /**
      * 数据最后更新的人（staffId）的ID
      */
-    @TableColumn(name = "`updater_id`")
+    @TableColumn
     private String updaterId;
 
     /**
@@ -92,16 +92,17 @@ public class Entity implements Serializable {
      * deleted字段为true的数据视为无效
      * 也就是说，只有id有值且没有被逻辑删除的对象，才视为有效对象
      */
-//    @Builder.Default
-//    @TableColumn
-//    private boolean effective = true;
+    @Builder.Default
+    @TableColumn(exists = false)
+    private boolean effective = true;
 
     /**
      * 重写getter
      * 懒加载的方式重设属性的值
      */
     public boolean isDeleted() {
-        return deletedDate != null && !DateTimeConstant.DELETED_DATE.isEqual(deletedDate);
+        deleted = deletedDate != null && !DateTimeConstant.DELETED_DATE.isEqual(deletedDate);
+        return deleted;
     }
 
     /**
@@ -117,7 +118,8 @@ public class Entity implements Serializable {
      * 懒加载的方式重设属性的值
      */
     public boolean isEffective() {
-        return !(StringConstant.ID_DEFAULT_VALUES.contains(id) || isDeleted());
+        effective = IdKit.isIdEffective(id) && isNotDeleted();
+        return effective;
     }
 
     /**
@@ -128,15 +130,6 @@ public class Entity implements Serializable {
         return !isEffective();
     }
 
-    /**
-     * 保存的时候做一次清理
-     * 这3个属性是由数据库来维护的，所以保存的时候要请空
-     */
-    public void saveClear() {
-        this.createdDate = null;
-        this.updatedDate = null;
-        this.deletedDate = null;
-    }
 
     /**
      * 设置操作者Id
@@ -146,32 +139,32 @@ public class Entity implements Serializable {
     public void setExecutor(String executorId) {
         this.setUpdaterId(executorId);
         // 如果传递了无效的ID进来，说明执行的是创建操作，同时设置创建者ID
-        if (IdentifierKit.isIdNotEffective(this.getId())) {
-            this.setCreatorId(executorId);
-            // 容灾，如果前端传递了'0'进来，系统逻辑上是视为无效的，但是mybatis不这么认为，所以要欺骗一下mybatis
-            this.setId(null);
-        }
+//        if (idGenerator.isIdEffective(this.getId())){
+//            this.setCreatorId(executorId);
+//            // 容灾，如果前端传递了'0'进来，系统逻辑上是视为无效的，但是mybatis不这么认为，所以要欺骗一下mybatis
+//            this.setId(null);
+//        }
     }
 
     /**
      * 提供一个静态的函数，判断实体类是否有效
      */
-    public static boolean isEffective(Entity entity) {
+    public static boolean isEffective(Entity<?> entity) {
         return entity != null && entity.isEffective();
     }
 
     /**
      * 提供一个静态的函数，判断实体类是否有效
      */
-    public static boolean isNotEffective(Entity entity) {
+    public static boolean isNotEffective(Entity<?> entity) {
         return !isEffective(entity);
     }
 
 
-    @Override
-    public String toString() {
-        return JsonKit.toJson(this);
-    }
+//    @Override
+//    public String toString() {
+//        return JsonKit.toJson(this);
+//    }
 
     /**
      * 以下全都是公共字段，所有实体类都会有这些字段

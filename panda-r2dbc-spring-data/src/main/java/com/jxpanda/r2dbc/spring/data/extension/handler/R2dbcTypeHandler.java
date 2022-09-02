@@ -1,5 +1,6 @@
-package com.jxpanda.r2dbc.spring.data.mapping.handler;
+package com.jxpanda.r2dbc.spring.data.extension.handler;
 
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 public interface R2dbcTypeHandler<O, V> {
@@ -37,7 +38,7 @@ public interface R2dbcTypeHandler<O, V> {
     /**
      * 什么都不处理的类型处理器
      * 是一个标记对象
-     * 用于在 {@link com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn} 注解中作为默认的类型处理器
+     * 用于在 {@link TableColumn} 注解中作为默认的类型处理器
      */
     class DefaultHandler implements R2dbcTypeHandler<Object, Object> {
 
@@ -55,7 +56,7 @@ public interface R2dbcTypeHandler<O, V> {
     /**
      * 强制忽略处理器
      * 是一个标记对象
-     * 用于在 {@link com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn} 注解中标识
+     * 用于在 {@link TableColumn} 注解中标识
      * 被这个类型标识的字段，会强制忽略处理器的处理（无论什么类型）
      * 与{@link DefaultHandler} 的区别是，DefaultHandler的优先级是低于IgnoreHandler的
      * DefaultHandler如果标识了「枚举」「非基本类型」的字段

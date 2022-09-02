@@ -1,15 +1,11 @@
 package demo.model;
 
 
-import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.annotation.Nulls;
-import com.jxpanda.commons.toolkit.json.JsonKit;
-import com.jxpanda.r2dbc.spring.data.mapping.annotation.EnumValue;
-import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableEntity;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcJacksonTypeHandler;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcJsonTypeHandler;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.StandardEnum;
+import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.EnumValue;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.extension.StandardEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,7 +32,7 @@ import java.util.List;
 @AllArgsConstructor
 @Accessors(chain = true)
 @TableEntity(name = "order")
-public class Order extends Entity {
+public class Order extends Entity<String> {
 
     @Serial
     private static final long serialVersionUID = 1L;

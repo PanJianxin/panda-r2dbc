@@ -1,11 +1,13 @@
-package com.jxpanda.r2dbc.spring.data.mapping.annotation;
+package com.jxpanda.r2dbc.spring.data.extension.annotation;
 
-import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcTypeHandler;
-import com.jxpanda.r2dbc.spring.data.mapping.policy.NullPolicy;
+import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcTypeHandler;
+import com.jxpanda.r2dbc.spring.data.extension.policy.NullPolicy;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.relational.core.mapping.Column;
 
 import java.lang.annotation.*;
+
+import static java.lang.annotation.ElementType.*;
 
 /**
  * @see Column
@@ -15,7 +17,7 @@ import java.lang.annotation.*;
 @Column
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target(value = { FIELD, METHOD, ANNOTATION_TYPE })
 public @interface TableColumn {
 
     /**

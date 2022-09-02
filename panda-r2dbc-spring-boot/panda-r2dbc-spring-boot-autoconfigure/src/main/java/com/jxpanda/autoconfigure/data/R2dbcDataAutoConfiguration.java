@@ -25,6 +25,9 @@ import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
+import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
+import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
+import com.jxpanda.r2dbc.spring.data.extension.support.SnowflakeIdGenerator;
 import com.jxpanda.r2dbc.spring.data.mapping.R2dbcMappingContext;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -37,6 +40,7 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.r2dbc.core.DatabaseClient;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -105,5 +109,24 @@ public class R2dbcDataAutoConfiguration {
     public R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers() {
         return new R2dbcCustomTypeHandlers();
     }
+
+
+    @Bean
+    @ConditionalOnMissingBean
+    public IdGenerator<String> idGenerator(R2dbcProperties r2dbcProperties) {
+        R2dbcProperties.Mapping mappingConfig = r2dbcProperties.getMapping();
+        return new SnowflakeIdGenerator<>(mappingConfig.getDataCenterId(), mappingConfig.getWorkerId()) {
+            @Override
+            protected String cast(Long id) {
+                return id.toString();
+            }
+
+            @Override
+            public boolean isIdEffective(String id) {
+                return !StringConstant.ID_DEFAULT_VALUES.contains(id);
+            }
+        };
+    }
+
 
 }

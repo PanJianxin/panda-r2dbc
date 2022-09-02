@@ -1,15 +1,12 @@
 package com.jxpanda.r2dbc.spring.data.convert;
 
-import com.jxpanda.r2dbc.spring.data.mapping.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcEnumTypeHandler;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcJacksonTypeHandler;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcJsonTypeHandler;
-import com.jxpanda.r2dbc.spring.data.mapping.handler.R2dbcTypeHandler;
-import org.springframework.data.mapping.model.SimpleTypeHolder;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcEnumTypeHandler;
+import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcJacksonTypeHandler;
+import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcJsonTypeHandler;
+import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcTypeHandler;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
-import org.springframework.data.util.TypeInformation;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

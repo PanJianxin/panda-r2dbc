@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.mapping.annotation;
+package com.jxpanda.r2dbc.spring.data.extension.annotation;
 
 
 import java.lang.annotation.*;

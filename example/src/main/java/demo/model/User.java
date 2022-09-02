@@ -1,5 +1,6 @@
 package demo.model;
 
+import com.jxpanda.r2dbc.spring.data.extension.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +16,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @AllArgsConstructor
 @Accessors(chain = true)
 @Table(value = "`user`")
-public class User extends Entity{
+public class User extends Entity<String> {
 
     private String name;
 

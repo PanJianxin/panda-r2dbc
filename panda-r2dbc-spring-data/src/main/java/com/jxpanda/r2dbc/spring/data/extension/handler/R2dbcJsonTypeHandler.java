@@ -1,6 +1,5 @@
-package com.jxpanda.r2dbc.spring.data.mapping.handler;
+package com.jxpanda.r2dbc.spring.data.extension.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 /**

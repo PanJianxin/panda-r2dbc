@@ -105,16 +105,14 @@ public class UpdateMapper extends QueryMapper {
 		Object mappedValue;
 		Class<?> typeHint;
 
-		if (value instanceof Parameter) {
-
-			Parameter parameter = (Parameter) value;
+		if (value instanceof Parameter parameter) {
 
 			mappedValue = convertValue(parameter.getValue(), propertyField.getTypeHint());
 			typeHint = getTypeHint(mappedValue, actualType.getType(), parameter);
 
-		} else if (value instanceof ValueFunction) {
+		} else if (value instanceof ValueFunction valueFunction) {
 
-			ValueFunction<Object> valueFunction = (ValueFunction<Object>) value;
+//			ValueFunction<Object> valueFunction = (ValueFunction<Object>) value;
 
 			mappedValue = convertValue(valueFunction.apply(Escaper.DEFAULT), propertyField.getTypeHint());
 
@@ -134,6 +132,7 @@ public class UpdateMapper extends QueryMapper {
 			typeHint = actualType.getType();
 		}
 
+		assert mappedValue != null;
 		return createAssignment(column, mappedValue, typeHint, bindings);
 	}
 
