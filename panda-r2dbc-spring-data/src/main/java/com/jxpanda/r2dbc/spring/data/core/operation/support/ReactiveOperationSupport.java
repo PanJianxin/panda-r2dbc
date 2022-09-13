@@ -40,12 +40,14 @@ public class ReactiveOperationSupport {
     }
 
 
+    @SuppressWarnings("unchecked")
+
     protected static class ReactiveSupport<T, R> {
 
         /**
          * entityTemplate
          */
-        private R2dbcEntityTemplate template;
+        private final R2dbcEntityTemplate template;
 
         /**
          * 领域对象类型，通常是实体对象的类型
@@ -68,17 +70,21 @@ public class ReactiveOperationSupport {
         private final SqlIdentifier tableName;
 
 
-        private StatementMapper statementMapper;
+//        private StatementMapper statementMapper;
 
-        private DatabaseClient databaseClient;
+//        private DatabaseClient databaseClient;
 
-        private R2dbcConverter converter;
+//        private R2dbcConverter converter;
 
-        private MappingContext<RelationalPersistentEntity<T>, ? extends RelationalPersistentProperty> mappingContext;
+//        private final MappingContext<RelationalPersistentEntity<T>, ? extends RelationalPersistentProperty> mappingContext;
 
-        private @Nullable ReactiveEntityCallbacks entityCallbacks;
+//        private @Nullable ReactiveEntityCallbacks entityCallbacks;
 
-        private final SpelAwareProxyProjectionFactory projectionFactory;
+//        private final SpelAwareProxyProjectionFactory projectionFactory;
+
+        protected ReactiveSupport(R2dbcEntityTemplate template, Class<T> domainType, Class<R> returnType) {
+            this(template, domainType, returnType, null, null);
+        }
 
 
         protected ReactiveSupport(R2dbcEntityTemplate template, Class<T> domainType, Class<R> returnType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
@@ -87,21 +93,11 @@ public class ReactiveOperationSupport {
             this.returnType = returnType;
             this.query = query == null ? Query.empty() : query;
             this.tableName = tableName == null ? getTableName(domainType) : tableName;
-            projectionFactory = template.getProjectionFactory();
         }
 
-        protected ReactiveSupport(DatabaseClient databaseClient, Class<T> domainType, Class<R> returnType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
-//            this.template = template;
-            this.databaseClient = databaseClient;
-            this.domainType = domainType;
-            this.returnType = returnType;
-            this.query = query == null ? Query.empty() : query;
-            this.tableName = tableName == null ? getTableName(domainType) : tableName;
-            projectionFactory = null;
-        }
 
-        protected ReactiveSupport(R2dbcEntityTemplate template, Class<T> domainType, Class<R> returnType) {
-            this(template, domainType, returnType, null, null);
+        public MappingContext<RelationalPersistentEntity<T>, ? extends RelationalPersistentProperty> getMappingContext() {
+            return (MappingContext<RelationalPersistentEntity<T>, ? extends RelationalPersistentProperty>) template.getMappingContext();
         }
 
         protected R2dbcEntityTemplate getTemplate() {
@@ -125,34 +121,37 @@ public class ReactiveOperationSupport {
         }
 
         protected StatementMapper getStatementMapper() {
-            return statementMapper;
+            return template.getDataAccessStrategy().getStatementMapper();
         }
 
         public DatabaseClient getDatabaseClient() {
-            return databaseClient;
-        }
-
-        @Nullable
-        protected ReactiveEntityCallbacks getEntityCallbacks() {
-            return entityCallbacks;
+            return template.getDatabaseClient();
         }
 
         public SqlIdentifier getTableName(Class<T> entityClass) {
-            return getRequiredEntity(entityClass).getTableName();
+            SqlIdentifier name = getRequiredEntity(entityClass).getTableName();
+            return name;
+        }
+
+        @Nullable
+        protected RelationalPersistentEntity<T> getPersistentEntity(Class<T> entityClass){
+            return this.getMappingContext().getPersistentEntity(entityClass);
+        }
+
+        protected RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
+            return this.getMappingContext().getRequiredPersistentEntity(entityClass);
         }
 
         private SqlIdentifier getTableNameOrEmpty(Class<T> entityClass) {
 
-            RelationalPersistentEntity<T> entity = this.mappingContext.getPersistentEntity(entityClass);
+            RelationalPersistentEntity<T> entity = getPersistentEntity(entityClass);
 
             return entity != null ? entity.getTableName() : SqlIdentifier.EMPTY;
         }
 
-        protected RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
-            return this.mappingContext.getRequiredPersistentEntity(entityClass);
-        }
-
         protected <E> Mono<E> maybeCallAfterConvert(E object, SqlIdentifier table) {
+
+            ReactiveEntityCallbacks entityCallbacks = template.getEntityCallbacks();
 
             if (entityCallbacks != null) {
                 return entityCallbacks.callback(AfterConvertCallback.class, object, table);
@@ -162,7 +161,7 @@ public class ReactiveOperationSupport {
         }
 
         protected <E> BiFunction<Row, RowMetadata, E> getRowMapper(Class<E> typeToRead) {
-            return new EntityRowMapper<>(typeToRead, this.converter);
+            return new EntityRowMapper<>(typeToRead, template.getConverter());
         }
 
         protected List<Expression> getSelectProjection(Table table, Query query, Class<R> returnType) {
@@ -171,7 +170,7 @@ public class ReactiveOperationSupport {
 
                 if (returnType.isInterface()) {
 
-                    ProjectionInformation projectionInformation = projectionFactory.getProjectionInformation(returnType);
+                    ProjectionInformation projectionInformation = template.getProjectionFactory().getProjectionInformation(returnType);
 
                     if (projectionInformation.isClosed()) {
                         return projectionInformation.getInputProperties().stream().map(FeatureDescriptor::getName).map(table::column)
@@ -193,11 +192,11 @@ public class ReactiveOperationSupport {
 
             BiFunction<Row, RowMetadata, R> rowMapper;
             if (returnType.isInterface()) {
-                simpleType = this.converter.isSimpleType(entityClass);
+                simpleType = this.template.getConverter().isSimpleType(entityClass);
                 rowMapper = getRowMapper(entityClass)
-                        .andThen(source -> projectionFactory.createProjection(returnType, source));
+                        .andThen(source -> template.getProjectionFactory().createProjection(returnType, source));
             } else {
-                simpleType = this.converter.isSimpleType(returnType);
+                simpleType = this.template.getConverter().isSimpleType(returnType);
                 rowMapper = getRowMapper(returnType);
             }
 

@@ -40,7 +40,6 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.r2dbc.core.DatabaseClient;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -63,11 +62,13 @@ public class R2dbcDataAutoConfiguration {
 
     private final R2dbcProperties r2dbcProperties;
 
+
     public R2dbcDataAutoConfiguration(DatabaseClient databaseClient, R2dbcProperties r2dbcProperties) {
         this.databaseClient = databaseClient;
         this.dialect = DialectResolver.getDialect(this.databaseClient.getConnectionFactory());
         this.r2dbcProperties = r2dbcProperties;
     }
+
 
     @Bean
     @ConditionalOnMissingBean
@@ -84,6 +85,12 @@ public class R2dbcDataAutoConfiguration {
         relationalMappingContext.setForceQuote(r2dbcProperties.getMapping().isForceQuote());
         relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
         return relationalMappingContext;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public NamingStrategy namingStrategy() {
+        return r2dbcProperties.getMapping().getEntity().getNamingPolicy();
     }
 
     @Bean

@@ -3,14 +3,13 @@ package demo.model;
 import com.baomidou.mybatisplus.core.toolkit.ClassUtils;
 import com.baomidou.mybatisplus.core.toolkit.reflect.GenericTypeUtils;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-//import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveSelectOperation;
 import com.jxpanda.r2dbc.spring.data.extension.Entity;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Resource;
+
 
 public class BaseService<T extends Entity> {
 

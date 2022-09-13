@@ -16,6 +16,7 @@
 
 package com.jxpanda.autoconfigure.r2dbc;
 
+import com.jxpanda.r2dbc.spring.data.extension.policy.NamingPolicy;
 import io.r2dbc.spi.ValidationDepth;
 import lombok.Getter;
 import lombok.Setter;
@@ -289,11 +290,16 @@ public class R2dbcProperties {
          */
         private int workerId = 0;
 
+        /**
+         * entity相关的配置
+         */
+        private Entity entity;
+
     }
 
     @Getter
     @Setter
-    private static class Entity {
+    public static class Entity {
 
         /**
          * 是否启用逻辑删除
@@ -309,6 +315,12 @@ public class R2dbcProperties {
          * 逻辑删除「删除值」的标记
          */
         private String logicDeleteValue = "";
+
+        /**
+         * 字段命名策略，默认是不处理
+         */
+        private NamingPolicy namingPolicy = NamingPolicy.DEFAULT;
+
 
     }
 

@@ -68,9 +68,9 @@ public final class ReactiveSelectOperationSupport extends ReactiveOperationSuppo
             super(template, domainType, returnType, query, tableName);
         }
 
-        private ReactiveSelectSupport(DatabaseClient databaseClient, Class<T> domainType, Class<R> returnType, Query query, SqlIdentifier tableName) {
-            super(databaseClient, domainType, returnType, query, tableName);
-        }
+//        private ReactiveSelectSupport(DatabaseClient databaseClient, Class<T> domainType, Class<R> returnType, Query query, SqlIdentifier tableName) {
+//            super(databaseClient, domainType, returnType, query, tableName);
+//        }
 
         /*
          * (non-Javadoc)

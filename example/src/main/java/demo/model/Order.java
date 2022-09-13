@@ -2,10 +2,10 @@ package demo.model;
 
 
 import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.StandardEnum;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.EnumValue;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableEntity;
-import com.jxpanda.r2dbc.spring.data.extension.StandardEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -90,6 +90,7 @@ public class Order extends Entity<String> {
 
     @TableColumn(name = "amount_changes", isJson = true)
     private List<AmountChange> amountChange;
+
 
     @Getter
     @AllArgsConstructor

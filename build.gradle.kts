@@ -30,7 +30,7 @@ subprojects {
         withSourcesJar()
     }
 
-    dependencies{
+    dependencies {
 
         implementation(platform(Bom.R2DBC))
         implementation(BomLibrary.R2DBC_SPI)
@@ -43,8 +43,12 @@ subprojects {
         implementation(platform(Bom.NETTY))
         implementation(BomLibrary.NETTY_HANDLER)
 
-        testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+        // https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
+//        implementation("jakarta.annotation:jakarta.annotation-api:2.1.1")
+
+
+//        testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+//        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
     }
 
     publishing {

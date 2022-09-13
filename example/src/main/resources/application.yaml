@@ -7,7 +7,10 @@ panda:
     url: r2dbc:pool:pool:mysql://mysql.ynjunke.cn:32333/hydrogen
     username: root
     password: Root2021@)@!
-
+    mapping:
+      force-quote: true
+      entity:
+        naming-policy: snake_case_to_camel_case
 #logging:
 #  level:
 #    root: debug

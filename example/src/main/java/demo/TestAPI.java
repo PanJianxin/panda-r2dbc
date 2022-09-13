@@ -1,13 +1,13 @@
 package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
-//import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import com.jxpanda.commons.toolkit.json.JsonKit;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import demo.model.*;
-
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
+import org.springframework.data.relational.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -19,19 +19,16 @@ import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("test")
+@AllArgsConstructor
 public class TestAPI {
 
-    @Resource
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Resource
-    private R2dbcEntityTemplate r2dbcEntityTemplate;
+    private final R2dbcEntityTemplate r2dbcEntityTemplate;
 
-    @Resource
-    private OrderRepository orderRepository;
+//    private final OrderRepository orderRepository;
 
-    @Resource
-    private OrderService orderService;
+    private final OrderService orderService;
 
 
 //    @PostMapping("")
@@ -60,11 +57,27 @@ public class TestAPI {
                 .all();
     }
 
+    @PostMapping("/order/update")
+    public Mono<Order> update(@RequestBody Order order, String orderId) {
+//        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
+        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
+                .apply(Update.update(Order.AMOUNT, order.getAmount()))
+                .map(l -> {
+                    order.setId(orderId);
+                    return order;
+                });
+    }
+
     @GetMapping("/order/{id}")
     public Mono<Order> getOrder(@PathVariable("id") String id) {
 //        return r2dbcEntityTemplate.selectOne(Query.query(Criteria.where(Order.ID).is(id)), Order.class)
 //                .log();
         return orderService.selectById(id)
+                .doOnSuccess(order -> {
+                    orderService.forEachColum(order, columInfo -> {
+                        System.out.println(columInfo);
+                    });
+                })
                 .log();
 //        return orderRepository.findById(id)
 //                .map(it->{

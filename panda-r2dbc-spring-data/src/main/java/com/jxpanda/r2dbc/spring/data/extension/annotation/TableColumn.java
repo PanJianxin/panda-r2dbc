@@ -17,7 +17,7 @@ import static java.lang.annotation.ElementType.*;
 @Column
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = { FIELD, METHOD, ANNOTATION_TYPE })
+@Target(value = {FIELD, METHOD, ANNOTATION_TYPE})
 public @interface TableColumn {
 
     /**
@@ -62,6 +62,6 @@ public @interface TableColumn {
     /**
      * 类型处理器，默认是不处理
      */
-    Class<? extends R2dbcTypeHandler<?,?>> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
+    Class<? extends R2dbcTypeHandler<?, ?>> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
 
 }
