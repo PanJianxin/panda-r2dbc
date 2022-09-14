@@ -120,9 +120,9 @@ public class R2dbcDataAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public IdGenerator<String> idGenerator(R2dbcProperties r2dbcProperties) {
+    public IdGenerator<?> idGenerator(R2dbcProperties r2dbcProperties) {
         R2dbcProperties.Mapping mappingConfig = r2dbcProperties.getMapping();
-        return new SnowflakeIdGenerator<>(mappingConfig.getDataCenterId(), mappingConfig.getWorkerId()) {
+        return new SnowflakeIdGenerator<String>(mappingConfig.getDataCenterId(), mappingConfig.getWorkerId()) {
             @Override
             protected String cast(Long id) {
                 return id.toString();

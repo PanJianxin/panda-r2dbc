@@ -4,13 +4,13 @@ spring:
 
 panda:
   r2dbc:
-    url: r2dbc:pool:pool:mysql://mysql.ynjunke.cn:32333/hydrogen
+    url: r2dbc:pool:pool:mysql://mysql.jxpanda.com:2333/hydrogen
     username: root
     password: Root2021@)@!
     mapping:
       force-quote: true
       entity:
-        naming-policy: snake_case_to_camel_case
+        naming-policy: camel_case_to_snake_case
 #logging:
 #  level:
 #    root: debug

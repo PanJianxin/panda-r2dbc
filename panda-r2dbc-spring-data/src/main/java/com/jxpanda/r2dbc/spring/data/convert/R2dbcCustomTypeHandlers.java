@@ -6,6 +6,7 @@ import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcJacksonTypeHandler;
 import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcJsonTypeHandler;
 import com.jxpanda.r2dbc.spring.data.extension.handler.R2dbcTypeHandler;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
+import org.springframework.lang.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ public class R2dbcCustomTypeHandlers {
         this.typeHandlerMap = typeHandlerList.stream().collect(Collectors.toMap(R2dbcTypeHandler::getClass, Function.identity()));
     }
 
-    public boolean hasCustomReadTarget(RelationalPersistentProperty property) {
+    public boolean hasTypeHandler(RelationalPersistentProperty property) {
         TableColumn tableColumn = property.findAnnotation(TableColumn.class);
 
         if (tableColumn == null) {
@@ -48,6 +49,14 @@ public class R2dbcCustomTypeHandlers {
      */
     public Object read(Object value, RelationalPersistentProperty property) {
         return getTypeHandler(property).read(value, property);
+    }
+
+    @Nullable
+    public Object write(@Nullable Object value, RelationalPersistentProperty property) {
+        if (value == null) {
+            return null;
+        }
+        return getTypeHandler(property).write(value, property);
     }
 
 

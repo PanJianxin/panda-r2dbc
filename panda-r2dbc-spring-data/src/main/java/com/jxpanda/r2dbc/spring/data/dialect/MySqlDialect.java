@@ -18,8 +18,11 @@ package com.jxpanda.r2dbc.spring.data.dialect;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
+import org.springframework.data.relational.core.dialect.ArrayColumns;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.r2dbc.core.binding.BindMarkersFactory;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 import java.net.InetAddress;
 import java.net.URI;
@@ -101,6 +104,11 @@ public class MySqlDialect extends org.springframework.data.relational.core.diale
         return identifier.getReference(getIdentifierProcessing());
     }
 
+    @Override
+    public ArrayColumns getArraySupport() {
+        return MySqlArrayColumns.INSTANCE;
+    }
+
     /**
      * Simple singleton to convert {@link Boolean}s to their {@link Byte} representation. MySQL does not have a built-in
      * boolean type by default, so relies on using a byte instead. {@literal true} maps to {@code 1}.
@@ -115,6 +123,32 @@ public class MySqlDialect extends org.springframework.data.relational.core.diale
         @Override
         public Byte convert(Boolean s) {
             return (byte) (s ? 1 : 0);
+        }
+    }
+
+    protected enum MySqlArrayColumns implements ArrayColumns {
+
+        INSTANCE;
+
+        /*
+         * (non-Javadoc)
+         * @see org.springframework.data.relational.core.dialect.ArrayColumns#isSupported()
+         */
+        @Override
+        public boolean isSupported() {
+            return true;
+        }
+
+        /*
+         * (non-Javadoc)
+         * @see org.springframework.data.relational.core.dialect.ArrayColumns#getArrayType(java.lang.Class)
+         */
+        @Override
+        public Class<?> getArrayType(Class<?> userType) {
+
+            Assert.notNull(userType, "Array component type must not be null");
+
+            return ClassUtils.resolvePrimitiveIfNecessary(userType);
         }
     }
 

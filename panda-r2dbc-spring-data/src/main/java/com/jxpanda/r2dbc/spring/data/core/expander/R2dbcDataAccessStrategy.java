@@ -22,6 +22,7 @@ import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
 import com.jxpanda.r2dbc.spring.data.core.DefaultStatementMapper;
 import com.jxpanda.r2dbc.spring.data.core.StatementMapper;
 import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.mapping.OutboundRow;
 import com.jxpanda.r2dbc.spring.data.mapping.R2dbcMappingContext;
 import com.jxpanda.r2dbc.spring.data.query.UpdateMapper;
@@ -52,7 +53,6 @@ import java.util.function.BiFunction;
  * 官方推荐直接使用{@link StatementMapper} , {@link UpdateMapper} , {@link R2dbcConverter}.来实现逻辑
  * 但是在编码过程中发现，这些类还是需要有一个对象来管理一下的，不然参数传递传一大堆，不优雅
  * 所以COPY过来改个名字，把接口的实现去掉，然后修改一下细节来使用
- *
  *
  * @author Mark Paluch
  * @author Louis Morgan
@@ -193,10 +193,8 @@ public class R2dbcDataAccessStrategy {
         RelationalPersistentEntity<?> entity = getRequiredPersistentEntity(ClassUtils.getUserClass(object));
 
         for (RelationalPersistentProperty property : entity) {
-
             Parameter value = row.get(property.getColumnName());
             if (shouldConvertArrayValue(property, value)) {
-
                 Parameter writeValue = getArrayValue(value, property);
                 row.put(property.getColumnName(), writeValue);
             }

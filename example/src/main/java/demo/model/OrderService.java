@@ -12,13 +12,13 @@ import reactor.core.publisher.Mono;
 @Service
 public class OrderService extends ServiceImpl<String, Order> {
 
-//    public OrderService(R2dbcEntityTemplate r2dbcEntityTemplate) {
-//        super(r2dbcEntityTemplate);
-//    }
-
-    public OrderService(R2dbcEntityTemplate r2dbcEntityTemplate, OrderRepository repository) {
-        super(r2dbcEntityTemplate, repository);
+    public OrderService(R2dbcEntityTemplate r2dbcEntityTemplate) {
+        super(r2dbcEntityTemplate);
     }
+
+//    public OrderService(R2dbcEntityTemplate r2dbcEntityTemplate, OrderRepository repository) {
+//        super(r2dbcEntityTemplate, repository);
+//    }
 
     @Override
     public Mono<Order> selectById(String s) {
@@ -34,13 +34,4 @@ public class OrderService extends ServiceImpl<String, Order> {
         return super.getRepository();
     }
 
-    @Override
-    public Class<Order> getEntityClass() {
-        return Order.class;
-    }
-
-    @Override
-    protected Class<String> getIdClass() {
-        return String.class;
-    }
 }

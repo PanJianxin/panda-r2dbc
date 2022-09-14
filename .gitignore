@@ -3,3 +3,4 @@
 /**/gradle/
 /.idea/
 /.fleet/settings.json
+.DS_Store

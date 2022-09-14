@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * ID生成器接口
  */
-public interface IdGenerator<T extends Serializable> {
+public interface IdGenerator<T> {
 
     /**
      * 生成一个ID

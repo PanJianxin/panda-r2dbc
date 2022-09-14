@@ -15,6 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.convert;
 
+import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.mapping.OutboundRow;
 import com.jxpanda.r2dbc.spring.data.support.ArrayUtils;
 import io.r2dbc.spi.ColumnMetadata;
@@ -186,7 +187,7 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
 
             // handler的优先级高于conversions
             // handler是通过TableColumn注解来指定的，因此优先级应该高于全局的conversions
-            if (getTypeHandlers().hasCustomReadTarget(property)) {
+            if (getTypeHandlers().hasTypeHandler(property)) {
                 return getTypeHandlers().read(value, property);
             }
 
@@ -355,7 +356,7 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
      * @see org.springframework.data.convert.EntityWriter#write(java.lang.Object, java.lang.Object)
      */
     @Override
-    public void write(Object source, OutboundRow sink) {
+    public void write(Object source, OutboundRow outboundRow) {
 
         Class<?> userClass = ClassUtils.getUserClass(source);
 
@@ -364,28 +365,28 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
 
             OutboundRow result = getConversionService().convert(source, OutboundRow.class);
             if (result != null) {
-                sink.putAll(result);
+                outboundRow.putAll(result);
             }
             return;
         }
 
-        writeInternal(source, sink, userClass);
+        writeInternal(source, outboundRow, userClass);
     }
 
-    private void writeInternal(Object source, OutboundRow sink, Class<?> userClass) {
+    private void writeInternal(Object source, OutboundRow outboundRow, Class<?> userClass) {
 
         RelationalPersistentEntity<?> entity = getRequiredPersistentEntity(userClass);
         PersistentPropertyAccessor<?> propertyAccessor = entity.getPropertyAccessor(source);
 
-        writeProperties(sink, entity, propertyAccessor, entity.isNew(source));
+        writeProperties(outboundRow, entity, propertyAccessor, entity.isNew(source));
     }
 
-    private void writeProperties(OutboundRow sink, RelationalPersistentEntity<?> entity,
+    private void writeProperties(OutboundRow outboundRow, RelationalPersistentEntity<?> entity,
                                  PersistentPropertyAccessor<?> accessor, boolean isNew) {
 
         for (RelationalPersistentProperty property : entity) {
 
-            if (!property.isWritable()) {
+            if (!property.isWritable() || !isPropertyExists(property)) {
                 continue;
             }
 
@@ -394,34 +395,36 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
             if (property.isIdProperty()) {
                 IdentifierAccessor identifierAccessor = entity.getIdentifierAccessor(accessor.getBean());
                 value = identifierAccessor.getIdentifier();
+            } else if (typeHandlers.hasTypeHandler(property)) {
+                value = typeHandlers.write(accessor.getProperty(property), property);
             } else {
                 value = accessor.getProperty(property);
             }
 
             if (value == null) {
-                writeNullInternal(sink, property);
+                writeNullInternal(outboundRow, property);
                 continue;
             }
 
-            if (getConversions().isSimpleType(value.getClass())) {
-                writeSimpleInternal(sink, value, isNew, property);
+            if (isSimpleType(value.getClass())) {
+                writeSimpleInternal(outboundRow, value, isNew, property);
             } else {
-                writePropertyInternal(sink, value, isNew, property);
+                writePropertyInternal(outboundRow, value, isNew, property);
             }
         }
     }
 
     @SuppressWarnings("unused")
-    private void writeSimpleInternal(OutboundRow sink, Object value, boolean isNew,
+    private void writeSimpleInternal(OutboundRow outboundRow, Object value, boolean isNew,
                                      RelationalPersistentProperty property) {
 
         Object result = getPotentiallyConvertedSimpleWrite(value);
 
-        sink.put(property.getColumnName(),
+        outboundRow.put(property.getColumnName(),
                 Parameter.fromOrEmpty(result, getPotentiallyConvertedSimpleNullType(property.getType())));
     }
 
-    private void writePropertyInternal(OutboundRow sink, Object value, boolean isNew,
+    private void writePropertyInternal(OutboundRow outboundRow, Object value, boolean isNew,
                                        RelationalPersistentProperty property) {
 
         TypeInformation<?> valueType = ClassTypeInformation.from(value.getClass());
@@ -431,17 +434,23 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
             if (valueType.getActualType() != null && valueType.getRequiredActualType().isCollectionLike()) {
 
                 // pass-thru nested collections
-                writeSimpleInternal(sink, value, isNew, property);
+                writeSimpleInternal(outboundRow, value, isNew, property);
                 return;
             }
 
             List<Object> collectionInternal = createCollection(asCollection(value), property);
-            sink.put(property.getColumnName(), Parameter.from(collectionInternal));
+            outboundRow.put(property.getColumnName(), Parameter.from(collectionInternal));
             return;
         }
 
         throw new InvalidDataAccessApiUsageException("Nested entities are not supported");
     }
+
+    private boolean isPropertyExists(RelationalPersistentProperty property) {
+        TableColumn tableColumn = property.findAnnotation(TableColumn.class);
+        return property.isIdProperty() || (tableColumn != null && tableColumn.exists());
+    }
+
 
     /**
      * Writes the given {@link Collection} using the given {@link RelationalPersistentProperty} information.
@@ -595,9 +604,7 @@ public class MappingR2dbcConverter extends BasicRelationalConverter implements R
 
         Optional<Class<?>> writeTarget = getConversions().getCustomWriteTarget(valueType);
 
-        return writeTarget.orElseGet(() -> {
-            return Enum.class.isAssignableFrom(valueType) ? String.class : valueType;
-        });
+        return writeTarget.orElseGet(() -> Enum.class.isAssignableFrom(valueType) ? String.class : valueType);
     }
 
     /*
