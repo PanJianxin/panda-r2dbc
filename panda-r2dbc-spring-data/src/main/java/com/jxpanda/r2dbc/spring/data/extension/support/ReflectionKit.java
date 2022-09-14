@@ -18,6 +18,7 @@ package com.jxpanda.r2dbc.spring.data.extension.support;
 
 import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import lombok.SneakyThrows;
+import org.springframework.core.GenericTypeResolver;
 
 import java.lang.reflect.*;
 import java.math.BigDecimal;
@@ -136,7 +137,7 @@ public final class ReflectionKit {
         Object defaultValue = DEFAULT_VALUE_MAP.get(fieldType);
         if (defaultValue == null) {
             if (fieldType.isEnum()) {
-                defaultValue =  Enum.valueOf((Class) fieldType, StringConstant.UNKNOWN);
+                defaultValue = Enum.valueOf((Class) fieldType, StringConstant.UNKNOWN);
             } else {
                 Constructor<?>[] constructors = fieldType.getConstructors();
                 if (constructors.length > 0) {
@@ -253,6 +254,11 @@ public final class ReflectionKit {
             }
         });
         return target;
+    }
+
+    public static Class<?> getSuperClassGenericType(final Class<?> clazz, final Class<?> genericIfc, int index) {
+        Class<?>[] classes = GenericTypeResolver.resolveTypeArguments(clazz, genericIfc);
+        return classes == null ? null : classes[index];
     }
 
 }
