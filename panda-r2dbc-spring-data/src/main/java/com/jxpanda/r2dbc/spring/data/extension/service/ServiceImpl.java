@@ -2,9 +2,12 @@ package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
+import com.jxpanda.r2dbc.spring.data.extension.support.ReflectionKit;
 import com.jxpanda.r2dbc.spring.data.repository.R2dbcRepository;
 import lombok.Getter;
 import lombok.ToString;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -18,13 +21,22 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 
+@SuppressWarnings("unchecked")
 public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
 
     protected final R2dbcEntityTemplate r2dbcEntityTemplate;
 
     private final R2dbcRepository<T, ID> repository;
 
+    @Autowired
     private NamingStrategy namingStrategy;
+
+    @Autowired
+    private IdGenerator<ID> idGenerator;
+
+    private Class<ID> idClass;
+
+    private Class<T> entityClass;
 
     public ServiceImpl(R2dbcEntityTemplate r2dbcEntityTemplate) {
         this.r2dbcEntityTemplate = r2dbcEntityTemplate;
@@ -38,18 +50,34 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
         this.repository = repository;
     }
 
-    protected Class<T> getEntityClass() {
-        return null;
+
+    protected Class<ID> getIdClass() {
+        if (idClass == null) {
+            idClass = (Class<ID>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 0);
+        }
+        return idClass;
     }
 
 
-    protected Class<ID> getIdClass() {
-        return null;
+    protected Class<T> getEntityClass() {
+        if (entityClass == null) {
+            entityClass = (Class<T>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 1);
+        }
+        return entityClass;
+    }
+
+    protected NamingStrategy getNamingStrategy() {
+        return namingStrategy;
     }
 
     @Override
     public Mono<T> insert(T entity) {
-        return r2dbcEntityTemplate.insert(entity);
+        return Mono.just(idGenerator)
+                .map(IdGenerator::generate)
+                .flatMap(id -> {
+                    entity.setId(id);
+                    return r2dbcEntityTemplate.insert(entity);
+                });
     }
 
     @Override
@@ -75,12 +103,13 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
 
     @Override
     public Mono<T> selectById(ID id) {
+//        return r2dbcEntityTemplate.select(getEntityClass()).matching(Query.query(Criteria.where(Entity.ID).is(id))).one();
         return repository.findById(id);
     }
 
     @Override
     public Mono<T> selectOne(Query query) {
-        return null;
+        return r2dbcEntityTemplate.select(getEntityClass()).matching(query).one();
     }
 
     @SuppressWarnings("unchecked")

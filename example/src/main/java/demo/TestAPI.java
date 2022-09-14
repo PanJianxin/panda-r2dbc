@@ -57,19 +57,33 @@ public class TestAPI {
                 .all();
     }
 
+    @PostMapping("/order/insert")
+    public Mono<Order> insert(@RequestBody Order order) {
+//        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
+        return orderService.insert(order);
+//        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
+//                .apply(Update.update(Order.AMOUNT, order.getAmount()))
+//                .map(l -> {
+//                    order.setId(orderId);
+//                    return order;
+//                });
+    }
+
     @PostMapping("/order/update")
     public Mono<Order> update(@RequestBody Order order, String orderId) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
-        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
-                .apply(Update.update(Order.AMOUNT, order.getAmount()))
-                .map(l -> {
-                    order.setId(orderId);
-                    return order;
-                });
+        return r2dbcEntityTemplate.insert(order);
+//        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
+//                .apply(Update.update(Order.AMOUNT, order.getAmount()))
+//                .map(l -> {
+//                    order.setId(orderId);
+//                    return order;
+//                });
     }
 
     @GetMapping("/order/{id}")
     public Mono<Order> getOrder(@PathVariable("id") String id) {
+//        return Mono.just(new Order());
 //        return r2dbcEntityTemplate.selectOne(Query.query(Criteria.where(Order.ID).is(id)), Order.class)
 //                .log();
         return orderService.selectById(id)
