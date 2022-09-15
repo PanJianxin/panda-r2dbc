@@ -1,13 +1,14 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.Entity;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.extension.support.ReflectionKit;
-import com.jxpanda.r2dbc.spring.data.repository.R2dbcRepository;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -40,7 +41,7 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
 
     public ServiceImpl(R2dbcEntityTemplate r2dbcEntityTemplate) {
         this.r2dbcEntityTemplate = r2dbcEntityTemplate;
-        RelationalPersistentEntity<T> requiredPersistentEntity = (RelationalPersistentEntity<T>) r2dbcEntityTemplate.getMappingContext().getRequiredPersistentEntity(getEntityClass());
+        RelationalPersistentEntity<T> requiredPersistentEntity = (RelationalPersistentEntity<T>) getMappingContext().getRequiredPersistentEntity(getEntityClass());
         MappingRelationalEntityInformation<T, ID> entity = new MappingRelationalEntityInformation<>(requiredPersistentEntity, getIdClass());
         this.repository = new ServiceRepository<>(entity, r2dbcEntityTemplate, r2dbcEntityTemplate.getConverter());
     }
@@ -118,11 +119,11 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
     }
 
     protected String getTableName() {
-        return r2dbcEntityTemplate.getTableName(getEntityClass()).getReference();
+       return getMappingContext().getRequiredPersistentEntity(getEntityClass()).getTableName().getReference();
     }
 
     public void forEachColum(T entity, Consumer<ColumInfo> consumer) {
-        RelationalPersistentEntity<?> requiredPersistentEntity = r2dbcEntityTemplate.getMappingContext().getRequiredPersistentEntity(getEntityClass());
+        RelationalPersistentEntity<?> requiredPersistentEntity = getMappingContext().getRequiredPersistentEntity(getEntityClass());
         requiredPersistentEntity.forEach(property -> {
             try {
                 consumer.accept(new ColumInfo(property, property.getGetter().invoke(entity)));
@@ -162,6 +163,10 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
             this.columName = property.getColumnName().getReference();
         }
 
+    }
+
+    private MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> getMappingContext() {
+        return r2dbcEntityTemplate.getConverter().getMappingContext();
     }
 
 

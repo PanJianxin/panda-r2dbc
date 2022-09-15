@@ -19,6 +19,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryMetadata;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.dao.NonTransientDataAccessException;
+import org.springframework.data.r2dbc.dialect.*;
 import org.springframework.data.util.Optionals;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 

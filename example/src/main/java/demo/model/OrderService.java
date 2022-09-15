@@ -1,11 +1,7 @@
 package demo.model;
 
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.service.ServiceImpl;
-import com.jxpanda.r2dbc.spring.data.extension.service.ServiceRepository;
-import com.jxpanda.r2dbc.spring.data.repository.R2dbcRepository;
-import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
-import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 

@@ -16,10 +16,10 @@
 
 package com.jxpanda.autoconfigure.data;
 
-import com.jxpanda.r2dbc.spring.data.repository.config.EnableR2dbcRepositories;
-import com.jxpanda.r2dbc.spring.data.repository.config.R2dbcRepositoryConfigurationExtension;
 import org.springframework.boot.autoconfigure.data.AbstractRepositoryConfigurationSourceSupport;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
+import org.springframework.data.r2dbc.repository.config.R2dbcRepositoryConfigurationExtension;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
 
 import java.lang.annotation.Annotation;

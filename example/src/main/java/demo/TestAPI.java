@@ -1,10 +1,9 @@
 package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
 import demo.model.*;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 
 @RestController
@@ -72,13 +70,13 @@ public class TestAPI {
     @PostMapping("/order/update")
     public Mono<Order> update(@RequestBody Order order, String orderId) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
-        return r2dbcEntityTemplate.insert(order);
-//        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
-//                .apply(Update.update(Order.AMOUNT, order.getAmount()))
-//                .map(l -> {
-//                    order.setId(orderId);
-//                    return order;
-//                });
+//        return r2dbcEntityTemplate.insert(order);
+        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
+                .apply(Update.update(Order.AMOUNT, order.getAmount()))
+                .map(l -> {
+                    order.setId(orderId);
+                    return order;
+                });
     }
 
     @GetMapping("/order/{id}")

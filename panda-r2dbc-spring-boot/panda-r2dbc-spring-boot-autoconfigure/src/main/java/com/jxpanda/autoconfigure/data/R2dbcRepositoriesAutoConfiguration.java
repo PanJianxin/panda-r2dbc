@@ -16,8 +16,6 @@
 
 package com.jxpanda.autoconfigure.data;
 
-import com.jxpanda.r2dbc.spring.data.repository.R2dbcRepository;
-import com.jxpanda.r2dbc.spring.data.repository.support.R2dbcRepositoryFactoryBean;
 import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -26,6 +24,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.r2dbc.repository.support.R2dbcRepositoryFactoryBean;
 import org.springframework.r2dbc.core.DatabaseClient;
 
 /**

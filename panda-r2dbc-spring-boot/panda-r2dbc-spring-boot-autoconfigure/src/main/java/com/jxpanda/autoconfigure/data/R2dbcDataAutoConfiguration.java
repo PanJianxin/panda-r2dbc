@@ -18,17 +18,12 @@ package com.jxpanda.autoconfigure.data;
 
 import com.jxpanda.autoconfigure.r2dbc.R2dbcAutoConfiguration;
 import com.jxpanda.autoconfigure.r2dbc.R2dbcProperties;
-import com.jxpanda.r2dbc.spring.data.convert.MappingR2dbcConverter;
-import com.jxpanda.r2dbc.spring.data.convert.R2dbcConverter;
-import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomConversions;
+import com.jxpanda.r2dbc.spring.data.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomTypeHandlers;
-import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
-import com.jxpanda.r2dbc.spring.data.dialect.R2dbcDialect;
+import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.extension.support.SnowflakeIdGenerator;
-import com.jxpanda.r2dbc.spring.data.mapping.R2dbcMappingContext;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -37,6 +32,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.r2dbc.convert.R2dbcConverter;
+import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.r2dbc.dialect.DialectResolver;
+import org.springframework.data.r2dbc.dialect.R2dbcDialect;
+import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.r2dbc.core.DatabaseClient;
 
@@ -72,8 +73,16 @@ public class R2dbcDataAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public R2dbcEntityTemplate r2dbcEntityTemplate(R2dbcConverter r2dbcConverter) {
-        return new R2dbcEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
+    public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
+                                                   R2dbcCustomConversions r2dbcCustomConversions,
+                                                   R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
+        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ReactiveEntityTemplate r2dbcEntityTemplate(MappingReactiveConverter r2dbcConverter) {
+        return new ReactiveEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
     }
 
     @Bean
@@ -93,13 +102,7 @@ public class R2dbcDataAutoConfiguration {
         return r2dbcProperties.getMapping().getEntity().getNamingPolicy();
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public R2dbcConverter r2dbcConverter(R2dbcMappingContext mappingContext,
-                                         R2dbcCustomConversions r2dbcCustomConversions,
-                                         R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
-        return new MappingR2dbcConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
-    }
+
 
     @Bean
     @ConditionalOnMissingBean
