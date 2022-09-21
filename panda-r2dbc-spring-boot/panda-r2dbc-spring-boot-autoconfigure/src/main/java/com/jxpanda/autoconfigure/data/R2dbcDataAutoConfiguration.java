@@ -32,7 +32,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.convert.CustomConversions;
-import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.dialect.DialectResolver;
@@ -76,7 +75,7 @@ public class R2dbcDataAutoConfiguration {
     public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
                                                    R2dbcCustomConversions r2dbcCustomConversions,
                                                    R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
-        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
+        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers, r2dbcProperties.getMappingProperties().transfer());
     }
 
     @Bean
@@ -91,7 +90,7 @@ public class R2dbcDataAutoConfiguration {
                                                    R2dbcCustomConversions r2dbcCustomConversions) {
         R2dbcMappingContext relationalMappingContext = new R2dbcMappingContext(
                 namingStrategy.getIfAvailable(() -> NamingStrategy.INSTANCE));
-        relationalMappingContext.setForceQuote(r2dbcProperties.getMapping().isForceQuote());
+        relationalMappingContext.setForceQuote(r2dbcProperties.getMappingProperties().isForceQuote());
         relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
         return relationalMappingContext;
     }
@@ -99,9 +98,8 @@ public class R2dbcDataAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public NamingStrategy namingStrategy() {
-        return r2dbcProperties.getMapping().getEntity().getNamingPolicy();
+        return r2dbcProperties.getMappingProperties().getNamingPolicy();
     }
-
 
 
     @Bean
@@ -124,8 +122,8 @@ public class R2dbcDataAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public IdGenerator<?> idGenerator(R2dbcProperties r2dbcProperties) {
-        R2dbcProperties.Mapping mappingConfig = r2dbcProperties.getMapping();
-        return new SnowflakeIdGenerator<String>(mappingConfig.getDataCenterId(), mappingConfig.getWorkerId()) {
+        R2dbcProperties.MappingProperties mappingProperties = r2dbcProperties.getMappingProperties();
+        return new SnowflakeIdGenerator<String>(mappingProperties.getDataCenterId(), mappingProperties.getWorkerId()) {
             @Override
             protected String cast(Long id) {
                 return id.toString();

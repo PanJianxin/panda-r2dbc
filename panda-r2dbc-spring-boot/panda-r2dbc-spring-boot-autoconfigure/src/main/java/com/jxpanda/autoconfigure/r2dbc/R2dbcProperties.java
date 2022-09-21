@@ -16,10 +16,11 @@
 
 package com.jxpanda.autoconfigure.r2dbc;
 
+import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
 import com.jxpanda.r2dbc.spring.data.extension.policy.NamingPolicy;
+import com.jxpanda.r2dbc.spring.data.extension.policy.ValidationPolicy;
 import io.r2dbc.spi.ValidationDepth;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -36,6 +37,7 @@ import java.util.UUID;
  * @author Rodolpho S. Couto
  * @since 2.3.0
  */
+@Data
 @ConfigurationProperties(prefix = "panda.r2dbc")
 public class R2dbcProperties {
 
@@ -75,63 +77,15 @@ public class R2dbcProperties {
     /**
      * 映射关系相关配置
      */
-    private final Mapping mapping = new Mapping();
+    private final MappingProperties mappingProperties = new MappingProperties();
 
+    /**
+     * pool config
+     */
     private final Pool pool = new Pool();
 
     private String uniqueName;
 
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public boolean isGenerateUniqueName() {
-        return this.generateUniqueName;
-    }
-
-    public void setGenerateUniqueName(boolean generateUniqueName) {
-        this.generateUniqueName = generateUniqueName;
-    }
-
-    public String getUrl() {
-        return this.url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getUsername() {
-        return this.username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return this.password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Map<String, String> getProperties() {
-        return this.properties;
-    }
-
-    public Pool getPool() {
-        return this.pool;
-    }
-
-    public Mapping getMapping() {
-        return mapping;
-    }
 
     /**
      * Provide a unique name specific to this instance. Calling this method several times
@@ -146,6 +100,7 @@ public class R2dbcProperties {
         return this.uniqueName;
     }
 
+    @Data
     public static class Pool {
 
         /**
@@ -195,83 +150,12 @@ public class R2dbcProperties {
          */
         private boolean enabled = true;
 
-        public Duration getMaxIdleTime() {
-            return this.maxIdleTime;
-        }
-
-        public void setMaxIdleTime(Duration maxIdleTime) {
-            this.maxIdleTime = maxIdleTime;
-        }
-
-        public Duration getMaxLifeTime() {
-            return this.maxLifeTime;
-        }
-
-        public void setMaxLifeTime(Duration maxLifeTime) {
-            this.maxLifeTime = maxLifeTime;
-        }
-
-        public Duration getMaxAcquireTime() {
-            return this.maxAcquireTime;
-        }
-
-        public void setMaxAcquireTime(Duration maxAcquireTime) {
-            this.maxAcquireTime = maxAcquireTime;
-        }
-
-        public Duration getMaxCreateConnectionTime() {
-            return this.maxCreateConnectionTime;
-        }
-
-        public void setMaxCreateConnectionTime(Duration maxCreateConnectionTime) {
-            this.maxCreateConnectionTime = maxCreateConnectionTime;
-        }
-
-        public int getInitialSize() {
-            return this.initialSize;
-        }
-
-        public void setInitialSize(int initialSize) {
-            this.initialSize = initialSize;
-        }
-
-        public int getMaxSize() {
-            return this.maxSize;
-        }
-
-        public void setMaxSize(int maxSize) {
-            this.maxSize = maxSize;
-        }
-
-        public String getValidationQuery() {
-            return this.validationQuery;
-        }
-
-        public void setValidationQuery(String validationQuery) {
-            this.validationQuery = validationQuery;
-        }
-
-        public ValidationDepth getValidationDepth() {
-            return this.validationDepth;
-        }
-
-        public void setValidationDepth(ValidationDepth validationDepth) {
-            this.validationDepth = validationDepth;
-        }
-
-        public boolean isEnabled() {
-            return this.enabled;
-        }
-
-        public void setEnabled(boolean enabled) {
-            this.enabled = enabled;
-        }
-
     }
 
-    @Getter
-    @Setter
-    public static class Mapping {
+
+    @Data
+    public static class MappingProperties {
+
         /**
          * 是否在对象映射的过程中强制加上引用符
          * 例如：在MySQL中，使用反引号'`'来做引用标识符，则注入SQL：SELECT XXX FROM order 会变为 SELECT XXX FROM `order`
@@ -291,21 +175,6 @@ public class R2dbcProperties {
         private int workerId = 0;
 
         /**
-         * entity相关的配置
-         */
-        private Entity entity;
-
-    }
-
-    @Getter
-    @Setter
-    public static class Entity {
-
-        /**
-         * 是否启用逻辑删除
-         */
-        private boolean logicDeletion = false;
-        /**
          * 如果配置了任何一个逻辑删除值，则全局开启逻辑删除
          * 逻辑删除「正常值」的标记
          */
@@ -321,6 +190,16 @@ public class R2dbcProperties {
          */
         private NamingPolicy namingPolicy = NamingPolicy.DEFAULT;
 
+        /**
+         * 字段验证策略
+         * 优先级列表：字段注解（@TableColumn） > 类注解（@TableEntity） > 全局配置（R2dbcProperty）
+         */
+        private ValidationPolicy validationPolicy = ValidationPolicy.NOT_NULL;
+
+
+        public R2dbcMappingProperties transfer() {
+            return new R2dbcMappingProperties(forceQuote, dataCenterId, workerId, logicNormalValue, logicDeleteValue, namingPolicy, validationPolicy);
+        }
 
     }
 

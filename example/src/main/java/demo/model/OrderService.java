@@ -21,6 +21,11 @@ public class OrderService extends ServiceImpl<String, Order> {
         return super.selectById(s);
     }
 
+    @Override
+    public Mono<Order> insert(Order entity) {
+        return super.insert(entity.setNumber(getIdGenerator().generate()));
+    }
+
     public Mono<Order> selectByNumber(String number){
         return getRepository().findByNumber(number);
     }

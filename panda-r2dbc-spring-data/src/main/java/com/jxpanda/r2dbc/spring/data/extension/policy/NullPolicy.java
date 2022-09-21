@@ -20,7 +20,7 @@ public enum NullPolicy {
     /**
      * 仅写数据的时候可以为null
      * 即：把Entity写入到数据库的过程中，不处理null值
-     * 此时，【毒】数据的时候，会把null值用默认值替换掉
+     * 此时，【读】数据的时候，会把null值用默认值替换掉
      */
     WRITE_NULL,
 

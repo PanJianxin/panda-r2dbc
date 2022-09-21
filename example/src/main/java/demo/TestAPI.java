@@ -58,7 +58,10 @@ public class TestAPI {
     @PostMapping("/order/insert")
     public Mono<Order> insert(@RequestBody Order order) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
-        return orderService.insert(order);
+        return orderService.insert(order)
+                .doOnSuccess(o->{
+                    System.out.println(o);
+                });
 //        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
 //                .apply(Update.update(Order.AMOUNT, order.getAmount()))
 //                .map(l -> {

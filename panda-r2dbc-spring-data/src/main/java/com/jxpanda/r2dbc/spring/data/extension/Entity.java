@@ -5,6 +5,7 @@ import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableLogic;
 import com.jxpanda.r2dbc.spring.data.extension.constant.DateTimeConstant;
+import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdKit;
 import lombok.*;
 import lombok.experimental.Accessors;
@@ -27,10 +28,8 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(of = {"id"})
-@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 public class Entity<ID> implements Serializable {
 
-    private static final String NAME_POLICY_KEY = "panda.r2dbc.mapping.entity.naming-policy";
 
     /**
      * 主键ID
@@ -67,14 +66,14 @@ public class Entity<ID> implements Serializable {
     private Long version;
 
     /**
-     * 创建数据的人（staffId）的ID
+     * 创建数据的人的ID
      */
     @TableColumn
     private String creatorId;
 
 
     /**
-     * 数据最后更新的人（staffId）的ID
+     * 数据最后更新的人的ID
      */
     @TableColumn
     private String updaterId;
@@ -131,22 +130,6 @@ public class Entity<ID> implements Serializable {
         return !isEffective();
     }
 
-
-    /**
-     * 设置操作者Id
-     *
-     * @param executorId 操作数据的人的ID
-     */
-    public void setExecutor(String executorId) {
-        this.setUpdaterId(executorId);
-        // 如果传递了无效的ID进来，说明执行的是创建操作，同时设置创建者ID
-//        if (idGenerator.isIdEffective(this.getId())){
-//            this.setCreatorId(executorId);
-//            // 容灾，如果前端传递了'0'进来，系统逻辑上是视为无效的，但是mybatis不这么认为，所以要欺骗一下mybatis
-//            this.setId(null);
-//        }
-    }
-
     /**
      * 提供一个静态的函数，判断实体类是否有效
      */
@@ -160,9 +143,6 @@ public class Entity<ID> implements Serializable {
     public static boolean isNotEffective(Entity<?> entity) {
         return !isEffective(entity);
     }
-
-
-
 
 
 //    @Override

@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.policy.NullPolicy;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.extension.support.ReflectionKit;
 import lombok.Getter;
@@ -51,26 +52,6 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
         this.repository = repository;
     }
 
-
-    protected Class<ID> getIdClass() {
-        if (idClass == null) {
-            idClass = (Class<ID>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 0);
-        }
-        return idClass;
-    }
-
-
-    protected Class<T> getEntityClass() {
-        if (entityClass == null) {
-            entityClass = (Class<T>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 1);
-        }
-        return entityClass;
-    }
-
-    protected NamingStrategy getNamingStrategy() {
-        return namingStrategy;
-    }
-
     @Override
     public Mono<T> insert(T entity) {
         return Mono.just(idGenerator)
@@ -104,7 +85,6 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
 
     @Override
     public Mono<T> selectById(ID id) {
-//        return r2dbcEntityTemplate.select(getEntityClass()).matching(Query.query(Criteria.where(Entity.ID).is(id))).one();
         return repository.findById(id);
     }
 
@@ -169,5 +149,31 @@ public class ServiceImpl<ID, T extends Entity<ID>> implements Service<ID, T> {
         return r2dbcEntityTemplate.getConverter().getMappingContext();
     }
 
+    protected Class<ID> getIdClass() {
+        if (idClass == null) {
+            idClass = (Class<ID>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 0);
+        }
+        return idClass;
+    }
+
+
+    protected Class<T> getEntityClass() {
+        if (entityClass == null) {
+            entityClass = (Class<T>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 1);
+        }
+        return entityClass;
+    }
+
+    protected NamingStrategy getNamingStrategy() {
+        return namingStrategy;
+    }
+
+    protected IdGenerator<ID> getIdGenerator(){
+        return idGenerator;
+    }
+
+//    protected NullPolicy getNullPolicy(){
+//        return
+//    }
 
 }

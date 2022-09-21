@@ -1,6 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.extension.annotation;
 
-import com.jxpanda.r2dbc.spring.data.extension.policy.NullPolicy;
+import com.jxpanda.r2dbc.spring.data.extension.policy.ValidationPolicy;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -42,12 +42,10 @@ public @interface TableEntity {
     String prefix() default "";
 
     /**
-     * 空值处理策略
-     * 实体内的null值处理策略，默认NULLABLE
-     * 即：全都允许为空
-     * 优先级小于TableColumn注解上的策略
+     * 字段验证策略
+     * 优先级列表：字段注解（@TableColumn） > 类注解（@TableEntity） > 全局配置（R2dbcProperty）
      */
-    NullPolicy nullPolicy() default NullPolicy.NULLABLE;
+    ValidationPolicy validationPolicy() default ValidationPolicy.NOT_CHECK;
 
 
 }
