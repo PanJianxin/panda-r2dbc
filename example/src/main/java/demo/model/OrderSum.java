@@ -5,13 +5,13 @@ import lombok.Data;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Data
-@Table("`order`")
+@Table("order")
 public class OrderSum {
 
-    @TableColumn(name = "count(*)")
+    @TableColumn(name = "count(*)", alias = "count")
     private Integer count;
 
-    @TableColumn(name = "sum(amount)")
+    @TableColumn(name = "sum(amount)", alias = "total_amount")
     private Integer totalAmount;
 
 }
