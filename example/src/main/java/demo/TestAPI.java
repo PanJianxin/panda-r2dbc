@@ -1,6 +1,7 @@
 package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
+import com.jxpanda.r2dbc.spring.data.extension.constant.DateTimeConstant;
 import demo.model.*;
 import lombok.AllArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
@@ -105,7 +106,7 @@ public class TestAPI {
     @GetMapping("/order/sum")
     public Mono<OrderSum> getOrderSum() {
         return r2dbcEntityTemplate.select(OrderSum.class)
-                .matching(Query.query(Criteria.where(Order.CREATED_DATE).in(LocalDateTime.now(), LocalDateTime.now())))
+                .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
                 .one();
 //        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
 //                .fetch()

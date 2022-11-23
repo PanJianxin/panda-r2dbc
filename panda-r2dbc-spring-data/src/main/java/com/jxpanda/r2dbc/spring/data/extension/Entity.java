@@ -1,11 +1,12 @@
 package com.jxpanda.r2dbc.spring.data.extension;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableLogic;
 import com.jxpanda.r2dbc.spring.data.extension.constant.DateTimeConstant;
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdKit;
 import lombok.*;
 import lombok.experimental.Accessors;
@@ -35,6 +36,7 @@ public class Entity<ID> implements Serializable {
      * 主键ID
      */
     @TableId
+    @JsonSerialize(using = ToStringSerializer.class)
     private ID id;
 
     /**

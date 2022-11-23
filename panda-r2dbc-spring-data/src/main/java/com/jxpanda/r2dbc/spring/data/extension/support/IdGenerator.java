@@ -1,9 +1,5 @@
 package com.jxpanda.r2dbc.spring.data.extension.support;
 
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
-
-import java.io.Serializable;
-
 /**
  * ID生成器接口
  */

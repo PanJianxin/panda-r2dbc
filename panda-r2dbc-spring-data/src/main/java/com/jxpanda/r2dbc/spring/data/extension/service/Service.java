@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 /**
  * @author Panda
  */
-public interface Service<ID, T extends Entity<ID>> {
+public interface Service<T extends Entity<ID>, ID> {
 
     /**
      * 插入一条数据

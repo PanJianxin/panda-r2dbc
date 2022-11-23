@@ -10,7 +10,7 @@ object Version {
 
     const val PANDA_COMMONS = "1.2.8"
 
-    const val R2DBC_POSTGRESQL = "0.8.12.RELEASE"
+    const val R2DBC_POSTGRESQL = "0.8.13.RELEASE"
 
     const val KOTLIN_COROUTINES = "1.6.3"
 

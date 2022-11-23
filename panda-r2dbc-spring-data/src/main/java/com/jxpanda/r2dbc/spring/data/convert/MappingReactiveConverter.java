@@ -28,6 +28,7 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.*;
 import org.springframework.data.r2dbc.convert.MappingR2dbcConverter;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
+import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import org.springframework.data.relational.core.conversion.RelationalConverter;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -96,6 +97,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     public <R> R read(Class<R> type, Row row, @Nullable RowMetadata metadata) {
 
         TypeInformation<? extends R> typeInfo = ClassTypeInformation.from(type);
+//        TypeInformation<R> typeInfo = TypeInformation.of(type);
         Class<? extends R> rawType = typeInfo.getType();
 
         if (Row.class.isAssignableFrom(rawType)) {
@@ -149,7 +151,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     private Object readFrom(Row row, @Nullable RowMetadata metadata, RelationalPersistentProperty property,
                             String prefix) {
 
-        String identifier = prefix + property.getColumnName().getReference();
+        String identifier = prefix + getPropertyName(property);
 
         try {
 
@@ -319,6 +321,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
                                        RelationalPersistentProperty property) {
 
         TypeInformation<?> valueType = ClassTypeInformation.from(value.getClass());
+//        TypeInformation<?> valueType = TypeInformation.of(value.getClass());
 
         if (valueType.isCollectionLike()) {
 
@@ -438,6 +441,10 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
     private <R> RelationalPersistentEntity<R> getRequiredPersistentEntity(Class<R> type) {
         return (RelationalPersistentEntity<R>) getMappingContext().getRequiredPersistentEntity(type);
+    }
+
+    private String getPropertyName(RelationalPersistentProperty property) {
+        return ((R2dbcMappingContext) this.getMappingContext()).getNamingStrategy().getColumnName(property);
     }
 
     /**

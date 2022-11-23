@@ -69,7 +69,8 @@ public enum NamingPolicy implements NamingStrategy {
             columnName = tableId.name();
         } else if (property.isAnnotationPresent(TableColumn.class)) {
             TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
-            columnName = tableColumn.name();
+            // 如果设置了别名，则返回别名
+            columnName = ObjectUtils.isEmpty(tableColumn.alias()) ? tableColumn.name() : tableColumn.alias();
         }
         return ObjectUtils.isEmpty(columnName) ? convert(property.getName()) : columnName;
     }

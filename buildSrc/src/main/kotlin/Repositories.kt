@@ -13,6 +13,7 @@ object Repositories {
 
     fun setRepositories(repositoryHandler: RepositoryHandler) {
         repositoryHandler.mavenLocal()
+        repositoryHandler.mavenCentral()
         repositoryHandler.maven(ALIYUN)
         repositoryHandler.maven(URL_RELEASE) {
             credentials {

@@ -1,7 +1,7 @@
 object Bom {
-    const val R2DBC = "io.r2dbc:r2dbc-bom:Borca-SR1"
-    const val REACTOR = "io.projectreactor:reactor-bom:2020.0.19"
-    const val NETTY = "io.netty:netty-bom:4.1.77.Final"
+    const val R2DBC = "io.r2dbc:r2dbc-bom:Borca-SR2"
+    const val REACTOR = "io.projectreactor:reactor-bom:2022.0.0"
+    const val NETTY = "io.netty:netty-bom:4.1.85.Final"
 }
 
 /**

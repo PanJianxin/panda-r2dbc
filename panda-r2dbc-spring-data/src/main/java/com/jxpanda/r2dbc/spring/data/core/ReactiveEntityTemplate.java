@@ -15,46 +15,36 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
+import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveSelectOperationSupport;
 import io.r2dbc.spi.ConnectionFactory;
-import io.r2dbc.spi.Row;
-import io.r2dbc.spi.RowMetadata;
-import org.reactivestreams.Publisher;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.projection.ProjectionInformation;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
+import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy;
-import org.springframework.data.r2dbc.core.ReactiveSelectOperationAdapter;
-import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
-import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
-import org.springframework.data.relational.core.sql.Expression;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
-import org.springframework.data.relational.core.sql.Table;
 import org.springframework.data.util.ProxyUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
-import org.springframework.r2dbc.core.PreparedOperation;
-import org.springframework.r2dbc.core.RowsFetchSpec;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.beans.FeatureDescriptor;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @SuppressWarnings("unchecked")
 public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
+
+    private @Nullable ReactiveEntityCallbacks entityCallbacks;
 
     public ReactiveEntityTemplate(ConnectionFactory connectionFactory) {
         super(connectionFactory);
@@ -71,7 +61,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
     }
 
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, ReactiveDataAccessStrategy strategy) {
+    public ReactiveEntityTemplate(DatabaseClient databaseClient, DefaultReactiveDataAccessStrategy strategy) {
         super(databaseClient, strategy);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
     }
@@ -81,11 +71,15 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     // -------------------------------------------------------------------------
 
 
+    public SpelAwareProxyProjectionFactory getProjectionFactory() {
+        return projectionFactory;
+    }
+
     SqlIdentifier getTableName(Class<?> entityClass) {
         return getRequiredEntity(entityClass).getTableName();
     }
 
-    private MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> getMappingContext() {
+    public MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> getMappingContext() {
         return this.getDataAccessStrategy().getConverter().getMappingContext();
     }
 
@@ -105,119 +99,36 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
         return (RelationalPersistentEntity<T>) getRequiredEntity(entityType);
     }
 
+
+    @Override
+    public void setEntityCallbacks(@Nullable ReactiveEntityCallbacks entityCallbacks) {
+        this.entityCallbacks = entityCallbacks;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+
+        if (entityCallbacks == null) {
+            setEntityCallbacks(ReactiveEntityCallbacks.create(applicationContext));
+        }
+
+        projectionFactory.setBeanFactory(applicationContext);
+        projectionFactory.setBeanClassLoader(Objects.requireNonNull(applicationContext.getClassLoader()));
+    }
+
+    @Nullable
+    public ReactiveEntityCallbacks getEntityCallbacks() {
+        return entityCallbacks;
+    }
+
+
     @Override
     public <T> ReactiveSelect<T> select(Class<T> domainType) {
-        return new ReactiveSelectOperationAdapter(this).select(domainType);
+        return new ReactiveSelectOperationSupport(this).select(domainType);
     }
 
-
-    @SuppressWarnings("unchecked")
-    <T, P extends Publisher<T>> P doSelect(Query query, Class<?> entityClass, SqlIdentifier tableName,
-                                           Class<T> returnType, Function<RowsFetchSpec<T>, P> resultHandler) {
-
-        RowsFetchSpec<T> fetchSpec = doSelect(query, entityClass, tableName, returnType);
-
-        P result = resultHandler.apply(fetchSpec);
-
-        if (result instanceof Mono) {
-            return (P) ((Mono<?>) result).flatMap(it -> maybeCallAfterConvert(it, tableName));
-        }
-
-        return (P) ((Flux<?>) result).flatMap(it -> maybeCallAfterConvert(it, tableName));
+    @Override
+    public <T> Mono<T> selectOne(Query query, Class<T> entityClass) throws DataAccessException {
+        return super.selectOne(query, entityClass);
     }
-
-    private <T> RowsFetchSpec<T> doSelect(Query query, Class<?> entityClass, SqlIdentifier tableName,
-                                          Class<T> returnType) {
-
-        StatementMapper statementMapper = getDataAccessStrategy().getStatementMapper().forType(entityClass);
-
-        StatementMapper.SelectSpec selectSpec = statementMapper //
-                .createSelect(tableName) //
-                .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, returnType)));
-
-        if (query.getLimit() > 0) {
-            selectSpec = selectSpec.limit(query.getLimit());
-        }
-
-        if (query.getOffset() > 0) {
-            selectSpec = selectSpec.offset(query.getOffset());
-        }
-
-        if (query.isSorted()) {
-            selectSpec = selectSpec.withSort(query.getSort());
-        }
-
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-
-        return getRowsFetchSpec(getDatabaseClient().sql(operation), entityClass, returnType);
-    }
-
-    private <T> List<Expression> getSelectProjection(Table table, Query query, Class<T> returnType) {
-
-        if (query.getColumns().isEmpty()) {
-
-            if (returnType.isInterface()) {
-
-                ProjectionInformation projectionInformation = projectionFactory.getProjectionInformation(returnType);
-
-                if (projectionInformation.isClosed()) {
-                    return projectionInformation.getInputProperties().stream().map(FeatureDescriptor::getName).map(table::column)
-                            .collect(Collectors.toList());
-                }
-            }
-
-            return Collections.singletonList(table.asterisk());
-        }
-
-        return query.getColumns().stream().map(table::column).collect(Collectors.toList());
-    }
-
-    private <T> RowsFetchSpec<T> getRowsFetchSpec(DatabaseClient.GenericExecuteSpec executeSpec, Class<?> entityClass,
-                                                  Class<T> returnType) {
-
-        boolean simpleType;
-
-        BiFunction<Row, RowMetadata, T> rowMapper;
-        if (returnType.isInterface()) {
-            simpleType = getConverter().isSimpleType(entityClass);
-            rowMapper = getDataAccessStrategy().getRowMapper(entityClass)
-                    .andThen(o -> projectionFactory.createProjection(returnType, o));
-        } else {
-            simpleType = getConverter().isSimpleType(returnType);
-            rowMapper = getDataAccessStrategy().getRowMapper(returnType);
-        }
-
-        // avoid top-level null values if the read type is a simple one (e.g. SELECT MAX(age) via Integer.class)
-        if (simpleType) {
-            return new UnwrapOptionalFetchSpecAdapter<>(
-                    executeSpec.map((row, metadata) -> Optional.ofNullable(rowMapper.apply(row, metadata))));
-        }
-
-        return executeSpec.map(rowMapper);
-    }
-
-
-    private record UnwrapOptionalFetchSpecAdapter<T>(RowsFetchSpec<Optional<T>> delegate) implements RowsFetchSpec<T> {
-
-        @Override
-            public Mono<T> one() {
-                return delegate.one().handle((optional, sink) -> optional.ifPresent(sink::next));
-            }
-
-            @Override
-            public Mono<T> first() {
-                return delegate.first().handle((optional, sink) -> optional.ifPresent(sink::next));
-            }
-
-            @Override
-            public Flux<T> all() {
-                return delegate.all().handle((optional, sink) -> optional.ifPresent(sink::next));
-            }
-        }
-
 }

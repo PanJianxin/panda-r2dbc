@@ -5,7 +5,10 @@ import com.jxpanda.r2dbc.spring.data.extension.policy.ValidationPolicy;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.relational.core.mapping.Column;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.*;
 
@@ -22,6 +25,9 @@ public @interface TableColumn {
 
     /**
      * 字段名
+     * 会渲染成 ${tableName}.${name}
+     * 例如：SELECT ${tableName}.${name}
+     * Spring底层源码会强行把表名作为前缀加上去，这会导致某些表达式无法正确的渲染（例如COUNT(*)函数）
      */
     @AliasFor(annotation = Column.class, attribute = "value")
     String name() default "";
@@ -31,6 +37,11 @@ public @interface TableColumn {
      * 这个配置有值的话，会生成如上SQL语句
      */
     String alias() default "";
+
+    /**
+     * 函数表达式
+     */
+    String function() default "";
 
     /**
      * 字段前缀

@@ -1,3 +1,6 @@
+repositories {
+    mavenCentral()
+}
 plugins {
     kotlin("jvm") version KotlinVersion.KOTLIN
 }
@@ -13,7 +16,7 @@ dependencies {
     implementation(KotlinLibrary.COROUTINES_CORE)
     implementation(KotlinLibrary.COROUTINES_REACTOR)
     // https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
-    implementation("com.github.spotbugs:spotbugs-annotations:4.7.2")
+    implementation("com.github.spotbugs:spotbugs-annotations:4.7.3")
 
 }
 

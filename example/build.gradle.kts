@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.springframework.boot") version "2.7.3"
+    id("org.springframework.boot") version "2.7.5"
     id("io.spring.dependency-management") version "1.0.11.RELEASE"
 }
 
@@ -30,9 +30,9 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
-    
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
+
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.0")
 }
 
 tasks.getByName<Test>("test") {
