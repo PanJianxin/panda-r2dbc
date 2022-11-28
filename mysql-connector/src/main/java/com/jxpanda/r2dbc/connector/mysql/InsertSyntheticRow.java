@@ -121,10 +121,10 @@ final class InsertSyntheticRow implements Row, RowMetadata, ColumnMetadata {
         return Collections.singletonList(this);
     }
 
-    @Override
-    public Collection<String> getColumnNames() {
-        return null;
-    }
+//    @Override
+//    public Collection<String> getColumnNames() {
+//        return null;
+//    }
 
     @Override
     public MySqlType getType() {

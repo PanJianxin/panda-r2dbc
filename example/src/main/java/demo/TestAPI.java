@@ -1,6 +1,7 @@
 package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
+import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.constant.DateTimeConstant;
 import demo.model.*;
 import lombok.AllArgsConstructor;
@@ -23,7 +24,7 @@ public class TestAPI {
 
     private final UserRepository userRepository;
 
-    private final R2dbcEntityTemplate r2dbcEntityTemplate;
+    private final ReactiveEntityTemplate reactiveEntityTemplate;
 
 //    private final OrderRepository orderRepository;
 
@@ -50,7 +51,7 @@ public class TestAPI {
     @GetMapping(path = "select", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<User> selectUser() {
 
-        return r2dbcEntityTemplate.select(User.class)
+        return reactiveEntityTemplate.select(User.class)
 //                .from("user")
                 .matching(Query.query(Criteria.where("name").is("Panda")))
                 .all();
@@ -60,7 +61,7 @@ public class TestAPI {
     public Mono<Order> insert(@RequestBody Order order) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
         return orderService.insert(order)
-                .doOnSuccess(o->{
+                .doOnSuccess(o -> {
                     System.out.println(o);
                 });
 //        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
@@ -75,7 +76,7 @@ public class TestAPI {
     public Mono<Order> update(@RequestBody Order order, String orderId) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
 //        return r2dbcEntityTemplate.insert(order);
-        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
+        return reactiveEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
                 .apply(Update.update(Order.AMOUNT, order.getAmount()))
                 .map(l -> {
                     order.setId(orderId);
@@ -90,11 +91,8 @@ public class TestAPI {
 //                .log();
         return orderService.selectById(id)
                 .doOnSuccess(order -> {
-                    orderService.forEachColum(order, columInfo -> {
-                        System.out.println(columInfo);
-                    });
-                })
-                .log();
+                    orderService.forEachColum(order, System.out::println);
+                });
 //        return orderRepository.findById(id)
 //                .map(it->{
 //                    System.out.println(it);
@@ -105,7 +103,27 @@ public class TestAPI {
 
     @GetMapping("/order/sum")
     public Mono<OrderSum> getOrderSum() {
-        return r2dbcEntityTemplate.select(OrderSum.class)
+        return reactiveEntityTemplate.select(OrderSum.class)
+                .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
+                .one();
+//        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
+//                .fetch()
+//                .one();
+    }
+
+    @GetMapping("/order/delete/{id}")
+    public Mono<OrderSum> delete(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.select(OrderSum.class)
+                .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
+                .one();
+//        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
+//                .fetch()
+//                .one();
+    }
+
+    @GetMapping("/order/destroy/{id}")
+    public Mono<OrderSum> destroy(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.select(OrderSum.class)
                 .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
                 .one();
 //        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
@@ -129,12 +147,12 @@ public class TestAPI {
 //                .amountChanges(new ArrayList<>())
                 .build();
 
-        r2dbcEntityTemplate.update(user).map(user1 -> {
+        reactiveEntityTemplate.update(user).map(user1 -> {
             return user1;
         });
 
-        return Flux.merge(r2dbcEntityTemplate.insert(user),
-                        r2dbcEntityTemplate.insert(order))
+        return Flux.merge(reactiveEntityTemplate.insert(user),
+                        reactiveEntityTemplate.insert(order))
                 .parallel(2)
                 .map(it -> {
                     System.out.println(it);

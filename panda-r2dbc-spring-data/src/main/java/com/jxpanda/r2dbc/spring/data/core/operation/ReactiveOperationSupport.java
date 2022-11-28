@@ -44,7 +44,6 @@ public class ReactiveOperationSupport {
 
 
     @SuppressWarnings("unchecked")
-
     protected static class ReactiveSupport<T, R> {
 
         /**

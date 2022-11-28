@@ -71,10 +71,6 @@ public final class ReactiveSelectOperationSupport extends ReactiveOperationSuppo
             super(template, domainType, returnType, query, tableName);
         }
 
-//        private ReactiveSelectSupport(DatabaseClient databaseClient, Class<T> domainType, Class<R> returnType, Query query, SqlIdentifier tableName) {
-//            super(databaseClient, domainType, returnType, query, tableName);
-//        }
-
         /*
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.SelectWithTable#from(java.lang.String)
@@ -177,7 +173,7 @@ public final class ReactiveSelectOperationSupport extends ReactiveOperationSuppo
                     .flatMap(it -> maybeCallAfterConvert(it, tableName));
         }
 
-        public Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+        private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
 
             RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
             StatementMapper statementMapper = getStatementMapper().forType(entityClass);
@@ -203,7 +199,7 @@ public final class ReactiveSelectOperationSupport extends ReactiveOperationSuppo
                     .hasElement();
         }
 
-        public Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+        private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
 
             RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
             StatementMapper statementMapper = getStatementMapper().forType(entityClass);

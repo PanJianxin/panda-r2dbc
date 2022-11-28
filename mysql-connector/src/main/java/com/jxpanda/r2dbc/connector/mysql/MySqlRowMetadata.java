@@ -104,10 +104,10 @@ final class MySqlRowMetadata implements RowMetadata {
         return InternalArrays.asImmutableList(originMetadata);
     }
 
-    @Override
-    public Collection<String> getColumnNames() {
-        return null;
-    }
+//    @Override
+//    public Collection<String> getColumnNames() {
+//        return null;
+//    }
 
     @Override
     public String toString() {

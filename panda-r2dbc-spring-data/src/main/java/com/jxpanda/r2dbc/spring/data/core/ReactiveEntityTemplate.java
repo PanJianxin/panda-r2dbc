@@ -131,4 +131,5 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     public <T> Mono<T> selectOne(Query query, Class<T> entityClass) throws DataAccessException {
         return super.selectOne(query, entityClass);
     }
+
 }

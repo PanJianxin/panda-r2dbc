@@ -10,7 +10,11 @@ object Version {
 
     const val PANDA_COMMONS = "1.2.8"
 
+    const val R2DBC_SPI = "1.0.0.RELEASE"
+    const val R2DBC_POLL = "1.0.0.RELEASE"
+    const val R2DBC_PROXY = "1.1.0.RELEASE"
     const val R2DBC_POSTGRESQL = "0.8.13.RELEASE"
+
 
     const val KOTLIN_COROUTINES = "1.6.3"
 
@@ -48,6 +52,9 @@ object Library {
     const val PANDA_COMMONS = "com.jxpanda.commons:commons-base:${Version.PANDA_COMMONS}"
     const val PANDA_ENCRYPT = "com.jxpanda.commons:commons-encrypt:${Version.PANDA_COMMONS}"
 
+    const val R2DBC_SPI = "io.r2dbc:r2dbc-spi:${Version.R2DBC_SPI}"
+    const val R2DBC_POOL = "io.r2dbc:r2dbc-pool:${Version.R2DBC_POLL}"
+    const val R2DBC_PROXY = "io.r2dbc:r2dbc-proxy:${Version.R2DBC_PROXY}"
     // https://mvnrepository.com/artifact/io.r2dbc/r2dbc-postgresql
     const val R2DBC_POSTGRESQL = "io.r2dbc:r2dbc-postgresql:${Version.R2DBC_POSTGRESQL}"
 

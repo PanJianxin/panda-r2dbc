@@ -1,8 +1,15 @@
-object Bom {
-    const val R2DBC = "io.r2dbc:r2dbc-bom:Borca-SR2"
-    const val REACTOR = "io.projectreactor:reactor-bom:2022.0.0"
-    const val NETTY = "io.netty:netty-bom:4.1.85.Final"
+object BomVersion {
+    const val R2DBC = "Borca-SR2"
+    const val REACTOR = "2022.0.0"
+    const val NETTY = "4.1.85.Final"
 }
+
+object Bom {
+    const val R2DBC = "io.r2dbc:r2dbc-bom:${BomVersion.R2DBC}"
+    const val REACTOR = "io.projectreactor:reactor-bom:${BomVersion.REACTOR}"
+    const val NETTY = "io.netty:netty-bom:${BomVersion.NETTY}"
+}
+
 
 /**
  * 使用BOM管理的依赖， 不需要写版本号

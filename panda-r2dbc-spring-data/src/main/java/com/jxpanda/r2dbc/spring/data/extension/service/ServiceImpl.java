@@ -72,10 +72,7 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
         return reactiveEntityTemplate.update(getEntityClass())
                 .matching(query)
                 .apply(buildUpdate(entity))
-                .map(l -> {
-                    System.out.println(l);
-                    return entity;
-                });
+                .map(l -> entity);
     }
 
     @Override

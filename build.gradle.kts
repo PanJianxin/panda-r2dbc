@@ -32,9 +32,9 @@ subprojects {
 
     dependencies {
 
-        implementation(platform(Bom.R2DBC))
-        implementation(BomLibrary.R2DBC_SPI)
-        implementation(BomLibrary.R2DBC_POOL)
+//        implementation(platform(Bom.R2DBC))
+        implementation(Library.R2DBC_SPI)
+        implementation(Library.R2DBC_POOL)
 
         implementation(platform(Bom.REACTOR))
         implementation(BomLibrary.REACTOR)

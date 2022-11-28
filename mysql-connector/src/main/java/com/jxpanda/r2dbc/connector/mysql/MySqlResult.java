@@ -47,9 +47,9 @@ public final class MySqlResult implements Result {
 
     private static final Consumer<ReferenceCounted> RELEASE = ReferenceCounted::release;
 
-    private static final BiConsumer<Segment, SynchronousSink<Integer>> ROWS_UPDATED = (segment, sink) -> {
+    private static final BiConsumer<Segment, SynchronousSink<Long>> ROWS_UPDATED = (segment, sink) -> {
         if (segment instanceof UpdateCount) {
-            sink.next((int) ((UpdateCount) segment).value());
+            sink.next(((UpdateCount) segment).value());
         } else if (segment instanceof Message) {
             sink.error(((Message) segment).exception());
         } else if (segment instanceof ReferenceCounted) {
@@ -57,7 +57,7 @@ public final class MySqlResult implements Result {
         }
     };
 
-    private static final BiFunction<Integer, Integer, Integer> SUM = Integer::sum;
+    private static final BiFunction<Long, Long, Long> SUM = Long::sum;
 
     private final Flux<Segment> segments;
 
@@ -66,7 +66,7 @@ public final class MySqlResult implements Result {
     }
 
     @Override
-    public Mono<Integer> getRowsUpdated() {
+    public Mono<Long> getRowsUpdated() {
         return segments.handle(ROWS_UPDATED).reduce(SUM);
     }
 
@@ -150,14 +150,14 @@ public final class MySqlResult implements Result {
     }
 
     static MySqlResult toResult(boolean binary, Codecs codecs, ConnectionContext context,
-        @Nullable String generatedKeyName, Flux<ServerMessage> messages) {
+                                @Nullable String generatedKeyName, Flux<ServerMessage> messages) {
         requireNonNull(codecs, "codecs must not be null");
         requireNonNull(context, "context must not be null");
         requireNonNull(messages, "messages must not be null");
 
         return new MySqlResult(OperatorUtils.discardOnCancel(messages)
-            .doOnDiscard(ReferenceCounted.class, RELEASE)
-            .handle(new MySqlSegments(binary, codecs, context, generatedKeyName)));
+                .doOnDiscard(ReferenceCounted.class, RELEASE)
+                .handle(new MySqlSegments(binary, codecs, context, generatedKeyName)));
     }
 
     private static final class MySqlMessage implements Message {
@@ -196,7 +196,7 @@ public final class MySqlResult implements Result {
         private final FieldValue[] fields;
 
         private MySqlRowSegment(FieldValue[] fields, MySqlRowMetadata metadata, Codecs codecs, boolean binary,
-            ConnectionContext context) {
+                                ConnectionContext context) {
             this.row = new MySqlRow(fields, metadata, codecs, binary, context);
             this.fields = fields;
         }
@@ -272,7 +272,7 @@ public final class MySqlResult implements Result {
         private MySqlRowMetadata rowMetadata;
 
         private MySqlSegments(boolean binary, Codecs codecs, ConnectionContext context,
-            @Nullable String generatedKeyName) {
+                              @Nullable String generatedKeyName) {
             this.binary = binary;
             this.codecs = codecs;
             this.context = context;
@@ -309,7 +309,7 @@ public final class MySqlResult implements Result {
                 this.rowMetadata = MySqlRowMetadata.create(metadataMessages);
             } else if (message instanceof OkMessage) {
                 Segment segment = generatedKeyName == null ? new MySqlUpdateCount((OkMessage) message) :
-                    new MySqlOkSegment((OkMessage) message, codecs, generatedKeyName);
+                        new MySqlOkSegment((OkMessage) message, codecs, generatedKeyName);
 
                 sink.next(segment);
             } else if (message instanceof ErrorMessage) {

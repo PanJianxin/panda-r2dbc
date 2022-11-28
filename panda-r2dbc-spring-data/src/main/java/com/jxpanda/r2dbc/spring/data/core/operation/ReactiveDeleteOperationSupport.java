@@ -17,13 +17,17 @@ package com.jxpanda.r2dbc.spring.data.core.operation;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
+import org.springframework.data.r2dbc.core.StatementMapper;
+import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
+import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
+import java.util.Optional;
 
 /**
  * Implementation of {@link ReactiveDeleteOperation}.
@@ -50,7 +54,7 @@ public final class ReactiveDeleteOperationSupport extends ReactiveOperationSuppo
         return new ReactiveDeleteSupport<>(template, domainType, Query.empty(), null);
     }
 
-    private final static class ReactiveDeleteSupport<T> extends ReactiveOperationSupport.ReactiveSupport<T, Long> implements ReactiveDelete, TerminatingDelete {
+    private final static class ReactiveDeleteSupport<T> extends ReactiveOperationSupport.ReactiveSupport<T, Long> implements ReactiveDelete {
 
 
         ReactiveDeleteSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
@@ -92,8 +96,23 @@ public final class ReactiveDeleteOperationSupport extends ReactiveOperationSuppo
         @Nonnull
         @Override
         public Mono<Long> all() {
-//            return getTemplate().doDelete(getQuery(), getDomainType(), getTableName());
-            return null;
+            return doDelete(getQuery(), getDomainType(), getTableName());
+        }
+
+        private Mono<Long> doDelete(Query query, Class<?> entityClass, SqlIdentifier tableName) {
+
+            StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+
+            StatementMapper.DeleteSpec deleteSpec = statementMapper
+                    .createDelete(tableName);
+
+            Optional<CriteriaDefinition> criteria = query.getCriteria();
+            if (criteria.isPresent()) {
+                deleteSpec = criteria.map(deleteSpec::withCriteria).orElse(deleteSpec);
+            }
+
+            PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
+            return getDatabaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
         }
 
     }
