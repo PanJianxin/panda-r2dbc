@@ -1,4 +1,1 @@
-com.jxpanda.autoconfigure.r2dbc.R2dbcAutoConfiguration
-com.jxpanda.autoconfigure.r2dbc.R2dbcTransactionManagerAutoConfiguration
-com.jxpanda.autoconfigure.data.R2dbcDataAutoConfiguration
-com.jxpanda.autoconfigure.data.R2dbcRepositoriesAutoConfiguration
+com.jxpanda.autoconfigure.R2dbcAutoConfiguration

@@ -1,16 +1,19 @@
 spring:
   main:
     allow-bean-definition-overriding: true
+  r2dbc:
+    url: r2dbc:pool:mysql://mysql.jxpanda.com:2333/hydrogen
+    username: root
+    password: Root2021@)@!
+
+
 
 panda:
   r2dbc:
-    url: r2dbc:pool:pool:mysql://mysql.jxpanda.com:2333/hydrogen
-    username: root
-    password: Root2021@)@!
-    mapping-properties:
-      force-quote: true
-      validation-policy: NOT_EMPTY
-      naming-policy: CAMEL_CASE_TO_SNAKE_CASE
+    force-quote: true
+    validation-policy: NOT_EMPTY
+    naming-policy: CAMEL_CASE_TO_SNAKE_CASE
+    data-center-id: 1
 
 
 #logging:

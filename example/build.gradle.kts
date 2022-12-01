@@ -14,9 +14,13 @@ repositories {
 dependencies {
 
     implementation(project(ProjectDependency.PANDA_R2DBC_SPRING_BOOT_STARTER))
-//    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+//    implementation(project(ProjectDependency.PANDA_R2DBC_SPRING_DATA))
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation(project(ProjectDependency.MYSQL_CONNECTOR))
     //    implementation("dev.miku:r2dbc-mysql:0.8.2.RELEASE")
+    // https://mvnrepository.com/artifact/com.github.jasync-sql/jasync-r2dbc-mysql
+//    implementation("com.github.jasync-sql:jasync-r2dbc-mysql:2.1.7")
+
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     implementation(Library.PANDA_COMMONS)

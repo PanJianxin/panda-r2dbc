@@ -22,4 +22,8 @@ object SpringLibrary {
     // https://mvnrepository.com/artifact/org.springframework.data/spring-data-r2dbc
     const val SPRING_DATA_R2DBC = "org.springframework.data:spring-data-r2dbc:${SpringVersion.SPRING_DATA_R2DBC}";
 
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-r2dbc
+    const val SPRING_BOOT_STARTER_DATA_R2DBC ="org.springframework.boot:spring-boot-starter-data-r2dbc:${SpringVersion.SPRING_DATA_R2DBC}"
+
+
 }
