@@ -13,7 +13,6 @@ panda:
     force-quote: true
     validation-policy: NOT_EMPTY
     naming-policy: CAMEL_CASE_TO_SNAKE_CASE
-    data-center-id: 1
 
 
 #logging:
