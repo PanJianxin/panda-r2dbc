@@ -1,6 +1,6 @@
 package demo.model;
 
-import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

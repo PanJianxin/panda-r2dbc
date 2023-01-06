@@ -1,7 +1,7 @@
 package demo.model;
 
 
-import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import com.jxpanda.r2dbc.spring.data.extension.StandardEnum;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.EnumValue;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;

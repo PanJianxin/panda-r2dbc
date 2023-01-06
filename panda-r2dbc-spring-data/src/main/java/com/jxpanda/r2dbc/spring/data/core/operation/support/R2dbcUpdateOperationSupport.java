@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core.operation;
+package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import org.springframework.data.r2dbc.core.ReactiveUpdateOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
@@ -27,15 +27,15 @@ import reactor.core.publisher.Mono;
 import javax.annotation.Nonnull;
 
 /**
- * Implementation of {@link ReactiveUpdateOperation}.
+ * Implementation of {@link R2dbcUpdateOperation}.
  *
  * @author Mark Paluch
  * @since 1.1
  */
-public final class ReactiveUpdateOperationSupport extends ReactiveOperationSupport implements ReactiveUpdateOperation {
+public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport implements R2dbcUpdateOperation {
 
 
-    public ReactiveUpdateOperationSupport(ReactiveEntityTemplate template) {
+    public R2dbcUpdateOperationSupport(ReactiveEntityTemplate template) {
         super(template);
     }
 
@@ -45,18 +45,19 @@ public final class ReactiveUpdateOperationSupport extends ReactiveOperationSuppo
      */
     @Nonnull
     @Override
-    public ReactiveUpdateOperation.ReactiveUpdate update(@Nonnull Class<?> domainType) {
+    public R2dbcUpdate update(@Nonnull Class<?> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new ReactiveUpdateSupport<>(template, domainType, Query.empty(), null);
+        return new R2dbcUpdateSupport<>(template, domainType, Query.empty(), null);
     }
 
-    private final static class ReactiveUpdateSupport<T> extends ReactiveOperationSupport.ReactiveSupport<T, Long> implements ReactiveUpdate, TerminatingUpdate {
+
+    private final static class R2dbcUpdateSupport<T> extends R2dbcSupport<T, Long> implements R2dbcUpdate, TerminatingUpdate {
 
 
-        ReactiveUpdateSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
-                              @Nullable SqlIdentifier tableName) {
+        R2dbcUpdateSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
+                           @Nullable SqlIdentifier tableName) {
             super(template, domainType, Long.class, query, tableName);
         }
 
@@ -70,7 +71,7 @@ public final class ReactiveUpdateOperationSupport extends ReactiveOperationSuppo
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new ReactiveUpdateSupport<>(getTemplate(), getDomainType(), getQuery(), tableName);
+            return new R2dbcUpdateSupport<>(getTemplate(), getDomainType(), getQuery(), tableName);
         }
 
         /*
@@ -83,29 +84,19 @@ public final class ReactiveUpdateOperationSupport extends ReactiveOperationSuppo
 
             Assert.notNull(query, "Query must not be null");
 
-            return new ReactiveUpdateSupport<>(getTemplate(), getDomainType(), query, getTableName());
+            return new R2dbcUpdateSupport<>(getTemplate(), getDomainType(), query, getTableName());
         }
 
         @Nonnull
         @Override
         public Mono<Long> apply(@Nonnull Update update) {
-            return null;
+            Assert.notNull(update, "Update must not be null");
+            return getExecutor().doUpdate(getQuery(), update, getDomainType(), getTableName());
         }
 
-
-//
-//        /*
-//         * (non-Javadoc)
-//         * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation.TerminatingUpdate#apply(org.springframework.data.r2dbc.query.Update)
-//         */
-//        @Override
-//        public Mono<Long> apply(Update update) {
-//
-//
-//            Assert.notNull(update, "Update must not be null");
-//
-//            return getTemplate().doUpdate(getQuery(), update, getDomainType(), getTableName());
-//        }
-
+        @Override
+        public <E> Mono<E> using(E entity) {
+            return getExecutor().doUpdate(entity, getTableName());
+        }
     }
 }

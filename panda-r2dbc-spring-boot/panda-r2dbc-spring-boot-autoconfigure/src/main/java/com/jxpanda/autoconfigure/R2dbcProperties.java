@@ -29,15 +29,9 @@ public class R2dbcProperties {
     private int workerId = 0;
 
     /**
-     * 如果配置了任何一个逻辑删除值，则全局开启逻辑删除
-     * 逻辑删除「正常值」的标记
+     * 逻辑删除配置
      */
-    private String logicNormalValue = "";
-    /**
-     * 如果配置了任何一个逻辑删除值，则全局开启逻辑删除
-     * 逻辑删除「删除值」的标记
-     */
-    private String logicDeleteValue = "";
+    private R2dbcMappingProperties.LogicDelete logicDelete;
 
     /**
      * 字段命名策略，默认是不处理
@@ -52,7 +46,8 @@ public class R2dbcProperties {
 
 
     public R2dbcMappingProperties transfer() {
-        return new R2dbcMappingProperties(forceQuote, dataCenterId, workerId, logicNormalValue, logicDeleteValue, namingPolicy, validationPolicy);
+        return new R2dbcMappingProperties(forceQuote, dataCenterId, workerId, logicDelete, namingPolicy, validationPolicy);
     }
+
 
 }

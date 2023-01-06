@@ -15,55 +15,99 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.core.operation.ReactiveSelectOperationSupport;
+import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcDeleteOperationSupport;
+import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcInsertOperationSupport;
+import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcSelectOperationSupport;
+import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcUpdateOperationSupport;
 import io.r2dbc.spi.ConnectionFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
-import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
+import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
-import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Query;
+import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
-
-@SuppressWarnings("unchecked")
 public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
 
+    private final R2dbcMappingProperties r2dbcMappingProperties;
+
     private @Nullable ReactiveEntityCallbacks entityCallbacks;
 
-    public ReactiveEntityTemplate(ConnectionFactory connectionFactory) {
+
+    public ReactiveEntityTemplate(ConnectionFactory connectionFactory, R2dbcMappingProperties r2dbcMappingProperties) {
         super(connectionFactory);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
+        this.r2dbcMappingProperties = r2dbcMappingProperties;
     }
 
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect) {
+    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcMappingProperties r2dbcMappingProperties) {
         super(databaseClient, dialect);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
+        this.r2dbcMappingProperties = r2dbcMappingProperties;
     }
 
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {
+    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter, R2dbcMappingProperties r2dbcMappingProperties) {
         super(databaseClient, dialect, converter);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
+        this.r2dbcMappingProperties = r2dbcMappingProperties;
     }
 
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, DefaultReactiveDataAccessStrategy strategy) {
+    public ReactiveEntityTemplate(DatabaseClient databaseClient, DefaultReactiveDataAccessStrategy strategy, R2dbcMappingProperties r2dbcMappingProperties) {
         super(databaseClient, strategy);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
+        this.r2dbcMappingProperties = r2dbcMappingProperties;
+    }
+
+
+    @Override
+    public <T> Mono<T> maybeCallBeforeConvert(T object, SqlIdentifier table) {
+        return super.maybeCallBeforeConvert(object, table);
+    }
+
+    @Override
+    public <T> Mono<T> maybeCallBeforeSave(T object, OutboundRow row, SqlIdentifier table) {
+        return super.maybeCallBeforeSave(object, row, table);
+    }
+
+    @Override
+    public <T> Mono<T> maybeCallAfterSave(T object, OutboundRow row, SqlIdentifier table) {
+        return super.maybeCallAfterSave(object, row, table);
+    }
+
+    @Override
+    public <T> Mono<T> maybeCallAfterConvert(T object, SqlIdentifier table) {
+        return super.maybeCallAfterConvert(object, table);
+    }
+
+
+    public SpelAwareProxyProjectionFactory getProjectionFactory() {
+        return projectionFactory;
+    }
+
+    public R2dbcMappingProperties getR2dbcMappingProperties() {
+        return r2dbcMappingProperties;
+    }
+
+    private <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
+        Class<?> entityType = ProxyUtils.getUserClass(entity);
+        return (RelationalPersistentEntity<T>) getDataAccessStrategy().getConverter().getMappingContext().getRequiredPersistentEntity(entityType);
     }
 
     // -------------------------------------------------------------------------
@@ -71,65 +115,60 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     // -------------------------------------------------------------------------
 
 
-    public SpelAwareProxyProjectionFactory getProjectionFactory() {
-        return projectionFactory;
-    }
-
-    SqlIdentifier getTableName(Class<?> entityClass) {
-        return getRequiredEntity(entityClass).getTableName();
-    }
-
-    public MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> getMappingContext() {
-        return this.getDataAccessStrategy().getConverter().getMappingContext();
-    }
-
-    SqlIdentifier getTableNameOrEmpty(Class<?> entityClass) {
-
-        RelationalPersistentEntity<?> entity = getMappingContext().getPersistentEntity(entityClass);
-
-        return entity != null ? entity.getTableName() : SqlIdentifier.EMPTY;
-    }
-
-    private RelationalPersistentEntity<?> getRequiredEntity(Class<?> entityClass) {
-        return getMappingContext().getRequiredPersistentEntity(entityClass);
-    }
-
-    private <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
-        Class<?> entityType = ProxyUtils.getUserClass(entity);
-        return (RelationalPersistentEntity<T>) getRequiredEntity(entityType);
-    }
-
-
-    @Override
-    public void setEntityCallbacks(@Nullable ReactiveEntityCallbacks entityCallbacks) {
-        this.entityCallbacks = entityCallbacks;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-
-        if (entityCallbacks == null) {
-            setEntityCallbacks(ReactiveEntityCallbacks.create(applicationContext));
-        }
-
-        projectionFactory.setBeanFactory(applicationContext);
-        projectionFactory.setBeanClassLoader(Objects.requireNonNull(applicationContext.getClassLoader()));
-    }
-
-    @Nullable
-    public ReactiveEntityCallbacks getEntityCallbacks() {
-        return entityCallbacks;
-    }
-
-
     @Override
     public <T> ReactiveSelect<T> select(Class<T> domainType) {
-        return new ReactiveSelectOperationSupport(this).select(domainType);
+        return new R2dbcSelectOperationSupport(this)
+                .select(domainType);
     }
 
     @Override
     public <T> Mono<T> selectOne(Query query, Class<T> entityClass) throws DataAccessException {
-        return super.selectOne(query, entityClass);
+        return select(entityClass)
+                .matching(query)
+                .one();
     }
+
+    @Override
+    public <T> Flux<T> select(Query query, Class<T> entityClass) throws DataAccessException {
+        return select(entityClass)
+                .matching(query)
+                .all();
+    }
+
+    @Override
+    public <T> ReactiveInsert<T> insert(Class<T> domainType) {
+        return new R2dbcInsertOperationSupport(this).insert(domainType);
+    }
+
+    @Override
+    public <T> Mono<T> insert(T entity) throws DataAccessException {
+        return insert(getRequiredEntity(entity).getType()).using(entity);
+    }
+
+    @Override
+    public R2dbcUpdateOperation.R2dbcUpdate update(Class<?> domainType) {
+        return new R2dbcUpdateOperationSupport(this).update(domainType);
+    }
+
+    @Override
+    public <T> Mono<T> update(T entity) throws DataAccessException {
+        return update(entity.getClass()).using(entity);
+    }
+
+    @Override
+    public Mono<Long> update(Query query, Update update, Class<?> entityClass) throws DataAccessException {
+        return update(entityClass).matching(query).apply(update);
+    }
+
+    @Override
+    public R2dbcDeleteOperation.R2dbcDelete delete(Class<?> domainType) {
+        return new R2dbcDeleteOperationSupport(this).delete(domainType);
+    }
+
+    @Override
+    public <T> Mono<T> delete(T entity) throws DataAccessException {
+        return delete(getRequiredEntity(entity).getType()).using(entity);
+    }
+
 
 }

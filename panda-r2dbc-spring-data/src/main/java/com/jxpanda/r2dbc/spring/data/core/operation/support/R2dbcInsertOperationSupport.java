@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core.operation;
+package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
 import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
@@ -30,9 +31,9 @@ import javax.annotation.Nonnull;
  * @author Mark Paluch
  * @since 1.1
  */
-public final class ReactiveInsertOperationSupport extends ReactiveOperationSupport implements ReactiveInsertOperation {
+public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport implements R2dbcInsertOperation {
 
-    public ReactiveInsertOperationSupport(ReactiveEntityTemplate template) {
+    public R2dbcInsertOperationSupport(ReactiveEntityTemplate template) {
         super(template);
     }
 
@@ -46,12 +47,12 @@ public final class ReactiveInsertOperationSupport extends ReactiveOperationSuppo
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new ReactiveInsertSupport<>(this.template, domainType, null);
+        return new R2dbcInsertSupport<>(this.template, domainType, null);
     }
 
-    private final static class ReactiveInsertSupport<T> extends ReactiveOperationSupport.ReactiveSupport<T, T> implements ReactiveInsert<T> {
+    private final static class R2dbcInsertSupport<T> extends R2dbcSupport<T, T> implements ReactiveInsert<T> {
 
-        ReactiveInsertSupport(ReactiveEntityTemplate template, Class<T> domainType, @Nullable SqlIdentifier tableName) {
+        R2dbcInsertSupport(ReactiveEntityTemplate template, Class<T> domainType, @Nullable SqlIdentifier tableName) {
             super(template, domainType, domainType, null, tableName);
         }
 
@@ -65,7 +66,7 @@ public final class ReactiveInsertOperationSupport extends ReactiveOperationSuppo
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new ReactiveInsertSupport<>(getTemplate(), getDomainType(), tableName);
+            return new R2dbcInsertSupport<>(getTemplate(), getDomainType(), tableName);
         }
 
         /*
@@ -78,8 +79,7 @@ public final class ReactiveInsertOperationSupport extends ReactiveOperationSuppo
 
             Assert.notNull(object, "Object to insert must not be null");
 
-//            return getTemplate().doInsert(object, getTableName());
-            return null;
+            return getExecutor().doInsert(object, getTableName());
         }
 
     }

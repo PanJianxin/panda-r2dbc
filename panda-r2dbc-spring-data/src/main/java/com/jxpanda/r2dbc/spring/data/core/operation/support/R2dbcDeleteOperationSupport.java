@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core.operation;
+package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
-import org.springframework.data.r2dbc.core.StatementMapper;
-import org.springframework.data.relational.core.query.CriteriaDefinition;
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
-import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
 
 /**
  * Implementation of {@link ReactiveDeleteOperation}.
@@ -35,9 +33,9 @@ import java.util.Optional;
  * @author Mark Paluch
  * @since 1.1
  */
-public final class ReactiveDeleteOperationSupport extends ReactiveOperationSupport implements ReactiveDeleteOperation {
+public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport implements ReactiveDeleteOperation {
 
-    public ReactiveDeleteOperationSupport(ReactiveEntityTemplate template) {
+    public R2dbcDeleteOperationSupport(ReactiveEntityTemplate template) {
         super(template);
     }
 
@@ -47,18 +45,18 @@ public final class ReactiveDeleteOperationSupport extends ReactiveOperationSuppo
      */
     @Nonnull
     @Override
-    public ReactiveDelete delete(@Nonnull Class<?> domainType) {
+    public R2dbcDeleteOperation.R2dbcDelete delete(@Nonnull Class<?> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new ReactiveDeleteSupport<>(template, domainType, Query.empty(), null);
+        return new R2dbcDeleteSupport<>(template, domainType, Query.empty(), null);
     }
 
-    private final static class ReactiveDeleteSupport<T> extends ReactiveOperationSupport.ReactiveSupport<T, Long> implements ReactiveDelete {
+    private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T, Long> implements R2dbcDeleteOperation.R2dbcDelete {
 
 
-        ReactiveDeleteSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
-                              @Nullable SqlIdentifier tableName) {
+        R2dbcDeleteSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
+                           @Nullable SqlIdentifier tableName) {
 
             super(template, domainType, Long.class, query, tableName);
         }
@@ -73,7 +71,7 @@ public final class ReactiveDeleteOperationSupport extends ReactiveOperationSuppo
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new ReactiveDeleteSupport<>(getTemplate(), getDomainType(), getQuery(), tableName);
+            return new R2dbcDeleteSupport<>(getTemplate(), getDomainType(), getQuery(), tableName);
         }
 
         /*
@@ -86,7 +84,7 @@ public final class ReactiveDeleteOperationSupport extends ReactiveOperationSuppo
 
             Assert.notNull(query, "Query must not be null");
 
-            return new ReactiveDeleteSupport<>(getTemplate(), getDomainType(), query, getTableName());
+            return new R2dbcDeleteSupport<>(getTemplate(), getDomainType(), query, getTableName());
         }
 
         /*
@@ -96,24 +94,14 @@ public final class ReactiveDeleteOperationSupport extends ReactiveOperationSuppo
         @Nonnull
         @Override
         public Mono<Long> all() {
-            return doDelete(getQuery(), getDomainType(), getTableName());
+            return getExecutor().doDelete(getQuery(), getDomainType(), getTableName());
         }
 
-        private Mono<Long> doDelete(Query query, Class<?> entityClass, SqlIdentifier tableName) {
+        @Override
+        public <E> Mono<Boolean> using(E entity) {
+            Assert.notNull(entity, "Entity must not be null");
 
-            StatementMapper statementMapper = getStatementMapper().forType(entityClass);
-
-            StatementMapper.DeleteSpec deleteSpec = statementMapper
-                    .createDelete(tableName);
-
-            Optional<CriteriaDefinition> criteria = query.getCriteria();
-            if (criteria.isPresent()) {
-                deleteSpec = criteria.map(deleteSpec::withCriteria).orElse(deleteSpec);
-            }
-
-            PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
-            return getDatabaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
+            return getExecutor().doDelete(entity, getTableName()).map(it -> it > 0);
         }
-
     }
 }

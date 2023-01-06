@@ -32,7 +32,6 @@ import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import org.springframework.data.relational.core.conversion.RelationalConverter;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.Parameter;
@@ -47,7 +46,7 @@ import java.util.*;
  * @author Mark Paluch
  * @author Oliver Drotbohm
  */
-//@SuppressWarnings("DuplicatedCode")
+@SuppressWarnings("deprecation")
 public class MappingReactiveConverter extends MappingR2dbcConverter {
 
     private final R2dbcCustomTypeHandlers typeHandlers;
@@ -96,8 +95,8 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     @SuppressWarnings("ConstantConditions")
     public <R> R read(Class<R> type, Row row, @Nullable RowMetadata metadata) {
 
-        TypeInformation<? extends R> typeInfo = ClassTypeInformation.from(type);
-//        TypeInformation<R> typeInfo = TypeInformation.of(type);
+//        TypeInformation<? extends R> typeInfo = ClassTypeInformation.from(type);
+        TypeInformation<R> typeInfo = TypeInformation.of(type);
         Class<? extends R> rawType = typeInfo.getType();
 
         if (Row.class.isAssignableFrom(rawType)) {
@@ -320,8 +319,8 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     private void writePropertyInternal(OutboundRow outboundRow, Object value, boolean isNew,
                                        RelationalPersistentProperty property) {
 
-        TypeInformation<?> valueType = ClassTypeInformation.from(value.getClass());
-//        TypeInformation<?> valueType = TypeInformation.of(value.getClass());
+//        TypeInformation<?> valueType = ClassTypeInformation.from(value.getClass());
+        TypeInformation<?> valueType = TypeInformation.of(value.getClass());
 
         if (valueType.isCollectionLike()) {
 
@@ -414,8 +413,8 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
      * @param value value
      * @return object
      */
-    @SuppressWarnings("ConstantConditions")
     @Nullable
+    @SuppressWarnings("SameParameterValue")
     private Object getPotentiallyConvertedSimpleWrite(@Nullable Object value, Class<?> typeHint) {
 
         if (value == null) {
@@ -423,12 +422,12 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         }
 
         if (Object.class != typeHint) {
-
             if (getConversionService().canConvert(value.getClass(), typeHint)) {
                 value = getConversionService().convert(value, typeHint);
             }
         }
 
+        assert value != null;
         Optional<Class<?>> customTarget = getConversions().getCustomWriteTarget(value.getClass());
 
         if (customTarget.isPresent()) {

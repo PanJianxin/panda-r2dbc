@@ -7,10 +7,10 @@ import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.extension.support.SnowflakeIdGenerator;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.DialectResolver;
@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 
-@Configuration
+@AutoConfiguration(after = org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
 @EnableConfigurationProperties(R2dbcProperties.class)
 public class R2dbcAutoConfiguration {
 
@@ -33,19 +33,19 @@ public class R2dbcAutoConfiguration {
 
     private final R2dbcDialect dialect;
 
-    private final R2dbcProperties mappingProperties;
+    private final R2dbcProperties r2dbcProperties;
 
 
-    public R2dbcAutoConfiguration(DatabaseClient databaseClient, R2dbcProperties mappingProperties) {
+    public R2dbcAutoConfiguration(DatabaseClient databaseClient, R2dbcProperties r2dbcProperties) {
         this.databaseClient = databaseClient;
         this.dialect = DialectResolver.getDialect(this.databaseClient.getConnectionFactory());
-        this.mappingProperties = mappingProperties;
+        this.r2dbcProperties = r2dbcProperties;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public ReactiveEntityTemplate r2dbcEntityTemplate(MappingReactiveConverter r2dbcConverter) {
-        return new ReactiveEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
+        return new ReactiveEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter, this.r2dbcProperties.transfer());
     }
 
 
@@ -54,7 +54,7 @@ public class R2dbcAutoConfiguration {
     public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
                                                    R2dbcCustomConversions r2dbcCustomConversions,
                                                    R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
-        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers, this.mappingProperties.transfer());
+        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers, this.r2dbcProperties.transfer());
     }
 
 
@@ -64,7 +64,7 @@ public class R2dbcAutoConfiguration {
                                                    R2dbcCustomConversions r2dbcCustomConversions) {
         R2dbcMappingContext relationalMappingContext = new R2dbcMappingContext(
                 namingStrategy.getIfAvailable(() -> DefaultNamingStrategy.INSTANCE));
-        relationalMappingContext.setForceQuote(this.mappingProperties.isForceQuote());
+        relationalMappingContext.setForceQuote(this.r2dbcProperties.isForceQuote());
         relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
         return relationalMappingContext;
     }
@@ -72,7 +72,7 @@ public class R2dbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public NamingStrategy namingStrategy() {
-        return this.mappingProperties.getNamingPolicy();
+        return this.r2dbcProperties.getNamingPolicy();
     }
 
 
@@ -97,7 +97,7 @@ public class R2dbcAutoConfiguration {
     @ConditionalOnMissingBean
     public IdGenerator<?> idGenerator() {
 
-        return new SnowflakeIdGenerator<String>(this.mappingProperties.getDataCenterId(), this.mappingProperties.getWorkerId()) {
+        return new SnowflakeIdGenerator<String>(this.r2dbcProperties.getDataCenterId(), this.r2dbcProperties.getWorkerId()) {
             @Override
             protected String cast(Long id) {
                 return id.toString();
@@ -108,6 +108,7 @@ public class R2dbcAutoConfiguration {
                 return !StringConstant.ID_DEFAULT_VALUES.contains(id);
             }
         };
+
     }
 
 

@@ -2,7 +2,7 @@ plugins {
     id("java")
     id("maven-publish")
     id("java-library")
-    id("io.freefair.lombok") version "6.6-rc1"
+    id("io.freefair.lombok") version "6.6"
 }
 
 allprojects {

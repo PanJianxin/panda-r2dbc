@@ -1,6 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
-import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import org.springframework.data.relational.core.query.Query;
 import reactor.core.publisher.Mono;
 

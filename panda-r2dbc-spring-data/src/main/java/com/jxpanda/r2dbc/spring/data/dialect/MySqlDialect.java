@@ -22,6 +22,10 @@ import org.springframework.util.ClassUtils;
 
 /**
  * An SQL dialect for MySQL.
+ * 集成于 {@link  org.springframework.data.r2dbc.dialect.MySqlDialect}
+ * <p>
+ * 区别在于，原来的MysqlDialect不支持数组的处理
+ * 这里重写了这里的逻辑，使其支持数组（原理是序列化为Json数组）
  *
  * @author Mark Paluch
  * @author Jens Schauder

@@ -1,7 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.extension.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.extension.support.ReflectionKit;
 import lombok.Getter;

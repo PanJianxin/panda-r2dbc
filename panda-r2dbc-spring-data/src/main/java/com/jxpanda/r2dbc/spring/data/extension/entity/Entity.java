@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.extension;
+package com.jxpanda.r2dbc.spring.data.extension.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
