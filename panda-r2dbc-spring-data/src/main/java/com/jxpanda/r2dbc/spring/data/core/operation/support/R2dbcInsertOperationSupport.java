@@ -19,11 +19,11 @@ import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
 import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.Nonnull;
 
 /**
  * Implementation of {@link ReactiveInsertOperation}.
@@ -41,9 +41,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
      * (non-Javadoc)
      * @see org.springframework.data.r2dbc.core.ReactiveInsertOperation#insert(java.lang.Class)
      */
-    @Nonnull
+    @NonNull
     @Override
-    public <T> ReactiveInsert<T> insert(@Nonnull Class<T> domainType) {
+    public <T> ReactiveInsert<T> insert(@NonNull Class<T> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
@@ -60,9 +60,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveInsertOperation.InsertWithTable#into(SqlIdentifier)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public ReactiveInsertOperation.TerminatingInsert<T> into(@Nonnull SqlIdentifier tableName) {
+        public ReactiveInsertOperation.TerminatingInsert<T> into(@NonNull SqlIdentifier tableName) {
 
             Assert.notNull(tableName, "Table name must not be null");
 
@@ -73,9 +73,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveInsertOperation.TerminatingInsert#one(java.lang.Object)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public Mono<T> using(@Nonnull T object) {
+        public Mono<T> using(@NonNull T object) {
 
             Assert.notNull(object, "Object to insert must not be null");
 

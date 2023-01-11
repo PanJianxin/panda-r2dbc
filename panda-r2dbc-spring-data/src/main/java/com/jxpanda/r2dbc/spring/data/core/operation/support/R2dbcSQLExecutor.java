@@ -29,6 +29,7 @@ import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.*;
+import org.springframework.data.util.Pair;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
@@ -47,7 +48,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Getter
-@SuppressWarnings({"unchecked", "rawtypes", "deprecation", "unused"})
+@SuppressWarnings({"unchecked", "rawtypes", "deprecation", "unused", "SameParameterValue"})
 public final class R2dbcSQLExecutor {
 
     private static final String SQL_AS = " AS ";
@@ -76,7 +77,12 @@ public final class R2dbcSQLExecutor {
         this.statementMapper = template.getDataAccessStrategy().getStatementMapper();
     }
 
+
     <T> Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+        return doExists(query, entityClass, tableName, false);
+    }
+
+    <T> Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
         RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
         StatementMapper statementMapper = getStatementMapper().forType(entityClass);
@@ -85,10 +91,7 @@ public final class R2dbcSQLExecutor {
 
         StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).withProjection(columnName).limit(1);
 
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
+        selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -96,6 +99,10 @@ public final class R2dbcSQLExecutor {
     }
 
     <T> Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+        return doCount(query, entityClass, tableName, false);
+    }
+
+    <T> Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
         RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
         StatementMapper statementMapper = getStatementMapper().forType(entityClass);
@@ -105,10 +112,7 @@ public final class R2dbcSQLExecutor {
             return spec.withProjection(Functions.count(countExpression));
         });
 
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
+        selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -116,6 +120,10 @@ public final class R2dbcSQLExecutor {
     }
 
     <T, R> RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType) {
+        return doSelect(query, entityClass, tableName, returnType, false);
+    }
+
+    <T, R> RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType, boolean ignoreLogicDelete) {
 
         boolean isQueryEntity = false;
 
@@ -125,7 +133,8 @@ public final class R2dbcSQLExecutor {
 
         StatementMapper statementMapper = isQueryEntity ? getStatementMapper() : getStatementMapper().forType(entityClass);
 
-        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
+        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName)
+                .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
 
         if (query.getLimit() > 0) {
             selectSpec = selectSpec.limit(query.getLimit());
@@ -139,10 +148,7 @@ public final class R2dbcSQLExecutor {
             selectSpec = selectSpec.withSort(query.getSort());
         }
 
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
+        selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -194,14 +200,22 @@ public final class R2dbcSQLExecutor {
     }
 
     <T> Mono<Long> doDelete(T entity, SqlIdentifier tableName) {
+        return doDelete(entity, tableName, false);
+    }
+
+    <T> Mono<Long> doDelete(T entity, SqlIdentifier tableName, boolean ignoreLogicDelete) {
         RelationalPersistentEntity<T> persistentEntity = getRequiredEntity(entity);
-        return doDelete(getByIdQuery(entity, persistentEntity), persistentEntity.getType(), tableName);
+        return doDelete(getByIdQuery(entity, persistentEntity), persistentEntity.getType(), tableName, ignoreLogicDelete);
     }
 
     Mono<Long> doDelete(Query query, Class<?> entityClass, SqlIdentifier tableName) {
+        return doDelete(query, entityClass, tableName, false);
+    }
+
+    Mono<Long> doDelete(Query query, Class<?> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
         // 如果开启了逻辑删除，变为执行更新操作
-        if (isLogicDeleteEnable(entityClass)) {
+        if (isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
             return doUpdate(query, createLogicDeleteUpdate(entityClass), entityClass, tableName);
         }
 
@@ -304,31 +318,32 @@ public final class R2dbcSQLExecutor {
         return template.getDataAccessStrategy().getIdentifierColumns(clazz);
     }
 
-    <T> SqlIdentifier getTableName(Class<T> entityClass) {
+    public <T> SqlIdentifier getTableName(Class<T> entityClass) {
         return getRequiredEntity(entityClass).getTableName();
     }
 
-
-    @Nullable
-    private <T> RelationalPersistentEntity<T> getPersistentEntity(Class<T> entityClass) {
-        return (RelationalPersistentEntity<T>) getMappingContext().getPersistentEntity(entityClass);
-    }
-
-    private <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
-        Class<?> entityType = ProxyUtils.getUserClass(entity);
-        return (RelationalPersistentEntity) getRequiredEntity(entityType);
-    }
-
-    private <T> RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
-        return (RelationalPersistentEntity<T>) getMappingContext().getRequiredPersistentEntity(entityClass);
-    }
-
-    private <T> SqlIdentifier getTableNameOrEmpty(Class<T> entityClass) {
+    public <T> SqlIdentifier getTableNameOrEmpty(Class<T> entityClass) {
 
         RelationalPersistentEntity<T> entity = getPersistentEntity(entityClass);
 
         return entity != null ? entity.getTableName() : SqlIdentifier.EMPTY;
     }
+
+
+    @Nullable
+    public <T> RelationalPersistentEntity<T> getPersistentEntity(Class<T> entityClass) {
+        return (RelationalPersistentEntity<T>) getMappingContext().getPersistentEntity(entityClass);
+    }
+
+    public <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
+        Class<?> entityType = ProxyUtils.getUserClass(entity);
+        return (RelationalPersistentEntity) getRequiredEntity(entityType);
+    }
+
+    public <T> RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
+        return (RelationalPersistentEntity<T>) getMappingContext().getRequiredPersistentEntity(entityClass);
+    }
+
 
     private <T> boolean isQueryEntity(Class<T> entityClass) {
         RelationalPersistentEntity<T> persistentEntity = getPersistentEntity(entityClass);
@@ -517,22 +532,57 @@ public final class R2dbcSQLExecutor {
     }
 
     /**
+     * 获取对象中逻辑删除的字段和值
+     *
+     * @param entityClass entityClass
+     * @return 第一个值是字段名，第二个值是逻辑删除的删除值
+     */
+    private Pair<String, Object> getLogicDeleteColumn(Class<?> entityClass, LogicDeleteValue whichValue) {
+        RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
+        RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
+        // 默认取值是全局配置的逻辑删除字段
+        R2dbcMappingProperties.LogicDelete logicDeleteConfig = r2dbcMappingProperties.logicDelete();
+        String logicDeleteField = logicDeleteConfig.field();
+        Object value = switch (whichValue) {
+            case DELETE_VALUE -> logicDeleteConfig.deleteValue();
+            case UNDELETE_VALUE -> logicDeleteConfig.undeleteValue();
+        };
+        // 如果配置了注解，则以注解为准
+        if (logicDeleteProperty != null) {
+            logicDeleteField = logicDeleteProperty.getName();
+            TableLogic tableLogicAnnotation = logicDeleteProperty.getRequiredAnnotation(TableLogic.class);
+            value = switch (whichValue) {
+                case DELETE_VALUE -> tableLogicAnnotation.deleteValue().getSupplier().get();
+                case UNDELETE_VALUE -> tableLogicAnnotation.undeleteValue().getSupplier().get();
+            };
+        }
+        return Pair.of(logicDeleteField, value);
+    }
+
+
+    /**
      * 创建逻辑删除的Update对象
      *
      * @param entityClass entityClass
      */
     private Update createLogicDeleteUpdate(Class<?> entityClass) {
-        RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
-        RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
-        // 默认取值是全局配置的逻辑删除字段
-        String logicDeleteField = r2dbcMappingProperties.logicDelete().field();
-        Object value = r2dbcMappingProperties.logicDelete().deleteValue();
-        // 如果配置了注解，则以注解为准
-        if (logicDeleteProperty != null) {
-            logicDeleteField = logicDeleteProperty.getName();
-            value = logicDeleteProperty.getRequiredAnnotation(TableLogic.class).deleteValue().getSupplier().get();
+        Pair<String, Object> logicDeleteColumn = getLogicDeleteColumn(entityClass, LogicDeleteValue.DELETE_VALUE);
+        return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
+    }
+
+    private <T> StatementMapper.SelectSpec selectWithCriteria(StatementMapper.SelectSpec selectSpec, Query query, Class<T> entityClass, boolean ignoreLogicDelete) {
+        Optional<CriteriaDefinition> criteriaOptional = query.getCriteria();
+        if (isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+            criteriaOptional = query.getCriteria()
+                    .or(() -> Optional.of(Criteria.empty()))
+                    .map(criteriaDefinition -> (Criteria) criteriaDefinition)
+                    .map(criteria -> {
+                        // 获取查询对象中的逻辑删除字段和值，写入到criteria中
+                        Pair<String, Object> logicDeleteColumn = getLogicDeleteColumn(entityClass, LogicDeleteValue.UNDELETE_VALUE);
+                        return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                    });
         }
-        return Update.update(logicDeleteField, value);
+        return criteriaOptional.map(selectSpec::withCriteria).orElse(selectSpec);
     }
 
     /**
@@ -541,9 +591,15 @@ public final class R2dbcSQLExecutor {
      * 1、类注解优先，如果类配置了${@link TableLogic}注解的enable属性为false，则不执行逻辑删除
      * 2、全局配置，如果没有配置注解，看全局是否配置逻辑删除，以全局的配置为主
      *
-     * @param entityClass entityClass
+     * @param entityClass       entityClass
+     * @param ignoreLogicDelete 是否忽略逻辑删除，这个的优先级高于所有配置
      */
-    private boolean isLogicDeleteEnable(Class<?> entityClass) {
+    private boolean isLogicDeleteEnable(Class<?> entityClass, boolean ignoreLogicDelete) {
+
+        if (ignoreLogicDelete) {
+            return false;
+        }
+
         RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         if (logicDeleteProperty == null) {
@@ -568,6 +624,10 @@ public final class R2dbcSQLExecutor {
         return String.format("Failed to update table [%s]; Row with Id [%s] does not exist", persistentEntity.getQualifiedTableName(), persistentEntity.getIdentifierAccessor(entity).getIdentifier());
     }
 
+    private enum LogicDeleteValue {
+        UNDELETE_VALUE,
+        DELETE_VALUE
+    }
 
     private record UnwrapOptionalFetchSpecAdapter<T>(RowsFetchSpec<Optional<T>> delegate) implements RowsFetchSpec<T> {
 

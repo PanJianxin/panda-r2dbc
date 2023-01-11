@@ -81,19 +81,12 @@ public class TestAPI {
 
     @GetMapping("/order/{id}")
     public Mono<Order> getOrder(@PathVariable("id") String id) {
-//        return Mono.just(new Order());
-//        return r2dbcEntityTemplate.selectOne(Query.query(Criteria.where(Order.ID).is(id)), Order.class)
-//                .log();
         return orderService.selectById(id)
                 .doOnSuccess(order -> {
-                    orderService.forEachColum(order, System.out::println);
+                    if (order != null){
+                        orderService.forEachColum(order, System.out::println);
+                    }
                 });
-//        return orderRepository.findById(id)
-//                .map(it->{
-//                    System.out.println(it);
-//                    return it;
-//                })
-//                .log();
     }
 
 

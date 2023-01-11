@@ -1,10 +1,6 @@
 repositories {
     mavenCentral()
 }
-//plugins {
-//    kotlin("jvm") version KotlinVersion.KOTLIN
-//}
-
 
 dependencies {
     api(SpringLibrary.SPRING_DATA_RELATIONAL)

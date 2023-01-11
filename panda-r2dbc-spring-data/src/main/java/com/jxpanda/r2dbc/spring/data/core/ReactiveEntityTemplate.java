@@ -20,23 +20,14 @@ import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
-import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
-import org.springframework.data.r2dbc.query.UpdateMapper;
-import org.springframework.data.relational.core.dialect.RenderContextFactory;
-import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
-import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
-import org.springframework.data.util.ProxyUtils;
-import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -49,8 +40,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     private final R2dbcMappingProperties r2dbcMappingProperties;
 
     private final R2dbcSQLExecutor sqlExecutor;
-
-    private @Nullable ReactiveEntityCallbacks entityCallbacks;
 
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter, R2dbcMappingProperties r2dbcMappingProperties) {
@@ -93,10 +82,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
         return r2dbcMappingProperties;
     }
 
-    private <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
-        Class<?> entityType = ProxyUtils.getUserClass(entity);
-        return (RelationalPersistentEntity<T>) getDataAccessStrategy().getConverter().getMappingContext().getRequiredPersistentEntity(entityType);
-    }
 
     // -------------------------------------------------------------------------
     // Methods dealing with org.springframework.data.r2dbc.core.FluentR2dbcOperations
@@ -130,7 +115,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     @Override
     public <T> Mono<T> insert(T entity) throws DataAccessException {
-        return insert(getRequiredEntity(entity).getType()).using(entity);
+        return insert(this.sqlExecutor.getRequiredEntity(entity).getType()).using(entity);
     }
 
     @Override
@@ -155,7 +140,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     @Override
     public <T> Mono<T> delete(T entity) throws DataAccessException {
-        return delete(getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
+        return delete(this.sqlExecutor.getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
     }
 
 

@@ -316,7 +316,7 @@ public final class MySqlConnection implements Connection, ConnectionState {
      * MySQL does not have any way to query the isolation level of the current transaction, only inferred from
      * past statements, so driver can not make sure the result is right.
      * <p>
-     * See https://bugs.mysql.com/bug.php?id=53341
+     * See <a href="https://bugs.mysql.com/bug.php?id=53341">...</a>
      * <p>
      * {@inheritDoc}
      */

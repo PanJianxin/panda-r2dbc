@@ -24,7 +24,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.Nonnull;
+import org.springframework.lang.NonNull;
 
 /**
  * Implementation of {@link R2dbcUpdateOperation}.
@@ -43,9 +43,9 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
      * (non-Javadoc)
      * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation#update(java.lang.Class)
      */
-    @Nonnull
+    @NonNull
     @Override
-    public R2dbcUpdate update(@Nonnull Class<?> domainType) {
+    public R2dbcUpdate update(@NonNull Class<?> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
@@ -65,9 +65,9 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation.UpdateWithTable#inTable(SqlIdentifier)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public UpdateWithQuery inTable(@Nonnull SqlIdentifier tableName) {
+        public UpdateWithQuery inTable(@NonNull SqlIdentifier tableName) {
 
             Assert.notNull(tableName, "Table name must not be null");
 
@@ -78,18 +78,18 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation.UpdateWithQuery#matching(org.springframework.data.r2dbc.query.Query)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public TerminatingUpdate matching(@Nonnull Query query) {
+        public TerminatingUpdate matching(@NonNull Query query) {
 
             Assert.notNull(query, "Query must not be null");
 
             return new R2dbcUpdateSupport<>(getTemplate(), getDomainType(), query, getTableName());
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Mono<Long> apply(@Nonnull Update update) {
+        public Mono<Long> apply(@NonNull Update update) {
             Assert.notNull(update, "Update must not be null");
             return getExecutor().doUpdate(getQuery(), update, getDomainType(), getTableName());
         }

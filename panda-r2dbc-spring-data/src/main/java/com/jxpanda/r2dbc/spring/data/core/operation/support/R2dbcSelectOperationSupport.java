@@ -26,7 +26,7 @@ import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.Nonnull;
+import org.springframework.lang.NonNull;
 import java.util.function.Function;
 
 /**
@@ -45,9 +45,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
      * (non-Javadoc)
      * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation#select(java.lang.Class)
      */
-    @Nonnull
+    @NonNull
     @Override
-    public <T> ReactiveSelect<T> select(@Nonnull Class<T> domainType) {
+    public <T> ReactiveSelect<T> select(@NonNull Class<T> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
@@ -66,9 +66,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.SelectWithTable#from(java.lang.String)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public SelectWithProjection<R> from(@Nonnull SqlIdentifier tableName) {
+        public SelectWithProjection<R> from(@NonNull SqlIdentifier tableName) {
 
             Assert.notNull(tableName, "Table name must not be null");
 
@@ -79,9 +79,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.SelectWithProjection#as(java.lang.Class)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public <E> SelectWithQuery<E> as(@Nonnull Class<E> returnType) {
+        public <E> SelectWithQuery<E> as(@NonNull Class<E> returnType) {
 
             Assert.notNull(returnType, "ReturnType must not be null");
 
@@ -92,9 +92,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.SelectWithQuery#matching(org.springframework.data.r2dbc.query.Query)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public TerminatingSelect<R> matching(@Nonnull Query query) {
+        public TerminatingSelect<R> matching(@NonNull Query query) {
 
             Assert.notNull(query, "Query must not be null");
 
@@ -105,7 +105,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.TerminatingSelect#count()
          */
-        @Nonnull
+        @NonNull
         @Override
         public Mono<Long> count() {
             return getExecutor().doCount(getQuery(), getDomainType(), getTableName());
@@ -115,7 +115,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.TerminatingSelect#exists()
          */
-        @Nonnull
+        @NonNull
         @Override
         public Mono<Boolean> exists() {
             return getExecutor().doExists(getQuery(), getDomainType(), getTableName());
@@ -125,7 +125,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.TerminatingSelect#first()
          */
-        @Nonnull
+        @NonNull
         @Override
         public Mono<R> first() {
             return selectMono(getQuery().limit(1), getDomainType(), getTableName(), getReturnType(), RowsFetchSpec::first);
@@ -135,7 +135,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.TerminatingSelect#one()
          */
-        @Nonnull
+        @NonNull
         @Override
         public Mono<R> one() {
             return selectMono(getQuery().limit(2), getDomainType(), getTableName(), getReturnType(), RowsFetchSpec::one);
@@ -145,7 +145,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.TerminatingSelect#all()
          */
-        @Nonnull
+        @NonNull
         @Override
         public Flux<R> all() {
             return selectFlux(getQuery(), getDomainType(), getTableName(), getReturnType(), RowsFetchSpec::all);

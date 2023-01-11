@@ -1,7 +1,7 @@
 object BomVersion {
     const val R2DBC = "Borca-SR2"
     const val REACTOR = "2022.0.0"
-    const val NETTY = "4.1.85.Final"
+    const val NETTY = "4.1.86.Final"
 }
 
 object Bom {

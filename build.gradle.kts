@@ -14,6 +14,15 @@ allprojects {
         Repositories.setRepositories(this)
     }
 
+    configurations {
+        all {
+            resolutionStrategy {
+                force(SpringLibrary.SPRING_DATA_R2DBC)
+                force(SpringLibrary.SPRING_R2DBC)
+            }
+        }
+    }
+
 }
 
 
@@ -43,12 +52,6 @@ subprojects {
         implementation(platform(Bom.NETTY))
         implementation(BomLibrary.NETTY_HANDLER)
 
-        // https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
-//        implementation("jakarta.annotation:jakarta.annotation-api:2.1.1")
-
-
-//        testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-//        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.2")
     }
 
     publishing {

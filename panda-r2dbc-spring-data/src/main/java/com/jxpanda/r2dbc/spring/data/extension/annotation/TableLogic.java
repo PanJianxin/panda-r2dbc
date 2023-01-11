@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.extension.annotation;
 
+import com.jxpanda.r2dbc.spring.data.extension.constant.DateTimeConstant;
 import com.jxpanda.r2dbc.spring.data.extension.support.EnvironmentKit;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import java.lang.annotation.Target;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.function.Supplier;
 
@@ -59,52 +61,52 @@ public @interface TableLogic {
 
         /**
          * null
-         * */
+         */
         NULL(() -> null),
 
         /**
          * 0
-         * */
+         */
         ZERO(() -> 0),
         /**
          * 1
-         * */
+         */
         ONE(() -> 1),
 
         /**
          * false
-         * */
+         */
         FALSE(() -> false),
         /**
          * true
-         * */
+         */
         TRUE(() -> true),
 
         /**
          * 1970-01-01 00:00:00
-         * */
-        DATE_1970(() -> ValueConstant.DATE_1970_01_01_00_00_00),
+         */
+        DATE_1970(() -> DateTimeConstant.DATE_1970_01_01_00_00_00),
         /**
          * now
-         * */
+         */
         DATE_NOW(Date::new),
 
         /**
          * 1970-01-01 00:00:00
-         * */
-        DATETIME_1970(() -> ValueConstant.DATETIME_1970_01_01_00_00_00),
+         */
+        DATETIME_1970(() -> DateTimeConstant.DATETIME_1970_01_01_00_00_00),
         /**
          * now
-         * */
+         */
         DATETIME_NOW(LocalDateTime::now),
 
         /**
          * 自定义值，从配置文件取值
-         * */
+         */
         CUSTOMER_UNDELETE(() -> ValueConstant.UNDELETE),
         /**
          * 自定义值，从配置文件取值
-         * */
+         */
         CUSTOMER_DELETE(() -> ValueConstant.DELETE);
 
 
@@ -117,20 +119,12 @@ public @interface TableLogic {
         private static final String PROPERTIES_KEY_UNDELETE_VALUE = "panda.r2dbc.logic-delete.undelete-value";
         private static final String PROPERTIES_KEY_DELETE_VALUE = "panda.r2dbc.logic-delete.delete-value";
 
-        private static final Date DATE_1970_01_01_00_00_00;
-        private static final LocalDateTime DATETIME_1970_01_01_00_00_00 = LocalDateTime.parse("1970-01-01 00:00:00");
-
         private static final Object UNDELETE;
         private static final Object DELETE;
 
         static {
             UNDELETE = EnvironmentKit.getOrDefault(PROPERTIES_KEY_UNDELETE_VALUE, "", Object.class);
             DELETE = EnvironmentKit.getOrDefault(PROPERTIES_KEY_DELETE_VALUE, "", Object.class);
-            try {
-                DATE_1970_01_01_00_00_00 = new SimpleDateFormat().parse("1970-01-01 00:00:00");
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
         }
 
     }

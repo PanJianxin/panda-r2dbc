@@ -18,14 +18,13 @@ package com.jxpanda.r2dbc.spring.data.core.operation.support;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
-import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.Nonnull;
 
 /**
  * Implementation of {@link ReactiveDeleteOperation}.
@@ -43,9 +42,9 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
      * (non-Javadoc)
      * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation#delete(java.lang.Class)
      */
-    @Nonnull
+    @NonNull
     @Override
-    public R2dbcDeleteOperation.R2dbcDelete delete(@Nonnull Class<?> domainType) {
+    public R2dbcDeleteOperation.R2dbcDelete delete(@NonNull Class<?> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
@@ -65,9 +64,9 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation.DeleteWithTable#from(SqlIdentifier)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public DeleteWithQuery from(@Nonnull SqlIdentifier tableName) {
+        public DeleteWithQuery from(@NonNull SqlIdentifier tableName) {
 
             Assert.notNull(tableName, "Table name must not be null");
 
@@ -78,9 +77,9 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation.DeleteWithQuery#matching(org.springframework.data.r2dbc.query.Query)
          */
-        @Nonnull
+        @NonNull
         @Override
-        public TerminatingDelete matching(@Nonnull Query query) {
+        public TerminatingDelete matching(@NonNull Query query) {
 
             Assert.notNull(query, "Query must not be null");
 
@@ -91,7 +90,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation.TerminatingDelete#all()
          */
-        @Nonnull
+        @NonNull
         @Override
         public Mono<Long> all() {
             return getExecutor().doDelete(getQuery(), getDomainType(), getTableName());
