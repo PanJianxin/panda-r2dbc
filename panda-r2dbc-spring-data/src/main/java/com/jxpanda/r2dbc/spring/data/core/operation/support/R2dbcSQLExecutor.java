@@ -5,11 +5,9 @@ import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableLogic;
-import io.r2dbc.postgresql.util.Assert;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import lombok.Getter;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.TransientDataAccessResourceException;
@@ -22,6 +20,7 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.StatementMapper;
+import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -31,11 +30,13 @@ import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.*;
 import org.springframework.data.util.ProxyUtils;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.r2dbc.core.Parameter;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.RowsFetchSpec;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -47,7 +48,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation", "unused"})
-class R2dbcSQLExecutor {
+public final class R2dbcSQLExecutor {
 
     private static final String SQL_AS = " AS ";
 
@@ -57,30 +58,249 @@ class R2dbcSQLExecutor {
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
 
-    final MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext;
+    private final MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext;
 
-    final StatementMapper statementMapper;
+    private final StatementMapper statementMapper;
 
     private final R2dbcConverter converter;
 
     private final DatabaseClient databaseClient;
 
-    R2dbcSQLExecutor(ReactiveEntityTemplate template) {
+    public R2dbcSQLExecutor(ReactiveEntityTemplate template, R2dbcDialect dialect, R2dbcConverter converter) {
         this.template = template;
         this.databaseClient = template.getDatabaseClient();
-        this.converter = template.getDataAccessStrategy().getConverter();
+        this.converter = converter;
         this.mappingContext = this.converter.getMappingContext();
-        this.statementMapper = template.getDataAccessStrategy().getStatementMapper();
         this.projectionFactory = template.getProjectionFactory();
         this.r2dbcMappingProperties = template.getR2dbcMappingProperties();
+        this.statementMapper = template.getDataAccessStrategy().getStatementMapper();
+    }
+
+    <T> Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+
+        RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
+        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+
+        SqlIdentifier columnName = entity.hasIdProperty() ? entity.getRequiredIdProperty().getColumnName() : SqlIdentifier.unquoted("*");
+
+        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).withProjection(columnName).limit(1);
+
+        Optional<CriteriaDefinition> criteria = query.getCriteria();
+        if (criteria.isPresent()) {
+            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
+        }
+
+        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+
+        return getDatabaseClient().sql(operation).map((r, md) -> r).first().hasElement();
+    }
+
+    <T> Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+
+        RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
+        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+
+        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> {
+            Expression countExpression = entity.hasIdProperty() ? table.column(entity.getRequiredIdProperty().getColumnName()) : Expressions.asterisk();
+            return spec.withProjection(Functions.count(countExpression));
+        });
+
+        Optional<CriteriaDefinition> criteria = query.getCriteria();
+        if (criteria.isPresent()) {
+            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
+        }
+
+        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+
+        return getDatabaseClient().sql(operation).map((r, md) -> r.get(0, Long.class)).first().defaultIfEmpty(0L);
+    }
+
+    <T, R> RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType) {
+
+        boolean isQueryEntity = false;
+
+        if (entityClass.isAnnotationPresent(TableEntity.class)) {
+            isQueryEntity = entityClass.getAnnotation(TableEntity.class).isQuery();
+        }
+
+        StatementMapper statementMapper = isQueryEntity ? getStatementMapper() : getStatementMapper().forType(entityClass);
+
+        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
+
+        if (query.getLimit() > 0) {
+            selectSpec = selectSpec.limit(query.getLimit());
+        }
+
+        if (query.getOffset() > 0) {
+            selectSpec = selectSpec.offset(query.getOffset());
+        }
+
+        if (query.isSorted()) {
+            selectSpec = selectSpec.withSort(query.getSort());
+        }
+
+        Optional<CriteriaDefinition> criteria = query.getCriteria();
+        if (criteria.isPresent()) {
+            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
+        }
+
+        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+
+        return getRowsFetchSpec(getDatabaseClient().sql(operation), entityClass, returnType);
     }
 
 
-//    ReactiveDataAccessStrategy getDataAccessStrategy() {
-//        return this.reactiveEntityTemplate.getDataAccessStrategy();
-//    }
+    <T> Mono<T> doInsert(T entity, SqlIdentifier tableName) {
 
-    List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
+        RelationalPersistentEntity<T> persistentEntity = getRequiredEntity(entity);
+
+        return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
+
+            T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
+
+            OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(initializedEntity);
+
+            potentiallyRemoveId(persistentEntity, outboundRow);
+
+            return template.maybeCallBeforeSave(initializedEntity, outboundRow, tableName).flatMap(entityToSave -> doInsert(entityToSave, tableName, outboundRow));
+        });
+    }
+
+    <T> Mono<T> doInsert(T entity, SqlIdentifier tableName, OutboundRow outboundRow) {
+
+        StatementMapper mapper = getStatementMapper();
+        StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
+
+        for (SqlIdentifier column : outboundRow.keySet()) {
+            Parameter settableValue = outboundRow.get(column);
+            if (settableValue.hasValue()) {
+                insert = insert.withColumn(column, settableValue);
+            }
+        }
+
+        PreparedOperation<?> operation = mapper.getMappedObject(insert);
+
+
+        List<SqlIdentifier> identifierColumns = getIdentifierColumns(entity.getClass());
+
+        return getDatabaseClient().sql(operation).filter(statement -> {
+
+            if (identifierColumns.isEmpty()) {
+                return statement.returnGeneratedValues();
+            }
+
+            return statement.returnGeneratedValues(template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
+        }).map(getConverter().populateIdIfNecessary(entity)).all().last(entity).flatMap(saved -> template.maybeCallAfterSave(saved, outboundRow, tableName));
+    }
+
+    <T> Mono<Long> doDelete(T entity, SqlIdentifier tableName) {
+        RelationalPersistentEntity<T> persistentEntity = getRequiredEntity(entity);
+        return doDelete(getByIdQuery(entity, persistentEntity), persistentEntity.getType(), tableName);
+    }
+
+    Mono<Long> doDelete(Query query, Class<?> entityClass, SqlIdentifier tableName) {
+
+        // 如果开启了逻辑删除，变为执行更新操作
+        if (isLogicDeleteEnable(entityClass)) {
+            return doUpdate(query, createLogicDeleteUpdate(entityClass), entityClass, tableName);
+        }
+
+        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+
+        StatementMapper.DeleteSpec deleteSpec = statementMapper.createDelete(tableName);
+
+        Optional<CriteriaDefinition> criteria = query.getCriteria();
+        if (criteria.isPresent()) {
+            deleteSpec = criteria.map(deleteSpec::withCriteria).orElse(deleteSpec);
+        }
+
+        PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
+        return getDatabaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
+    }
+
+
+    <T> Mono<T> doUpdate(T entity, SqlIdentifier tableName) {
+
+
+        RelationalPersistentEntity<T> persistentEntity = getRequiredEntity(entity);
+
+        return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
+
+            T entityToUse;
+            Criteria matchingVersionCriteria;
+
+            if (persistentEntity.hasVersionProperty()) {
+                matchingVersionCriteria = createMatchingVersionCriteria(onBeforeConvert, persistentEntity);
+                entityToUse = incrementVersion(persistentEntity, onBeforeConvert);
+            } else {
+                entityToUse = onBeforeConvert;
+                matchingVersionCriteria = null;
+            }
+
+            OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(entityToUse);
+
+            return template.maybeCallBeforeSave(entityToUse, outboundRow, tableName).flatMap(onBeforeSave -> {
+
+                SqlIdentifier idColumn = persistentEntity.getRequiredIdProperty().getColumnName();
+                Parameter id = outboundRow.remove(idColumn);
+
+                persistentEntity.forEach(p -> {
+                    if (p.isInsertOnly()) {
+                        outboundRow.remove(p.getColumnName());
+                    }
+                });
+
+                Criteria criteria = Criteria.where(template.getDataAccessStrategy().toSql(idColumn)).is(id);
+
+                if (matchingVersionCriteria != null) {
+                    criteria = criteria.and(matchingVersionCriteria);
+                }
+
+                return doUpdate(onBeforeSave, tableName, persistentEntity, criteria, outboundRow);
+            });
+        });
+    }
+
+    Mono<Long> doUpdate(Query query, Update update, Class<?> entityClass, SqlIdentifier tableName) {
+
+        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+
+        StatementMapper.UpdateSpec selectSpec = statementMapper.createUpdate(tableName, update);
+
+        Optional<CriteriaDefinition> criteria = query.getCriteria();
+        if (criteria.isPresent()) {
+            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
+        }
+
+        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+        return getDatabaseClient().sql(operation).fetch().rowsUpdated();
+    }
+
+    <T> Mono<T> doUpdate(T entity, SqlIdentifier tableName, RelationalPersistentEntity<T> persistentEntity, Criteria criteria, OutboundRow outboundRow) {
+
+
+        Update update = Update.from((Map) outboundRow);
+
+        StatementMapper mapper = getStatementMapper();
+        StatementMapper.UpdateSpec updateSpec = mapper.createUpdate(tableName, update).withCriteria(criteria);
+
+        PreparedOperation<?> operation = mapper.getMappedObject(updateSpec);
+
+        return getDatabaseClient().sql(operation).fetch().rowsUpdated().handle((rowsUpdated, sink) -> {
+
+            if (rowsUpdated != 0) {
+                return;
+            }
+
+            if (persistentEntity.hasVersionProperty()) {
+                sink.error(new OptimisticLockingFailureException(formatOptimisticLockingExceptionMessage(entity, persistentEntity)));
+            } else {
+                sink.error(new TransientDataAccessResourceException(formatTransientEntityExceptionMessage(entity, persistentEntity)));
+            }
+        }).then(template.maybeCallAfterSave(entity, outboundRow, tableName));
+    }
+
+    private List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
         return template.getDataAccessStrategy().getIdentifierColumns(clazz);
     }
 
@@ -90,16 +310,16 @@ class R2dbcSQLExecutor {
 
 
     @Nullable
-    <T> RelationalPersistentEntity<T> getPersistentEntity(Class<T> entityClass) {
+    private <T> RelationalPersistentEntity<T> getPersistentEntity(Class<T> entityClass) {
         return (RelationalPersistentEntity<T>) getMappingContext().getPersistentEntity(entityClass);
     }
 
-    <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
+    private <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
         Class<?> entityType = ProxyUtils.getUserClass(entity);
         return (RelationalPersistentEntity) getRequiredEntity(entityType);
     }
 
-    <T> RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
+    private <T> RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
         return (RelationalPersistentEntity<T>) getMappingContext().getRequiredPersistentEntity(entityClass);
     }
 
@@ -296,6 +516,48 @@ class R2dbcSQLExecutor {
         return (T) propertyAccessor.getBean();
     }
 
+    /**
+     * 创建逻辑删除的Update对象
+     *
+     * @param entityClass entityClass
+     */
+    private Update createLogicDeleteUpdate(Class<?> entityClass) {
+        RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
+        RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
+        // 默认取值是全局配置的逻辑删除字段
+        String logicDeleteField = r2dbcMappingProperties.logicDelete().field();
+        Object value = r2dbcMappingProperties.logicDelete().deleteValue();
+        // 如果配置了注解，则以注解为准
+        if (logicDeleteProperty != null) {
+            logicDeleteField = logicDeleteProperty.getName();
+            value = logicDeleteProperty.getRequiredAnnotation(TableLogic.class).deleteValue().getSupplier().get();
+        }
+        return Update.update(logicDeleteField, value);
+    }
+
+    /**
+     * 是否使用逻辑删除
+     * 判定依据是：
+     * 1、类注解优先，如果类配置了${@link TableLogic}注解的enable属性为false，则不执行逻辑删除
+     * 2、全局配置，如果没有配置注解，看全局是否配置逻辑删除，以全局的配置为主
+     *
+     * @param entityClass entityClass
+     */
+    private boolean isLogicDeleteEnable(Class<?> entityClass) {
+        RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
+        RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
+        if (logicDeleteProperty == null) {
+            // 如果没有配置逻辑删除的字段，以全局配置为准
+            R2dbcMappingProperties.LogicDelete logicDeleteConfig = r2dbcMappingProperties.logicDelete();
+            // 开启了逻辑删除配置，并且配置了逻辑删除字段才生效
+            return logicDeleteConfig.enable() && !ObjectUtils.isEmpty(logicDeleteConfig.field());
+        } else {
+            // 如果配置了逻辑删除字段，以注解的配置为准
+            TableLogic tableLogicAnnotation = logicDeleteProperty.getRequiredAnnotation(TableLogic.class);
+            return tableLogicAnnotation.enable();
+        }
+    }
+
     private <T> String formatOptimisticLockingExceptionMessage(T entity, RelationalPersistentEntity<T> persistentEntity) {
 
         return String.format("Failed to update table [%s]; Version does not match for row with Id [%s]", persistentEntity.getQualifiedTableName(), persistentEntity.getIdentifierAccessor(entity).getIdentifier());
@@ -307,253 +569,21 @@ class R2dbcSQLExecutor {
     }
 
 
-    <T> Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
-
-        RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
-
-        SqlIdentifier columnName = entity.hasIdProperty() ? entity.getRequiredIdProperty().getColumnName() : SqlIdentifier.unquoted("*");
-
-        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).withProjection(columnName).limit(1);
-
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-
-        return getDatabaseClient().sql(operation).map((r, md) -> r).first().hasElement();
-    }
-
-    <T> Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
-
-        RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
-
-        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> {
-            Expression countExpression = entity.hasIdProperty() ? table.column(entity.getRequiredIdProperty().getColumnName()) : Expressions.asterisk();
-            return spec.withProjection(Functions.count(countExpression));
-        });
-
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-
-        return getDatabaseClient().sql(operation).map((r, md) -> r.get(0, Long.class)).first().defaultIfEmpty(0L);
-    }
-
-    <T, R> RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType) {
-
-        boolean isQueryEntity = false;
-
-        if (entityClass.isAnnotationPresent(TableEntity.class)) {
-            isQueryEntity = entityClass.getAnnotation(TableEntity.class).isQuery();
-        }
-
-        StatementMapper statementMapper = isQueryEntity ? getStatementMapper() : getStatementMapper().forType(entityClass);
-
-        StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
-
-        if (query.getLimit() > 0) {
-            selectSpec = selectSpec.limit(query.getLimit());
-        }
-
-        if (query.getOffset() > 0) {
-            selectSpec = selectSpec.offset(query.getOffset());
-        }
-
-        if (query.isSorted()) {
-            selectSpec = selectSpec.withSort(query.getSort());
-        }
-
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-
-        return getRowsFetchSpec(getDatabaseClient().sql(operation), entityClass, returnType);
-    }
-
-
-    <T> Mono<T> doInsert(T entity, SqlIdentifier tableName) {
-
-        RelationalPersistentEntity<T> persistentEntity = getRequiredEntity(entity);
-
-        return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
-
-            T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
-
-            OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(initializedEntity);
-
-            potentiallyRemoveId(persistentEntity, outboundRow);
-
-            return template.maybeCallBeforeSave(initializedEntity, outboundRow, tableName).flatMap(entityToSave -> doInsert(entityToSave, tableName, outboundRow));
-        });
-    }
-
-    <T> Mono<T> doInsert(T entity, SqlIdentifier tableName, OutboundRow outboundRow) {
-
-        StatementMapper mapper = getStatementMapper();
-        StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
-
-        for (SqlIdentifier column : outboundRow.keySet()) {
-            Parameter settableValue = outboundRow.get(column);
-            if (settableValue.hasValue()) {
-                insert = insert.withColumn(column, settableValue);
-            }
-        }
-
-        PreparedOperation<?> operation = mapper.getMappedObject(insert);
-
-
-        List<SqlIdentifier> identifierColumns = getIdentifierColumns(entity.getClass());
-
-        return getDatabaseClient().sql(operation).filter(statement -> {
-
-            if (identifierColumns.isEmpty()) {
-                return statement.returnGeneratedValues();
-            }
-
-            return statement.returnGeneratedValues(template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
-        }).map(getConverter().populateIdIfNecessary(entity)).all().last(entity).flatMap(saved -> template.maybeCallAfterSave(saved, outboundRow, tableName));
-    }
-
-    <T> Mono<Long> doDelete(T entity, SqlIdentifier tableName) {
-        RelationalPersistentEntity<T> persistentEntity = getRequiredEntity(entity);
-        return doDelete(getByIdQuery(entity, persistentEntity), persistentEntity.getType(), tableName);
-    }
-
-    private Update createLogicDeleteUpdate(Class<?> entityClass) {
-        RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
-        requiredEntity.findAnnotation(TableLogic.class);
-        return Update.update("", "");
-    }
-
-    Mono<Long> doDelete(Query query, Class<?> entityClass, SqlIdentifier tableName) {
-
-        // 如果开启了逻辑删除，执行更新操作
-        R2dbcMappingProperties.LogicDelete logicDelete = r2dbcMappingProperties.logicDelete();
-        if (logicDelete.enable()) {
-            return doUpdate(query, Update.update("", ""), entityClass, tableName);
-        }
-
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
-
-        StatementMapper.DeleteSpec deleteSpec = statementMapper.createDelete(tableName);
-
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            deleteSpec = criteria.map(deleteSpec::withCriteria).orElse(deleteSpec);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
-        return getDatabaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
-    }
-
-
-    <T> Mono<T> doUpdate(T entity, SqlIdentifier tableName) {
-
-
-        RelationalPersistentEntity<T> persistentEntity = getRequiredEntity(entity);
-
-        return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
-
-            T entityToUse;
-            Criteria matchingVersionCriteria;
-
-            if (persistentEntity.hasVersionProperty()) {
-                matchingVersionCriteria = createMatchingVersionCriteria(onBeforeConvert, persistentEntity);
-                entityToUse = incrementVersion(persistentEntity, onBeforeConvert);
-            } else {
-                entityToUse = onBeforeConvert;
-                matchingVersionCriteria = null;
-            }
-
-            OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(entityToUse);
-
-            return template.maybeCallBeforeSave(entityToUse, outboundRow, tableName).flatMap(onBeforeSave -> {
-
-                SqlIdentifier idColumn = persistentEntity.getRequiredIdProperty().getColumnName();
-                Parameter id = outboundRow.remove(idColumn);
-
-                persistentEntity.forEach(p -> {
-                    if (p.isInsertOnly()) {
-                        outboundRow.remove(p.getColumnName());
-                    }
-                });
-
-                Criteria criteria = Criteria.where(template.getDataAccessStrategy().toSql(idColumn)).is(id);
-
-                if (matchingVersionCriteria != null) {
-                    criteria = criteria.and(matchingVersionCriteria);
-                }
-
-                return doUpdate(onBeforeSave, tableName, persistentEntity, criteria, outboundRow);
-            });
-        });
-    }
-
-    Mono<Long> doUpdate(Query query, Update update, Class<?> entityClass, SqlIdentifier tableName) {
-
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
-
-        StatementMapper.UpdateSpec selectSpec = statementMapper.createUpdate(tableName, update);
-
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-        return getDatabaseClient().sql(operation).fetch().rowsUpdated();
-    }
-
-    <T> Mono<T> doUpdate(T entity, SqlIdentifier tableName, RelationalPersistentEntity<T> persistentEntity, Criteria criteria, OutboundRow outboundRow) {
-
-
-        Update update = Update.from((Map) outboundRow);
-
-        StatementMapper mapper = getStatementMapper();
-        StatementMapper.UpdateSpec updateSpec = mapper.createUpdate(tableName, update).withCriteria(criteria);
-
-        PreparedOperation<?> operation = mapper.getMappedObject(updateSpec);
-
-        return getDatabaseClient().sql(operation).fetch().rowsUpdated().handle((rowsUpdated, sink) -> {
-
-            if (rowsUpdated != 0) {
-                return;
-            }
-
-            if (persistentEntity.hasVersionProperty()) {
-                sink.error(new OptimisticLockingFailureException(formatOptimisticLockingExceptionMessage(entity, persistentEntity)));
-            } else {
-                sink.error(new TransientDataAccessResourceException(formatTransientEntityExceptionMessage(entity, persistentEntity)));
-            }
-        }).then(template.maybeCallAfterSave(entity, outboundRow, tableName));
-    }
-
-
     private record UnwrapOptionalFetchSpecAdapter<T>(RowsFetchSpec<Optional<T>> delegate) implements RowsFetchSpec<T> {
 
-        @NotNull
+        @NonNull
         @Override
         public Mono<T> one() {
             return delegate.one().handle((optional, sink) -> optional.ifPresent(sink::next));
         }
 
-        @NotNull
+        @NonNull
         @Override
         public Mono<T> first() {
             return delegate.first().handle((optional, sink) -> optional.ifPresent(sink::next));
         }
 
-        @NotNull
+        @NonNull
         @Override
         public Flux<T> all() {
             return delegate.all().handle((optional, sink) -> optional.ifPresent(sink::next));

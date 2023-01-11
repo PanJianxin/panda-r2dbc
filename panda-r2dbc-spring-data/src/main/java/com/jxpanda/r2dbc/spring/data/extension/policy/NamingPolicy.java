@@ -5,10 +5,10 @@ import com.jxpanda.r2dbc.spring.data.extension.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import lombok.AllArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.util.ParsingUtils;
+import org.springframework.lang.NonNull;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -40,15 +40,15 @@ public enum NamingPolicy implements NamingStrategy {
     private final Function<String, String> converter;
 
 
-    @NotNull
+    @NonNull
     @Override
     public String getSchema() {
         return "";
     }
 
-    @NotNull
+    @NonNull
     @Override
-    public String getTableName(@NotNull Class<?> type) {
+    public String getTableName(@NonNull Class<?> type) {
         String tableName = null;
         boolean annotationPresent = type.isAnnotationPresent(TableEntity.class);
         if (annotationPresent) {
@@ -59,9 +59,9 @@ public enum NamingPolicy implements NamingStrategy {
     }
 
 
-    @NotNull
+    @NonNull
     @Override
-    public String getColumnName(@NotNull RelationalPersistentProperty property) {
+    public String getColumnName(@NonNull RelationalPersistentProperty property) {
         String columnName = null;
         boolean isId = property.isAnnotationPresent(TableId.class);
         if (isId) {

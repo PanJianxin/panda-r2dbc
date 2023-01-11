@@ -18,20 +18,20 @@ package com.jxpanda.r2dbc.spring.data.core;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
-import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcDeleteOperationSupport;
-import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcInsertOperationSupport;
-import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcSelectOperationSupport;
-import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcUpdateOperationSupport;
-import io.r2dbc.spi.ConnectionFactory;
+import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
+import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
-import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
+import org.springframework.data.r2dbc.query.UpdateMapper;
+import org.springframework.data.relational.core.dialect.RenderContextFactory;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
@@ -48,33 +48,21 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     private final R2dbcMappingProperties r2dbcMappingProperties;
 
+    private final R2dbcSQLExecutor sqlExecutor;
+
     private @Nullable ReactiveEntityCallbacks entityCallbacks;
 
-
-    public ReactiveEntityTemplate(ConnectionFactory connectionFactory, R2dbcMappingProperties r2dbcMappingProperties) {
-        super(connectionFactory);
-        this.projectionFactory = new SpelAwareProxyProjectionFactory();
-        this.r2dbcMappingProperties = r2dbcMappingProperties;
-    }
-
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcMappingProperties r2dbcMappingProperties) {
-        super(databaseClient, dialect);
-        this.projectionFactory = new SpelAwareProxyProjectionFactory();
-        this.r2dbcMappingProperties = r2dbcMappingProperties;
-    }
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter, R2dbcMappingProperties r2dbcMappingProperties) {
         super(databaseClient, dialect, converter);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
         this.r2dbcMappingProperties = r2dbcMappingProperties;
+        this.sqlExecutor = new R2dbcSQLExecutor(this, dialect, converter);
     }
 
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, DefaultReactiveDataAccessStrategy strategy, R2dbcMappingProperties r2dbcMappingProperties) {
-        super(databaseClient, strategy);
-        this.projectionFactory = new SpelAwareProxyProjectionFactory();
-        this.r2dbcMappingProperties = r2dbcMappingProperties;
+    public R2dbcSQLExecutor getSqlExecutor() {
+        return sqlExecutor;
     }
-
 
     @Override
     public <T> Mono<T> maybeCallBeforeConvert(T object, SqlIdentifier table) {
@@ -167,7 +155,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     @Override
     public <T> Mono<T> delete(T entity) throws DataAccessException {
-        return delete(getRequiredEntity(entity).getType()).using(entity);
+        return delete(getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
     }
 
 

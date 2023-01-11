@@ -55,7 +55,7 @@ public class Entity<ID> implements Serializable {
     /**
      * 数据删除时间
      */
-    @TableLogic
+    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
     @TableColumn
     @Builder.Default
     private LocalDateTime deletedDate = DateTimeConstant.DELETED_DATE;

@@ -13,10 +13,6 @@ public enum IdPolicy {
     /**
      * 手动处理
      * */
-    NONE,
-    /**
-     * 使用ID生成器
-     * */
-
+    NONE
 
 }

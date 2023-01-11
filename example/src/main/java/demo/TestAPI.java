@@ -2,6 +2,7 @@ package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.extension.support.EnvironmentKit;
 import demo.model.*;
 import lombok.AllArgsConstructor;
 import org.springframework.data.relational.core.query.Criteria;
@@ -95,6 +96,7 @@ public class TestAPI {
 //                .log();
     }
 
+
     @GetMapping("/order/sum")
     public Mono<OrderSum> getOrderSum() {
         return reactiveEntityTemplate.select(OrderSum.class)
@@ -106,10 +108,10 @@ public class TestAPI {
     }
 
     @GetMapping("/order/delete/{id}")
-    public Mono<OrderSum> delete(@PathVariable("id") String id) {
-        return reactiveEntityTemplate.select(OrderSum.class)
-                .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
-                .one();
+    public Mono<Order> delete(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.delete(Order.builder()
+                .id(id)
+                .build());
 //        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
 //                .fetch()
 //                .one();

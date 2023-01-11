@@ -2,6 +2,7 @@ package com.jxpanda.r2dbc.spring.data.config;
 
 import com.jxpanda.r2dbc.spring.data.extension.policy.NamingPolicy;
 import com.jxpanda.r2dbc.spring.data.extension.policy.ValidationPolicy;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * @param forceQuote       是否在对象映射的过程中强制加上引用符
@@ -20,14 +21,15 @@ public record R2dbcMappingProperties(boolean forceQuote,
                                      NamingPolicy namingPolicy,
                                      ValidationPolicy validationPolicy) {
 
+
     /**
-     * @param enable      是否开启逻辑删除
-     * @param field       逻辑删除的字段，优先级低于entity上的注解
-     * @param normalValue 逻辑删除「正常值」的标记
-     * @param deleteValue 逻辑删除「删除值」的标记
+     * @param enable        是否开启逻辑删除
+     * @param field         逻辑删除的字段，优先级低于entity上的注解
+     * @param undeleteValue 逻辑删除「未删除值」的标记
+     * @param deleteValue   逻辑删除「删除值」的标记
      */
     public record LogicDelete(
-            boolean enable, String field, String normalValue, String deleteValue
+            boolean enable, String field, String undeleteValue, String deleteValue
     ) {
     }
 

@@ -10,11 +10,11 @@ public class R2dbcOperationSupport {
 
     protected final ReactiveEntityTemplate template;
 
-    protected final R2dbcSQLExecutor executor;
+    protected final R2dbcSQLExecutor sqlExecutor;
 
     public R2dbcOperationSupport(ReactiveEntityTemplate template) {
         this.template = template;
-        this.executor = new R2dbcSQLExecutor(template);
+        this.sqlExecutor = template.getSqlExecutor();
     }
 
 
@@ -59,7 +59,7 @@ public class R2dbcOperationSupport {
 
         protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
             this.template = template;
-            this.executor = new R2dbcSQLExecutor(template);
+            this.executor = template.getSqlExecutor();
             this.domainType = domainType;
             this.returnType = returnType;
             this.query = query == null ? Query.empty() : query;

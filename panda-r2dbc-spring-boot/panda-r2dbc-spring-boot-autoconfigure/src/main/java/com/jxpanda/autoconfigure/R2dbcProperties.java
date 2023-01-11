@@ -31,7 +31,7 @@ public class R2dbcProperties {
     /**
      * 逻辑删除配置
      */
-    private R2dbcMappingProperties.LogicDelete logicDelete;
+    private LogicDelete logicDelete;
 
     /**
      * 字段命名策略，默认是不处理
@@ -46,8 +46,23 @@ public class R2dbcProperties {
 
 
     public R2dbcMappingProperties transfer() {
-        return new R2dbcMappingProperties(forceQuote, dataCenterId, workerId, logicDelete, namingPolicy, validationPolicy);
+        return new R2dbcMappingProperties(forceQuote, dataCenterId, workerId, logicDelete.transfer(), namingPolicy, validationPolicy);
     }
 
+    /**
+     * @param enable      是否开启逻辑删除
+     * @param field       逻辑删除的字段，优先级低于entity上的注解
+     * @param undeleteValue 逻辑删除「正常值」的标记
+     * @param deleteValue 逻辑删除「删除值」的标记
+     */
+    public record LogicDelete(
+            boolean enable, String field, String undeleteValue, String deleteValue
+    ) {
+
+        public R2dbcMappingProperties.LogicDelete transfer() {
+            return new R2dbcMappingProperties.LogicDelete(enable, field, undeleteValue, deleteValue);
+        }
+
+    }
 
 }

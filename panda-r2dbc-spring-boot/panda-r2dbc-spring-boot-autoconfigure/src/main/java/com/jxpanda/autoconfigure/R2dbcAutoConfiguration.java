@@ -11,6 +11,8 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScans;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.DialectResolver;
@@ -27,6 +29,7 @@ import java.util.List;
 
 @AutoConfiguration(after = org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
 @EnableConfigurationProperties(R2dbcProperties.class)
+@ComponentScan(basePackages = {"com.jxpanda.r2dbc.spring.data.extension.support"})
 public class R2dbcAutoConfiguration {
 
     private final DatabaseClient databaseClient;
