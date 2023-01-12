@@ -20,6 +20,8 @@ import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import lombok.SneakyThrows;
 import org.springframework.core.GenericTypeResolver;
 
+import java.lang.annotation.Annotation;
+import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -41,6 +43,7 @@ public final class ReflectionKit {
     private static final String GET_CLASS = "getClass";
     private static final String SET_PREFIX = "set";
     private static final String IS_PREFIX = "is";
+    private static final String WRITE_REPLACE = "writeReplace";
 
     private static final Map<Class<?>, Object> DEFAULT_VALUE_MAP = new HashMap<>() {{
         put(Collection.class, Collections.emptyList());
@@ -260,5 +263,52 @@ public final class ReflectionKit {
         Class<?>[] classes = GenericTypeResolver.resolveTypeArguments(clazz, genericIfc);
         return classes == null ? null : classes[index];
     }
+
+    /**
+     * 获取lambda表达式对应的字段
+     */
+    public static <T, R> Field getField(AccessorFunction<T, R> accessorFunction) {
+
+        // 从function取出序列化方法
+        Method writeReplaceMethod;
+        try {
+            writeReplaceMethod = accessorFunction.getClass().getDeclaredMethod(WRITE_REPLACE);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+
+        // 从序列化方法取出序列化的lambda信息
+        boolean isAccessible = writeReplaceMethod.isAccessible();
+        writeReplaceMethod.setAccessible(true);
+        SerializedLambda serializedLambda;
+        try {
+            serializedLambda = (SerializedLambda) writeReplaceMethod.invoke(accessorFunction);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        writeReplaceMethod.setAccessible(isAccessible);
+
+        // 从lambda信息取出method、field、class等
+        String implMethodName = serializedLambda.getImplMethodName();
+        // 确保方法是符合规范的get方法，boolean类型是is开头
+        if (!implMethodName.startsWith(IS_PREFIX) && !implMethodName.startsWith(GET_PREFIX)) {
+            throw new RuntimeException("Function: " + implMethodName + ",does not conform to the java bean specification");
+        }
+
+        // get方法开头为 is 或者 get，将方法名 去除is或者get，然后首字母小写，就是属性名
+        int prefixLen = implMethodName.startsWith(IS_PREFIX) ? IS_PREFIX.length() : GET_PREFIX.length();
+
+        String fieldName = StringKit.uncapitalize(implMethodName.substring(prefixLen));
+
+        Field field;
+        try {
+            field = Class.forName(serializedLambda.getImplClass().replace(StringConstant.SLASH, StringConstant.DOT)).getDeclaredField(fieldName);
+        } catch (ClassNotFoundException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+
+        return field;
+    }
+
 
 }

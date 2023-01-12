@@ -2,6 +2,7 @@ package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableLogic;
@@ -37,7 +38,6 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.r2dbc.core.Parameter;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.RowsFetchSpec;
-import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -128,7 +128,7 @@ public final class R2dbcSQLExecutor {
         boolean isQueryEntity = false;
 
         if (entityClass.isAnnotationPresent(TableEntity.class)) {
-            isQueryEntity = entityClass.getAnnotation(TableEntity.class).isQuery();
+            isQueryEntity = entityClass.getAnnotation(TableEntity.class).isAggregate();
         }
 
         StatementMapper statementMapper = isQueryEntity ? getStatementMapper() : getStatementMapper().forType(entityClass);
@@ -345,14 +345,14 @@ public final class R2dbcSQLExecutor {
     }
 
 
-    private <T> boolean isQueryEntity(Class<T> entityClass) {
+    private <T> boolean isAggregateEntity(Class<T> entityClass) {
         RelationalPersistentEntity<T> persistentEntity = getPersistentEntity(entityClass);
-        return persistentEntity != null && isQueryEntity(persistentEntity);
+        return persistentEntity != null && isAggregateEntity(persistentEntity);
     }
 
-    private <T> boolean isQueryEntity(RelationalPersistentEntity<T> relationalPersistentEntity) {
+    private <T> boolean isAggregateEntity(RelationalPersistentEntity<T> relationalPersistentEntity) {
         TableEntity tableEntity = relationalPersistentEntity.findAnnotation(TableEntity.class);
-        return tableEntity != null && tableEntity.isQuery();
+        return tableEntity != null && tableEntity.isAggregate();
     }
 
     private boolean isPropertyExists(RelationalPersistentProperty property) {
@@ -398,7 +398,7 @@ public final class R2dbcSQLExecutor {
 
             List<Expression> columns = new ArrayList<>();
 
-            boolean isQueryEntity = isQueryEntity(entityClass);
+            boolean isQueryEntity = isAggregateEntity(entityClass);
 
             entity.forEach(property -> {
                 if (isPropertyExists(property)) {
@@ -406,8 +406,7 @@ public final class R2dbcSQLExecutor {
                     if (!isQueryEntity) {
                         expression = table.column(property.getColumnName());
                     } else {
-                        TableColumn tableColumn = property.findAnnotation(TableColumn.class);
-                        Assert.isTrue(tableColumn != null, "");
+                        TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
                         if (!isFunctionProperty(property)) {
                             String sql = tableColumn.name();
                             // 如果设置了别名，添加别名的语法
@@ -426,7 +425,6 @@ public final class R2dbcSQLExecutor {
             });
             return columns;
         }
-
         return query.getColumns().stream().map(table::column).collect(Collectors.toList());
     }
 
@@ -575,11 +573,16 @@ public final class R2dbcSQLExecutor {
         if (isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
             criteriaOptional = query.getCriteria()
                     .or(() -> Optional.of(Criteria.empty()))
-                    .map(criteriaDefinition -> (Criteria) criteriaDefinition)
-                    .map(criteria -> {
+                    .map(criteriaDefinition -> {
                         // 获取查询对象中的逻辑删除字段和值，写入到criteria中
                         Pair<String, Object> logicDeleteColumn = getLogicDeleteColumn(entityClass, LogicDeleteValue.UNDELETE_VALUE);
-                        return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                        if (criteriaDefinition instanceof Criteria criteria) {
+                            return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                        }
+                        if (criteriaDefinition instanceof LambdaCriteria lambdaCriteria) {
+                            return lambdaCriteria.and(LambdaCriteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                        }
+                        return criteriaDefinition;
                     });
         }
         return criteriaOptional.map(selectSpec::withCriteria).orElse(selectSpec);

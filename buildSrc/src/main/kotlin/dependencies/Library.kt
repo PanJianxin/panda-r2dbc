@@ -1,7 +1,7 @@
 object Version {
     const val GUAVA = "29.0-jre"
     const val FAST_JSON = "1.2.76"
-    const val JACKSON = "2.13.3"
+    const val JACKSON = "2.14.1"
     const val DOM4J = "2.1.3"
     const val LOG4J2 = "2.15.0"
     const val LOGBACK = "1.2.7"

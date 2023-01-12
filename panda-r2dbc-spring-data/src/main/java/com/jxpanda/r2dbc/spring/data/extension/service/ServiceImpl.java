@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.extension.support.ReflectionKit;
@@ -82,7 +83,7 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Mono<T> selectById(ID id) {
-        return this.selectOne(Query.query(Criteria.where(Entity.ID).is(id)));
+        return this.selectOne(Query.query(LambdaCriteria.where(Entity<ID>::getId).is(id)));
     }
 
     @Override
@@ -90,7 +91,7 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
         return reactiveEntityTemplate.select(getEntityClass()).matching(query).one();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "unused", "SameParameterValue"})
     protected <R extends R2dbcRepository<T, ID>> R getRepository(Class<R> clazz) {
         return (R) repository;
     }
@@ -103,7 +104,9 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
         RelationalPersistentEntity<?> requiredPersistentEntity = getMappingContext().getRequiredPersistentEntity(getEntityClass());
         requiredPersistentEntity.forEach(property -> {
             try {
-                consumer.accept(new ColumInfo(property, property.getGetter().invoke(entity)));
+                if (property != null && property.getGetter() != null) {
+                    consumer.accept(new ColumInfo(property, property.getGetter().invoke(entity)));
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

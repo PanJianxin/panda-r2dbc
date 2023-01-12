@@ -3,6 +3,7 @@ package com.jxpanda.r2dbc.spring.data.extension.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.extension.annotation.TableLogic;
@@ -12,6 +13,7 @@ import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.relational.core.query.Query;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -30,7 +32,6 @@ import java.util.stream.Stream;
 @Accessors(chain = true)
 @EqualsAndHashCode(of = {"id"})
 public class Entity<ID> implements Serializable {
-
 
     /**
      * 主键ID
@@ -55,9 +56,9 @@ public class Entity<ID> implements Serializable {
     /**
      * 数据删除时间
      */
-    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
     @TableColumn
     @Builder.Default
+    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
     private LocalDateTime deletedDate = DateTimeConstant.DELETED_DATE;
 
     /**
@@ -145,6 +146,8 @@ public class Entity<ID> implements Serializable {
     public static boolean isNotEffective(Entity<?> entity) {
         return !isEffective(entity);
     }
+
+
 
 
 //    @Override

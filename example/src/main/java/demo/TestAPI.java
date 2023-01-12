@@ -1,7 +1,9 @@
 package demo;
 
+import com.jxpanda.commons.base.Entity;
 import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.support.EnvironmentKit;
 import demo.model.*;
 import lombok.AllArgsConstructor;
@@ -13,6 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("test")
@@ -44,12 +51,10 @@ public class TestAPI {
     }
 
     @GetMapping(path = "select", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<User> selectUser() {
-
-        return reactiveEntityTemplate.select(User.class)
-//                .from("user")
-                .matching(Query.query(Criteria.where("name").is("Panda")))
-                .all();
+    public Flux<Order> selectList(int duration) {
+        return reactiveEntityTemplate.select(Order.class)
+                .all()
+                .delayElements(Duration.of(duration, ChronoUnit.SECONDS));
     }
 
     @PostMapping("/order/insert")
@@ -71,7 +76,7 @@ public class TestAPI {
     public Mono<Order> update(@RequestBody Order order, String orderId) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
 //        return r2dbcEntityTemplate.insert(order);
-        return reactiveEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
+        return reactiveEntityTemplate.update(Order.class).matching(Query.query(LambdaCriteria.where(Order::getId).is(orderId)))
                 .apply(Update.update(Order.AMOUNT, order.getAmount()))
                 .map(l -> {
                     order.setId(orderId);
@@ -83,7 +88,7 @@ public class TestAPI {
     public Mono<Order> getOrder(@PathVariable("id") String id) {
         return orderService.selectById(id)
                 .doOnSuccess(order -> {
-                    if (order != null){
+                    if (order != null) {
                         orderService.forEachColum(order, System.out::println);
                     }
                 });
@@ -93,7 +98,7 @@ public class TestAPI {
     @GetMapping("/order/sum")
     public Mono<OrderSum> getOrderSum() {
         return reactiveEntityTemplate.select(OrderSum.class)
-                .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
+                .matching(Query.query(LambdaCriteria.where(Order::getId).greaterThan("3005542952022835202")))
                 .one();
 //        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
 //                .fetch()

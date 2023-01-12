@@ -135,7 +135,7 @@ public class StringKit {
         if (string.isBlank() || Character.isUpperCase(string.charAt(0))) {
             return string;
         } else {
-            return (string.substring(0, 1).toUpperCase()) + string.substring(1);
+            return String.valueOf(string.charAt(0)).toUpperCase() + string.substring(1);
         }
     }
 
@@ -146,7 +146,7 @@ public class StringKit {
         if (string.isBlank() || Character.isLowerCase(string.charAt(0))) {
             return string;
         } else {
-            return (string.substring(0, 1).toLowerCase()) + string.substring(1);
+            return String.valueOf(string.charAt(0)).toLowerCase() + string.substring(1);
         }
     }
 
