@@ -18,6 +18,7 @@ package com.jxpanda.r2dbc.spring.data.core;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
 import org.springframework.dao.DataAccessException;
@@ -91,7 +92,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
 
     @Override
-    public <T> ReactiveSelect<T> select(Class<T> domainType) {
+    public <T> R2dbcSelectOperation.R2dbcSelect<T> select(Class<T> domainType) {
         return new R2dbcSelectOperationSupport(this)
                 .select(domainType);
     }

@@ -20,11 +20,10 @@ import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
-
-import org.springframework.lang.NonNull;
 
 /**
  * Implementation of {@link R2dbcUpdateOperation}.
