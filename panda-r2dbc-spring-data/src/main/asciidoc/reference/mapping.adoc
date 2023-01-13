@@ -121,7 +121,7 @@ IMPORTANT: The `@Id` annotation tells the mapper which property you want to use 
 [[mapping.types]]
 === Default Type Mapping
 
-The following table explains how property types of an entity affect mapping:
+The following table explains how property types of an standardEntity affect mapping:
 
 |===
 |Source Type | Target Type | Remarks
@@ -246,7 +246,7 @@ To selectively handle the conversion yourself, register one or more one or more 
 You can use the `r2dbcCustomConversions` method in `AbstractR2dbcConfiguration` to configure converters.
 The examples <<mapping.configuration, at the beginning of this chapter>> show how to perform the configuration with Java.
 
-NOTE: Custom top-level entity conversion requires asymmetric types for conversion.
+NOTE: Custom top-level standardEntity conversion requires asymmetric types for conversion.
 Inbound data is extracted from R2DBC's `Row`.
 Outbound data (to be used with `INSERT`/`UPDATE` statements) is represented as `OutboundRow` and later assembled to a statement.
 

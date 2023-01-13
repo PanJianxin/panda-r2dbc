@@ -13,7 +13,7 @@ To access domain entities stored in a relational database, you can use our sophi
 To do so, create an interface for your repository.
 Consider the following `Person` class:
 
-.Sample Person entity
+.Sample Person standardEntity
 ====
 [source,java]
 ----
@@ -111,10 +111,10 @@ interface ReactivePersonRepository extends ReactiveSortingRepository<Person, Lon
 <1> The method shows a query for all people with the given `firstname`. The query is derived by parsing the method name for constraints that can be concatenated with `And` and `Or`. Thus, the method name results in a query expression of `SELECT … FROM person WHERE firstname = :firstname`.
 <2> The method shows a query for all people with the given `firstname` once the `firstname` is emitted by the given `Publisher`.
 <3> Use `Pageable` to pass offset and sorting parameters to the database.
-<4> Find a single entity for the given criteria. It completes with `IncorrectResultSizeDataAccessException` on non-unique results.
-<5> Unless <4>, the first entity is always emitted even if the query yields more result rows.
+<4> Find a single standardEntity for the given criteria. It completes with `IncorrectResultSizeDataAccessException` on non-unique results.
+<5> Unless <4>, the first standardEntity is always emitted even if the query yields more result rows.
 <6> The `findByLastname` method shows a query for all people with the given last name.
-<7> A query for a single `Person` entity projecting only `firstname` and `lastname` columns.
+<7> A query for a single `Person` standardEntity projecting only `firstname` and `lastname` columns.
 The annotated query uses native bind markers, which are Postgres bind markers in this example.
 ====
 
@@ -214,7 +214,7 @@ The following table shows the keywords that are supported for query methods:
 [[r2dbc.repositories.modifying]]
 === Modifying Queries
 
-The previous sections describe how to declare queries to access a given entity or collection of entities.
+The previous sections describe how to declare queries to access a given standardEntity or collection of entities.
 Using keywords from the preceding table can be used in conjunction with `delete…By` or `remove…By` to create derived queries that delete matching rows.
 
 .`Delete…By` Query
@@ -323,22 +323,22 @@ For example, you can apply a `toUpperCase()` to a `String` -based property befor
 Query By Example really shines when you you don't know all the fields needed in a query in advance.
 If you were building a filter on a web page where the user can pick the fields, Query By Example is a great way to flexibly capture that into an efficient query.
 
-[[r2dbc.entity-persistence.state-detection-strategies]]
+[[r2dbc.standardEntity-persistence.state-detection-strategies]]
 include::../{spring-data-commons-docs}/is-new-state-detection.adoc[leveloffset=+2]
 
-[[r2dbc.entity-persistence.id-generation]]
+[[r2dbc.standardEntity-persistence.id-generation]]
 === ID Generation
 
 Spring Data R2DBC uses the ID to identify entities.
-The ID of an entity must be annotated with Spring Data's https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/annotation/Id.html[`@Id`] annotation.
+The ID of an standardEntity must be annotated with Spring Data's https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/annotation/Id.html[`@Id`] annotation.
 
-When your database has an auto-increment column for the ID column, the generated value gets set in the entity after inserting it into the database.
+When your database has an auto-increment column for the ID column, the generated value gets set in the standardEntity after inserting it into the database.
 
-Spring Data R2DBC does not attempt to insert values of identifier columns when the entity is new and the identifier value defaults to its initial value.
+Spring Data R2DBC does not attempt to insert values of identifier columns when the standardEntity is new and the identifier value defaults to its initial value.
 That is `0` for primitive types and `null` if the identifier property uses a numeric wrapper type such as `Long`.
 
-One important constraint is that, after saving an entity, the entity must not be new anymore.
-Note that whether an entity is new is part of the entity's state.
+One important constraint is that, after saving an standardEntity, the standardEntity must not be new anymore.
+Note that whether an standardEntity is new is part of the standardEntity's state.
 With auto-increment columns, this happens automatically, because the ID gets set by Spring Data with the value from the ID column.
 
 [[r2dbc.optimistic-locking]]
@@ -387,7 +387,7 @@ include::../{spring-data-commons-docs}/repository-projections.adoc[leveloffset=+
 ==== Result Mapping
 
 A query method returning an Interface- or DTO projection is backed by results produced by the actual query.
-Interface projections generally rely on mapping results onto the domain type first to consider potential `@Column` type mappings and the actual projection proxy uses a potentially partially materialized entity to expose projection data.
+Interface projections generally rely on mapping results onto the domain type first to consider potential `@Column` type mappings and the actual projection proxy uses a potentially partially materialized standardEntity to expose projection data.
 
 Result mapping for DTO projections depends on the actual query type.
 Derived queries use the domain type to map results, and Spring Data creates DTO instances solely from properties available on the domain type.
@@ -398,8 +398,8 @@ DTO projections used with query methods annotated with `@Query` map query result
 Field mappings on the domain type are not considered.
 Using the DTO type directly, your query method can benefit from a more dynamic projection that isn't restricted to the domain model.
 
-include::../{spring-data-commons-docs}/entity-callbacks.adoc[leveloffset=+1]
-include::./r2dbc-entity-callbacks.adoc[leveloffset=+2]
+include::../{spring-data-commons-docs}/standardEntity-callbacks.adoc[leveloffset=+1]
+include::./r2dbc-standardEntity-callbacks.adoc[leveloffset=+2]
 
 [[r2dbc.multiple-databases]]
 == Working with multiple Databases

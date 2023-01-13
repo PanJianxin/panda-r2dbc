@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
 import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository;

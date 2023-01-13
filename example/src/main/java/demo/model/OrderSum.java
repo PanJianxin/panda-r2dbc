@@ -1,7 +1,7 @@
 package demo.model;
 
-import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.extension.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import lombok.Data;
 
 @Data

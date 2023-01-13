@@ -1,7 +1,7 @@
 package com.jxpanda.autoconfigure;
 
-import com.jxpanda.r2dbc.spring.data.convert.MappingReactiveConverter;
-import com.jxpanda.r2dbc.spring.data.convert.R2dbcCustomTypeHandlers;
+import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
+import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
@@ -12,7 +12,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScans;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.DialectResolver;

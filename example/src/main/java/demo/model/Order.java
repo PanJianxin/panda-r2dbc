@@ -1,11 +1,11 @@
 package demo.model;
 
 
-import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
-import com.jxpanda.r2dbc.spring.data.extension.StandardEnum;
-import com.jxpanda.r2dbc.spring.data.extension.annotation.EnumValue;
-import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.extension.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
+import com.jxpanda.r2dbc.spring.data.core.enhance.StandardEnum;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.EnumValue;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,7 +32,7 @@ import java.util.List;
 @AllArgsConstructor
 @Accessors(chain = true)
 @TableEntity(name = "order")
-public class Order extends Entity<String> {
+public class Order extends StandardEntity<String> {
 
     @Serial
     private static final long serialVersionUID = 1L;

@@ -16,11 +16,11 @@
 package com.jxpanda.r2dbc.spring.data.extension.support;
 
 
+import com.jxpanda.r2dbc.spring.data.core.query.AccessorFunction;
 import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
 import lombok.SneakyThrows;
 import org.springframework.core.GenericTypeResolver;
 
-import java.lang.annotation.Annotation;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.*;
 import java.math.BigDecimal;

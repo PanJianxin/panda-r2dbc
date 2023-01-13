@@ -1,11 +1,5 @@
 package com.jxpanda.r2dbc.spring.data.core.query;
 
-import com.jxpanda.r2dbc.spring.data.extension.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.extension.annotation.TableId;
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
-import com.jxpanda.r2dbc.spring.data.extension.support.AccessorFunction;
-import com.jxpanda.r2dbc.spring.data.extension.support.ReflectionKit;
-import com.jxpanda.r2dbc.spring.data.extension.support.StringKit;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.sql.IdentifierProcessing;
@@ -15,7 +9,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 /**

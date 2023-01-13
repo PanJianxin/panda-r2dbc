@@ -1,8 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.config;
 
-import com.jxpanda.r2dbc.spring.data.extension.policy.NamingPolicy;
-import com.jxpanda.r2dbc.spring.data.extension.policy.ValidationPolicy;
-import org.springframework.context.annotation.Configuration;
+import com.jxpanda.r2dbc.spring.data.core.enhance.policy.NamingPolicy;
+import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
 
 /**
  * @param forceQuote       是否在对象映射的过程中强制加上引用符

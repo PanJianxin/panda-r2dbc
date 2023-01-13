@@ -3,6 +3,7 @@ package com.jxpanda.r2dbc.spring.data.extension.service;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
+import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.extension.support.ReflectionKit;
 import lombok.Getter;
@@ -13,7 +14,6 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
-import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation;
@@ -83,7 +83,7 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Mono<T> selectById(ID id) {
-        return this.selectOne(Query.query(LambdaCriteria.where(Entity<ID>::getId).is(id)));
+        return this.selectOne(Query.query(LambdaCriteria.where(StandardEntity<ID>::getId).is(id)));
     }
 
     @Override

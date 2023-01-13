@@ -1,8 +1,8 @@
 package com.jxpanda.autoconfigure;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
-import com.jxpanda.r2dbc.spring.data.extension.policy.NamingPolicy;
-import com.jxpanda.r2dbc.spring.data.extension.policy.ValidationPolicy;
+import com.jxpanda.r2dbc.spring.data.core.enhance.policy.NamingPolicy;
+import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

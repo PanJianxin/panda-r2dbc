@@ -3,7 +3,7 @@
 = R2dbcEntityOperations Data Access API
 
 `R2dbcEntityTemplate` is the central entrypoint for Spring Data R2DBC.
-It provides direct entity-oriented methods and a more narrow, fluent interface for typical ad-hoc use-cases, such as querying, inserting, updating, and deleting data.
+It provides direct standardEntity-oriented methods and a more narrow, fluent interface for typical ad-hoc use-cases, such as querying, inserting, updating, and deleting data.
 
 The entry points (`insert()`, `select()`, `update()`, and others) follow a natural naming schema based on the operation to be run.
 Moving on from the entry point, the API is designed to offer only context-dependent methods that lead to a terminating method that creates and runs a SQL statement.
@@ -92,7 +92,7 @@ This way of consuming rows expects the query to return exactly a single result.
 
 TIP: You can directly apply <<projections,Projections>> to results by providing the target type via `select(Class<?>)`.
 
-You can switch between retrieving a single entity and retrieving multiple entities through the following terminating methods:
+You can switch between retrieving a single standardEntity and retrieving multiple entities through the following terminating methods:
 
 * `first()`: Consume only the first row, returning a `Mono`.
 The returned `Mono` completes without emitting an object if the query returns no results.
