@@ -17,8 +17,7 @@ allprojects {
     configurations {
         all {
             resolutionStrategy {
-                force(SpringLibrary.SPRING_DATA_R2DBC)
-                force(SpringLibrary.SPRING_R2DBC)
+                force(Library.SLF4J)
             }
         }
     }

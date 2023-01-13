@@ -7,12 +7,12 @@ spring:
     password: Root2021@)@!
 
 
-
 panda:
   r2dbc:
-    force-quote: true
-    validation-policy: NOT_EMPTY
-    naming-policy: CAMEL_CASE_TO_SNAKE_CASE
+    mapping:
+      force-quote: true
+      validation-policy: NOT_EMPTY
+      naming-policy: CAMEL_CASE_TO_SNAKE_CASE
     logic-delete:
       enable: true
       undelete-value: 1970-01-01 00:00:00
@@ -22,4 +22,7 @@ panda:
 
 #logging:
 #  level:
+logging:
+  level:
+    root: debug
 #    root: debug

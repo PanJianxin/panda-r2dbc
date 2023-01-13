@@ -22,7 +22,10 @@ import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Collection;
 
 
 /**
@@ -43,14 +46,14 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
      */
     @NonNull
     @Override
-    public <T> ReactiveInsert<T> insert(@NonNull Class<T> domainType) {
+    public <T> R2dbcInsert<T> insert(@NonNull Class<T> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
         return new R2dbcInsertSupport<>(this.template, domainType, null);
     }
 
-    private final static class R2dbcInsertSupport<T> extends R2dbcSupport<T, T> implements ReactiveInsert<T> {
+    private final static class R2dbcInsertSupport<T> extends R2dbcSupport<T, T> implements R2dbcInsert<T> {
 
         R2dbcInsertSupport(ReactiveEntityTemplate template, Class<T> domainType, @Nullable SqlIdentifier tableName) {
             super(template, domainType, domainType, null, tableName);
@@ -82,5 +85,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
             return getExecutor().doInsert(object, getTableName());
         }
 
+        @Override
+        public Flux<T> insertBatch(Collection<T> entityList) {
+            return getExecutor().doBatchInsert(entityList, getTableName());
+        }
     }
 }

@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -64,12 +65,13 @@ public class TestAPI {
                 .doOnSuccess(o -> {
                     System.out.println(o);
                 });
-//        return r2dbcEntityTemplate.update(Order.class).matching(Query.query(Criteria.where("id").is(orderId)))
-//                .apply(Update.update(Order.AMOUNT, order.getAmount()))
-//                .map(l -> {
-//                    order.setId(orderId);
-//                    return order;
-//                });
+    }
+
+    @PostMapping("/order/insert-batch")
+    public Flux<Order> insertBatch(@RequestBody List<Order> orderList) {
+//        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
+        return reactiveEntityTemplate.insert(Order.class)
+                .insertBatch(orderList);
     }
 
     @PostMapping("/order/update")

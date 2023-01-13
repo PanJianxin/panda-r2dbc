@@ -56,7 +56,7 @@ public class R2dbcAutoConfiguration {
     public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
                                                    R2dbcCustomConversions r2dbcCustomConversions,
                                                    R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
-        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers, this.r2dbcProperties.transfer());
+        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers, this.r2dbcProperties.mapping());
     }
 
 
@@ -66,7 +66,7 @@ public class R2dbcAutoConfiguration {
                                                    R2dbcCustomConversions r2dbcCustomConversions) {
         R2dbcMappingContext relationalMappingContext = new R2dbcMappingContext(
                 namingStrategy.getIfAvailable(() -> DefaultNamingStrategy.INSTANCE));
-        relationalMappingContext.setForceQuote(this.r2dbcProperties.isForceQuote());
+        relationalMappingContext.setForceQuote(this.r2dbcProperties.mapping().forceQuote());
         relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
         return relationalMappingContext;
     }
@@ -74,7 +74,7 @@ public class R2dbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public NamingStrategy namingStrategy() {
-        return this.r2dbcProperties.getNamingPolicy();
+        return this.r2dbcProperties.mapping().namingPolicy();
     }
 
 
@@ -99,7 +99,7 @@ public class R2dbcAutoConfiguration {
     @ConditionalOnMissingBean
     public IdGenerator<?> idGenerator() {
 
-        return new SnowflakeIdGenerator<String>(this.r2dbcProperties.getDataCenterId(), this.r2dbcProperties.getWorkerId()) {
+        return new SnowflakeIdGenerator<String>(this.r2dbcProperties.mapping().dataCenterId(), this.r2dbcProperties.mapping().workerId()) {
             @Override
             protected String cast(Long id) {
                 return id.toString();

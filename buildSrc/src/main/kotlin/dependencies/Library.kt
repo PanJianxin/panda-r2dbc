@@ -5,7 +5,7 @@ object Version {
     const val DOM4J = "2.1.3"
     const val LOG4J2 = "2.15.0"
     const val LOGBACK = "1.2.7"
-    const val SLF4J = "1.7.32"
+    const val SLF4J = "2.0.6"
     const val REACTOR = "3.4.18"
 
     const val PANDA_COMMONS = "1.2.8"
@@ -29,7 +29,7 @@ object Library {
 
     const val LOGBACK_CORE = "ch.qos.logback:logback-core:${Version.LOGBACK}"
     const val LOGBACK_CLASSIC = "ch.qos.logback:logback-classic:${Version.LOGBACK}"
-    const val SLF4J = "org.slf4j:slf4j-api:${Version.LOGBACK}"
+    const val SLF4J = "org.slf4j:slf4j-api:${Version.SLF4J}"
 
     /**
      * jackson的包

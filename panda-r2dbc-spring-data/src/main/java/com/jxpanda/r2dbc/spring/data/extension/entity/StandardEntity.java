@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.util.ObjectUtils;
 
 /**
  * @author Panda
@@ -24,5 +25,9 @@ public class StandardEntity<ID> implements Entity<ID> {
     @JsonSerialize(using = ToStringSerializer.class)
     private ID id;
 
+    @Override
+    public boolean isEffective() {
+        return !ObjectUtils.isEmpty(getId());
+    }
 
 }

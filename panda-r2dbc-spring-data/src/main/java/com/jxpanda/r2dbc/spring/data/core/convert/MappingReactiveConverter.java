@@ -15,7 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.core.convert;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
+import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
@@ -51,7 +51,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
     private final R2dbcCustomTypeHandlers typeHandlers;
 
-    private final R2dbcMappingProperties mappingProperties;
+    private final R2dbcConfigProperties.Mapping mappingProperties;
 
     /**
      * Creates a new {@link MappingReactiveConverter} given {@link MappingContext} and {@link CustomConversions} and {@link R2dbcCustomTypeHandlers}.
@@ -64,7 +64,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
             MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context,
             CustomConversions conversions,
             R2dbcCustomTypeHandlers typeHandlers,
-            R2dbcMappingProperties mappingProperties) {
+            R2dbcConfigProperties.Mapping mappingProperties) {
         super(context, conversions);
         this.typeHandlers = typeHandlers;
         this.mappingProperties = mappingProperties;

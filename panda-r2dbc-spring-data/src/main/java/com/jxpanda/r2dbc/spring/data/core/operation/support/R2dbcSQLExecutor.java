@@ -1,11 +1,11 @@
 package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
+import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import lombok.Getter;
@@ -38,6 +38,7 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.r2dbc.core.Parameter;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.RowsFetchSpec;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -55,7 +56,7 @@ public final class R2dbcSQLExecutor {
 
     private final ReactiveEntityTemplate template;
 
-    private final R2dbcMappingProperties r2dbcMappingProperties;
+    private final R2dbcConfigProperties r2dbcConfigProperties;
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
 
@@ -73,7 +74,7 @@ public final class R2dbcSQLExecutor {
         this.converter = converter;
         this.mappingContext = this.converter.getMappingContext();
         this.projectionFactory = template.getProjectionFactory();
-        this.r2dbcMappingProperties = template.getR2dbcMappingProperties();
+        this.r2dbcConfigProperties = template.getR2dbcConfigProperties();
         this.statementMapper = template.getDataAccessStrategy().getStatementMapper();
     }
 
@@ -189,15 +190,28 @@ public final class R2dbcSQLExecutor {
 
         List<SqlIdentifier> identifierColumns = getIdentifierColumns(entity.getClass());
 
-        return getDatabaseClient().sql(operation).filter(statement -> {
+        return getDatabaseClient().sql(operation)
+                .filter(statement -> {
 
-            if (identifierColumns.isEmpty()) {
-                return statement.returnGeneratedValues();
-            }
+                    if (identifierColumns.isEmpty()) {
+                        return statement.returnGeneratedValues();
+                    }
 
-            return statement.returnGeneratedValues(template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
-        }).map(getConverter().populateIdIfNecessary(entity)).all().last(entity).flatMap(saved -> template.maybeCallAfterSave(saved, outboundRow, tableName));
+                    return statement.returnGeneratedValues(template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
+                })
+                .map(getConverter().populateIdIfNecessary(entity)).all().last(entity)
+                .flatMap(saved -> template.maybeCallAfterSave(saved, outboundRow, tableName));
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    <T> Flux<T> doBatchInsert(Collection<T> entityList, SqlIdentifier tableName) {
+        if (ObjectUtils.isEmpty(entityList)) {
+            return Flux.empty();
+        }
+        return Flux.fromStream(entityList.stream())
+                .flatMap(entity -> doInsert(entity, tableName));
+    }
+
 
     <T> Mono<Long> doDelete(T entity, SqlIdentifier tableName) {
         return doDelete(entity, tableName, false);
@@ -539,7 +553,7 @@ public final class R2dbcSQLExecutor {
         RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         // 默认取值是全局配置的逻辑删除字段
-        R2dbcMappingProperties.LogicDelete logicDeleteConfig = r2dbcMappingProperties.logicDelete();
+        R2dbcConfigProperties.LogicDelete logicDeleteConfig = r2dbcConfigProperties.logicDelete();
         String logicDeleteField = logicDeleteConfig.field();
         Object value = switch (whichValue) {
             case DELETE_VALUE -> logicDeleteConfig.deleteValue();
@@ -607,7 +621,7 @@ public final class R2dbcSQLExecutor {
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         if (logicDeleteProperty == null) {
             // 如果没有配置逻辑删除的字段，以全局配置为准
-            R2dbcMappingProperties.LogicDelete logicDeleteConfig = r2dbcMappingProperties.logicDelete();
+            R2dbcConfigProperties.LogicDelete logicDeleteConfig = r2dbcConfigProperties.logicDelete();
             // 开启了逻辑删除配置，并且配置了逻辑删除字段才生效
             return logicDeleteConfig.enable() && !ObjectUtils.isEmpty(logicDeleteConfig.field());
         } else {

@@ -15,8 +15,9 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcMappingProperties;
+import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
 import org.springframework.dao.DataAccessException;
@@ -37,20 +38,24 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
 
-    private final R2dbcMappingProperties r2dbcMappingProperties;
+    private final R2dbcConfigProperties r2dbcConfigProperties;
 
     private final R2dbcSQLExecutor sqlExecutor;
 
 
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter, R2dbcMappingProperties r2dbcMappingProperties) {
+    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter, R2dbcConfigProperties r2dbcConfigProperties) {
         super(databaseClient, dialect, converter);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
-        this.r2dbcMappingProperties = r2dbcMappingProperties;
+        this.r2dbcConfigProperties = r2dbcConfigProperties;
         this.sqlExecutor = new R2dbcSQLExecutor(this, dialect, converter);
     }
 
     public R2dbcSQLExecutor getSqlExecutor() {
         return sqlExecutor;
+    }
+
+    public R2dbcConfigProperties getR2dbcConfigProperties() {
+        return r2dbcConfigProperties;
     }
 
     @Override
@@ -78,9 +83,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
         return projectionFactory;
     }
 
-    public R2dbcMappingProperties getR2dbcMappingProperties() {
-        return r2dbcMappingProperties;
-    }
 
 
     // -------------------------------------------------------------------------
@@ -109,7 +111,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     }
 
     @Override
-    public <T> ReactiveInsert<T> insert(Class<T> domainType) {
+    public <T> R2dbcInsertOperation.R2dbcInsert<T> insert(Class<T> domainType) {
         return new R2dbcInsertOperationSupport(this).insert(domainType);
     }
 

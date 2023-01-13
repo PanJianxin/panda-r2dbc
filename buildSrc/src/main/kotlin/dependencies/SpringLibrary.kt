@@ -3,6 +3,7 @@ object SpringVersion {
     const val SPRING_DATA_RELATIONAL = "3.0.0"
     const val SPRING_R2DBC = "6.0.3"
     const val SPRING_DATA_R2DBC = "3.0.0"
+    const val SPRING_DATA_R2DBC_STARTER = "3.0.1"
 }
 
 
@@ -23,7 +24,7 @@ object SpringLibrary {
     const val SPRING_DATA_R2DBC = "org.springframework.data:spring-data-r2dbc:${SpringVersion.SPRING_DATA_R2DBC}";
 
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-r2dbc
-    const val SPRING_BOOT_STARTER_DATA_R2DBC ="org.springframework.boot:spring-boot-starter-data-r2dbc:${SpringVersion.SPRING_DATA_R2DBC}"
+    const val SPRING_BOOT_STARTER_DATA_R2DBC ="org.springframework.boot:spring-boot-starter-data-r2dbc:${SpringVersion.SPRING_DATA_R2DBC_STARTER}"
 
 
 }
