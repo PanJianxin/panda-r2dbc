@@ -3,7 +3,7 @@ package com.jxpanda.r2dbc.spring.data.core.enhance.policy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.AllArgsConstructor;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;

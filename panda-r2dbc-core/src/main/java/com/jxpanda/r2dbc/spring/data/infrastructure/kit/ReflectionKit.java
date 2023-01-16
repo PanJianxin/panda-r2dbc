@@ -13,11 +13,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.jxpanda.r2dbc.spring.data.extension.kit;
+package com.jxpanda.r2dbc.spring.data.infrastructure.kit;
 
 
 import com.jxpanda.r2dbc.spring.data.core.query.AccessorFunction;
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.SneakyThrows;
 import org.springframework.core.GenericTypeResolver;
 

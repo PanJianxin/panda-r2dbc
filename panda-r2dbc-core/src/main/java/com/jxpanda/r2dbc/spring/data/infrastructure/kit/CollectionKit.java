@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.extension.kit;
+package com.jxpanda.r2dbc.spring.data.infrastructure.kit;
 
 import java.util.*;
 import java.util.function.Function;

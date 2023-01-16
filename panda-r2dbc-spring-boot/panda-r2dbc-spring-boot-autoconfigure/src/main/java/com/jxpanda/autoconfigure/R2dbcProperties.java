@@ -9,7 +9,6 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
  *
  * @param mapping     映射相关配置
  * @param logicDelete 逻辑删除相关配置
- *
  */
 @ConfigurationProperties(prefix = "panda.r2dbc")
 public record R2dbcProperties(

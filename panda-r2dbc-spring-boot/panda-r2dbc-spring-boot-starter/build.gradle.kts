@@ -1,5 +1,5 @@
 dependencies{
     api(project(ProjectDependency.PANDA_R2DBC_SPRING_BOOT_AUTOCONFIGURE))
-    api(project(ProjectDependency.PANDA_R2DBC_CORE))
+    api(project(ProjectDependency.PANDA_R2DBC_EXTENSION))
 //    api(SpringLibrary.SPRING_BOOT_STARTER_DATA_R2DBC)
 }

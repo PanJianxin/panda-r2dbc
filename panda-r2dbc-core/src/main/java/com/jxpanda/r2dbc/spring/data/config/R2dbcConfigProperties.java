@@ -2,13 +2,13 @@ package com.jxpanda.r2dbc.spring.data.config;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.policy.NamingPolicy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 
 /**
  * @param mapping     映射相关配置
  * @param logicDelete 逻辑删除相关配置
  */
 public record R2dbcConfigProperties(
-
         Mapping mapping,
         LogicDelete logicDelete
 ) {
@@ -30,6 +30,9 @@ public record R2dbcConfigProperties(
                           NamingPolicy namingPolicy,
                           ValidationPolicy validationPolicy) {
 
+        public static Mapping empty() {
+            return new Mapping(false, 0, 0, NamingPolicy.DEFAULT, ValidationPolicy.NOT_CHECK);
+        }
 
     }
 
@@ -42,6 +45,11 @@ public record R2dbcConfigProperties(
     public record LogicDelete(
             boolean enable, String field, String undeleteValue, String deleteValue
     ) {
+
+        public static LogicDelete empty() {
+            return new LogicDelete(false, StringConstant.BLANK, StringConstant.BLANK, StringConstant.BLANK);
+        }
+
     }
 
 }

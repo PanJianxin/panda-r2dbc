@@ -1,6 +1,6 @@
-package com.jxpanda.r2dbc.spring.data.extension.kit;
+package com.jxpanda.r2dbc.spring.data.infrastructure.kit;
 
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.NonNull;
 
 import java.util.Arrays;

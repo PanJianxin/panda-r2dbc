@@ -1,7 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.annotation;
 
-import com.jxpanda.r2dbc.spring.data.extension.constant.DateTimeConstant;
-import com.jxpanda.r2dbc.spring.data.extension.kit.EnvironmentKit;
+import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.DateTimeConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -113,15 +113,12 @@ public @interface TableLogic {
 
     final class ValueConstant {
 
-        private static final String PROPERTIES_KEY_UNDELETE_VALUE = "panda.r2dbc.logic-delete.undelete-value";
-        private static final String PROPERTIES_KEY_DELETE_VALUE = "panda.r2dbc.logic-delete.delete-value";
-
         private static final Object UNDELETE;
         private static final Object DELETE;
 
         static {
-            UNDELETE = EnvironmentKit.getOrDefault(PROPERTIES_KEY_UNDELETE_VALUE, "", Object.class);
-            DELETE = EnvironmentKit.getOrDefault(PROPERTIES_KEY_DELETE_VALUE, "", Object.class);
+            UNDELETE = R2dbcEnvironment.getLogicDelete().undeleteValue();
+            DELETE = R2dbcEnvironment.getLogicDelete().deleteValue();
         }
 
     }

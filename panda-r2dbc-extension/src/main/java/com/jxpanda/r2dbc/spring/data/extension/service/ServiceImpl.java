@@ -5,7 +5,7 @@ import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
-import com.jxpanda.r2dbc.spring.data.extension.kit.ReflectionKit;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;

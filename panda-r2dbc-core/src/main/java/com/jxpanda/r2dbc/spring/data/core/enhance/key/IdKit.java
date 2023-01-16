@@ -1,6 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.key;
 
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 
 public class IdKit {
 

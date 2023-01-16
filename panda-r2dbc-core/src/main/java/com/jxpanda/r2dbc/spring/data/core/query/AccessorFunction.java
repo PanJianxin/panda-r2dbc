@@ -2,9 +2,9 @@ package com.jxpanda.r2dbc.spring.data.core.query;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
-import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
-import com.jxpanda.r2dbc.spring.data.extension.kit.ReflectionKit;
-import com.jxpanda.r2dbc.spring.data.extension.kit.StringKit;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.StringKit;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
