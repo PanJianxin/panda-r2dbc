@@ -4,8 +4,8 @@ import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.extension.constant.StringConstant;
-import com.jxpanda.r2dbc.spring.data.extension.support.IdGenerator;
-import com.jxpanda.r2dbc.spring.data.extension.support.SnowflakeIdGenerator;
+import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
+import com.jxpanda.r2dbc.spring.data.core.enhance.key.SnowflakeIdGenerator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,7 +28,7 @@ import java.util.List;
 
 @AutoConfiguration(after = org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
 @EnableConfigurationProperties(R2dbcProperties.class)
-@ComponentScan(basePackages = {"com.jxpanda.r2dbc.spring.data.extension.support"})
+@ComponentScan(basePackages = {"com.jxpanda.r2dbc.spring.data.extension.kit"})
 public class R2dbcAutoConfiguration {
 
     private final DatabaseClient databaseClient;

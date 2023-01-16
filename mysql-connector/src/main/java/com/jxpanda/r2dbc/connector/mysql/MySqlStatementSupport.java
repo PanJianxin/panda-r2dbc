@@ -35,13 +35,15 @@ abstract class MySqlStatementSupport implements MySqlStatement {
         requireNonNull(columns, "columns must not be null");
 
         switch (columns.length) {
-            case 0:
+            case 0 -> {
                 this.generatedKeyName = LAST_INSERT_ID;
                 return this;
-            case 1:
+            }
+            case 1 -> {
                 this.generatedKeyName = requireValidName(columns[0],
-                    "id name must not be empty and not contain backticks");
+                        "id name must not be empty and not contain backticks");
                 return this;
+            }
         }
 
         throw new IllegalArgumentException("MySQL only supports single generated value");

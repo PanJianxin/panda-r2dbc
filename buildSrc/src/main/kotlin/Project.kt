@@ -7,6 +7,8 @@ object ProjectDependency {
 
     const val MYSQL_CONNECTOR = ":mysql-connector"
 
+    const val PANDA_R2DBC_CORE = ":panda-r2dbc-core"
+    const val PANDA_R2DBC_EXTENSION = ":panda-r2dbc-extension"
     const val PANDA_R2DBC_SPRING_DATA = ":panda-r2dbc-spring-data"
 
     const val PANDA_R2DBC_SPRING_BOOT = ":panda-r2dbc-spring-boot"

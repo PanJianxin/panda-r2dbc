@@ -244,30 +244,26 @@ public final class Query {
         while (offset < length && offset >= 0) {
             ch = sql.charAt(offset++);
             switch (ch) {
-                case '/':
+                case '/' -> {
                     if (offset == length) {
                         break;
                     }
-
                     if (sql.charAt(offset) == '*') {
                         // Consume if '/* ... */' comment.
                         while (++offset < length) {
                             if (sql.charAt(offset) == '*' && offset + 1 < length &&
-                                sql.charAt(offset + 1) == '/') {
+                                    sql.charAt(offset + 1) == '/') {
                                 // If end of comment.
                                 offset += 2;
                                 break;
                             }
                         }
-                        break;
                     }
-
-                    break;
-                case '-':
+                }
+                case '-' -> {
                     if (offset == length) {
                         break;
                     }
-
                     if (sql.charAt(offset) == '-') {
                         // Consume if '-- ... \n' comment.
                         while (++offset < length) {
@@ -278,13 +274,9 @@ public final class Query {
                                 break;
                             }
                         }
-                        break;
                     }
-
-                    break;
-                case '`':
-                case '\'':
-                case '"':
+                }
+                case '`', '\'', '"' -> {
                     // Quote cases, should find same quote
                     while (offset < length) {
                         if (sql.charAt(offset++) == ch) {
@@ -295,14 +287,12 @@ public final class Query {
                             ++offset;
                         }
                     }
-
-                    break;
-                default:
+                }
+                default -> {
                     if (ch == '?') {
                         return offset - 1;
                     }
-
-                    break;
+                }
             }
         }
 
@@ -310,55 +300,43 @@ public final class Query {
     }
 
     private static Map<String, ParameterIndex> wrap(Map<String, ParameterIndex> map, String anyKey) {
-        switch (map.size()) {
-            case 0:
-                return Collections.emptyMap();
-            case 1:
-                return Collections.singletonMap(anyKey, map.get(anyKey));
-            default:
-                return map;
-        }
+        return switch (map.size()) {
+            case 0 -> Collections.emptyMap();
+            case 1 -> Collections.singletonMap(anyKey, map.get(anyKey));
+            default -> map;
+        };
     }
 
-    private static final class Part {
+    private record Part(int start, int end) {
 
-        private static final Part EMPTY = new Part(0, 0);
-
-        private final int start;
-
-        private final int end;
-
-        private Part(int start, int end) {
-            this.start = start;
-            this.end = end;
-        }
+            private static final Part EMPTY = new Part(0, 0);
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
+            public boolean equals(Object o) {
+                if (this == o) {
+                    return true;
+                }
+                if (o == null || getClass() != o.getClass()) {
+                    return false;
+                }
+
+                Part part = (Part) o;
+
+                return start == part.start && end == part.end;
             }
 
-            Part part = (Part) o;
+            @Override
+            public int hashCode() {
+                return Integer.reverse(start) ^ end;
+            }
 
-            return start == part.start && end == part.end;
-        }
+            @Override
+            public String toString() {
+                return start == end ? "()" : "(" + start + ", " + end + ')';
+            }
 
-        @Override
-        public int hashCode() {
-            return Integer.reverse(start) ^ end;
+            static Part of(int start, int end) {
+                return start == end ? EMPTY : new Part(start, end);
+            }
         }
-
-        @Override
-        public String toString() {
-            return start == end ? "()" : "(" + start + ", " + end + ')';
-        }
-
-        static Part of(int start, int end) {
-            return start == end ? EMPTY : new Part(start, end);
-        }
-    }
 }

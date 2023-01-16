@@ -1,11 +1,10 @@
 package demo;
 
-import com.jxpanda.commons.base.Entity;
 import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
-import com.jxpanda.r2dbc.spring.data.extension.support.EnvironmentKit;
 import demo.model.*;
+import io.r2dbc.spi.Connection;
 import lombok.AllArgsConstructor;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
@@ -18,9 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("test")
@@ -71,7 +68,7 @@ public class TestAPI {
     public Flux<Order> insertBatch(@RequestBody List<Order> orderList) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
         return reactiveEntityTemplate.insert(Order.class)
-                .insertBatch(orderList);
+                .batchInsert(orderList);
     }
 
     @PostMapping("/order/update")
