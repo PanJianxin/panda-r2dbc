@@ -17,10 +17,7 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,9 +139,9 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
         return update(entityClass).matching(query).apply(update);
     }
 
-//    public <T> Mono<T> save(T entity) {
-//
-//    }
+    public <T> R2dbcSaveOperation.R2dbcSave<T> save(Class<T> domainType) {
+        return new R2dbcSaveOperationSupport(this).save(domainType);
+    }
 
     @Override
     public R2dbcDeleteOperation.R2dbcDelete delete(Class<?> domainType) {

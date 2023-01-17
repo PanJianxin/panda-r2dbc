@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core.operation;
 
+import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -10,6 +11,8 @@ import java.util.Collection;
  * 逻辑上有主键则更新，没有主键则插入
  */
 public interface R2dbcSaveOperation {
+
+    <T> R2dbcSave<T> save(Class<T> domainType);
 
     interface R2dbcSave<T> {
         /**
