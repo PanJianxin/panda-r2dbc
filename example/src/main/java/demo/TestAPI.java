@@ -30,18 +30,6 @@ public class TestAPI {
     private final OrderService orderService;
 
 
-//    @PostMapping("")
-//    public Mono<User> save(@RequestBody Mono<User> userMono) {
-//        return userMono
-//                .flatMap(user -> {
-//                    if (ObjectUtils.isEmpty(user.getId())) {
-//                        user.setId(IdentifierKit.nextIdString());
-//                        return r2dbcEntityTemplate.insert(user);
-//                    }
-//                    return userRepository.save(user);
-//                });
-//    }
-
     @GetMapping("{userId}")
     public Mono<User> getUser(@PathVariable("userId") String userId) {
         return userRepository.findById(userId);
@@ -56,25 +44,25 @@ public class TestAPI {
 
     @PostMapping("/order/insert")
     public Mono<Order> insert(@RequestBody Order order) {
-//        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
         return orderService.insert(order)
-                .doOnSuccess(o -> {
-                    System.out.println(o);
-                });
+                .log();
     }
 
-//    @Transactional
+//    @PostMapping("/order/save")
+//    public Mono<Order> save(@RequestBody Order order) {
+//        return reactiveEntityTemplate.save(order)
+//                .log();
+//    }
+
+    //    @Transactional
     @PostMapping("/order/insert-batch")
     public Flux<Order> insertBatch(@RequestBody List<Order> orderList) {
-//        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
         return reactiveEntityTemplate.insert(Order.class)
                 .batchInsert(orderList);
     }
 
     @PostMapping("/order/update")
     public Mono<Order> update(@RequestBody Order order, String orderId) {
-//        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
-//        return r2dbcEntityTemplate.insert(order);
         return reactiveEntityTemplate.update(Order.class).matching(Query.query(LambdaCriteria.where(Order::getId).is(orderId)))
                 .apply(Update.update(Order.AMOUNT, order.getAmount()))
                 .map(l -> {
@@ -99,9 +87,6 @@ public class TestAPI {
         return reactiveEntityTemplate.select(OrderSum.class)
                 .matching(Query.query(LambdaCriteria.where(Order::getId).greaterThan("3005542952022835202")))
                 .one();
-//        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
-//                .fetch()
-//                .one();
     }
 
     @GetMapping("/order/delete/{id}")
@@ -109,9 +94,6 @@ public class TestAPI {
         return reactiveEntityTemplate.delete(Order.builder()
                 .id(id)
                 .build());
-//        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
-//                .fetch()
-//                .one();
     }
 
     @GetMapping("/order/destroy/{id}")
@@ -119,9 +101,6 @@ public class TestAPI {
         return reactiveEntityTemplate.select(OrderSum.class)
                 .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
                 .one();
-//        return r2dbcEntityTemplate.getDatabaseClient().sql("SELECT count(*), sum(amount) FROM `order`")
-//                .fetch()
-//                .one();
     }
 
     @Transactional

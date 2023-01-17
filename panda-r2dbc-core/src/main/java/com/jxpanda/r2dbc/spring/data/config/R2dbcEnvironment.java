@@ -12,7 +12,7 @@ import java.util.Optional;
 public class R2dbcEnvironment implements EnvironmentAware {
 
     private static final String MAPPING_KEY = "panda.r2dbc.mapping";
-    private static final String LOGIC_DELETE_KEY = "panda.r2dbc.logic-delete";
+    private static final String LOGIC_DELETE_KEY = "panda.r2dbc.logic-deleteValue";
 
     private static Optional<Environment> environmentOptional = Optional.empty();
 

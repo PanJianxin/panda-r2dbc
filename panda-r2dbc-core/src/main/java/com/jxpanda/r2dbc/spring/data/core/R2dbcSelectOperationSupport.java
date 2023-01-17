@@ -16,18 +16,37 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
+import io.r2dbc.spi.Row;
+import io.r2dbc.spi.RowMetadata;
+import org.springframework.data.projection.ProjectionInformation;
+import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
+import org.springframework.data.r2dbc.core.StatementMapper;
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Query;
-import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.data.relational.core.sql.*;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.RowsFetchSpec;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.beans.FeatureDescriptor;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link ReactiveSelectOperation}.
@@ -36,6 +55,9 @@ import java.util.function.Function;
  * @since 1.1
  */
 public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport implements ReactiveSelectOperation {
+
+    private static final String SQL_AS = " AS ";
+
 
     public R2dbcSelectOperationSupport(ReactiveEntityTemplate template) {
         super(template);
@@ -55,6 +77,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
     }
 
 
+    @SuppressWarnings("SameParameterValue")
     private final static class R2dbcSelectSupport<T, R> extends R2dbcSupport<T, R> implements R2dbcSelectOperation.R2dbcSelect<R> {
 
         private R2dbcSelectSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType, Query query,
@@ -72,7 +95,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcSelectSupport<>(getTemplate(), getDomainType(), getReturnType(), getQuery(), tableName);
+            return new R2dbcSelectSupport<>(this.template, this.domainType, this.returnType, this.query, tableName);
         }
 
         /*
@@ -85,7 +108,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(returnType, "ReturnType must not be null");
 
-            return new R2dbcSelectSupport<>(getTemplate(), getReturnType(), returnType, getQuery(), getTableName());
+            return new R2dbcSelectSupport<>(this.template, this.returnType, returnType, this.query, this.tableName);
         }
 
         /*
@@ -98,7 +121,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(query, "Query must not be null");
 
-            return new R2dbcSelectSupport<>(getTemplate(), getDomainType(), getReturnType(), query, getTableName());
+            return new R2dbcSelectSupport<>(this.template, this.domainType, this.returnType, query, this.tableName);
         }
 
         /*
@@ -108,7 +131,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         @NonNull
         @Override
         public Mono<Long> count() {
-            return getExecutor().doCount(getQuery(), getDomainType(), getTableName());
+            return doCount(this.query, this.domainType, this.tableName);
         }
 
         /*
@@ -118,7 +141,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         @NonNull
         @Override
         public Mono<Boolean> exists() {
-            return getExecutor().doExists(getQuery(), getDomainType(), getTableName());
+            return doExists(this.query, this.domainType, this.tableName);
         }
 
         /*
@@ -128,7 +151,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         @NonNull
         @Override
         public Mono<R> first() {
-            return selectMono(getQuery().limit(1), getDomainType(), getTableName(), getReturnType(), RowsFetchSpec::first);
+            return selectMono(this.query.limit(1), this.domainType, this.tableName, this.returnType, RowsFetchSpec::first);
         }
 
         /*
@@ -138,7 +161,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         @NonNull
         @Override
         public Mono<R> one() {
-            return selectMono(getQuery().limit(2), getDomainType(), getTableName(), getReturnType(), RowsFetchSpec::one);
+            return selectMono(this.query.limit(2), this.domainType, this.tableName, this.returnType, RowsFetchSpec::one);
         }
 
         /*
@@ -148,23 +171,215 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         @NonNull
         @Override
         public Flux<R> all() {
-            return selectFlux(getQuery(), getDomainType(), getTableName(), getReturnType(), RowsFetchSpec::all);
+            return selectFlux(this.query, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all);
+        }
+
+
+        private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+            return doExists(query, entityClass, tableName, false);
+        }
+
+        private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
+
+            RelationalPersistentEntity<T> entity = this.coordinator.getRequiredEntity(entityClass);
+            StatementMapper statementMapper = this.coordinator.statementMapper().forType(entityClass);
+
+            SqlIdentifier columnName = entity.hasIdProperty() ? entity.getRequiredIdProperty().getColumnName() : SqlIdentifier.unquoted("*");
+
+            StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).withProjection(columnName).limit(1);
+
+            selectSpec = this.coordinator.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+
+            PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+
+            return this.coordinator.databaseClient().sql(operation).map((r, md) -> r).first().hasElement();
+        }
+
+        private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
+            return doCount(query, entityClass, tableName, false);
+        }
+
+        private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
+
+            RelationalPersistentEntity<T> entity = this.coordinator.getRequiredEntity(entityClass);
+            StatementMapper statementMapper = this.coordinator.statementMapper().forType(entityClass);
+
+            StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> {
+                Expression countExpression = entity.hasIdProperty() ? table.column(entity.getRequiredIdProperty().getColumnName()) : Expressions.asterisk();
+                return spec.withProjection(Functions.count(countExpression));
+            });
+
+            selectSpec = this.coordinator.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+
+            PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+
+            return this.coordinator.databaseClient().sql(operation).map((r, md) -> r.get(0, Long.class)).first().defaultIfEmpty(0L);
+        }
+
+        private RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType) {
+            return doSelect(query, entityClass, tableName, returnType, false);
+        }
+
+        private RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType, boolean ignoreLogicDelete) {
+
+            boolean isQueryEntity = false;
+
+            if (entityClass.isAnnotationPresent(TableEntity.class)) {
+                isQueryEntity = entityClass.getAnnotation(TableEntity.class).isAggregate();
+            }
+
+            StatementMapper statementMapper = isQueryEntity ? this.coordinator.statementMapper() : this.coordinator.statementMapper().forType(entityClass);
+
+            StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName)
+                    .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
+
+            if (query.getLimit() > 0) {
+                selectSpec = selectSpec.limit(query.getLimit());
+            }
+
+            if (query.getOffset() > 0) {
+                selectSpec = selectSpec.offset(query.getOffset());
+            }
+
+            if (query.isSorted()) {
+                selectSpec = selectSpec.withSort(query.getSort());
+            }
+
+            selectSpec = this.coordinator.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+
+            PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+
+            return getRowsFetchSpec(this.coordinator.databaseClient().sql(operation), entityClass, returnType);
         }
 
 
         private Mono<R> selectMono(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Mono<R>> resultHandler) {
-            return resultHandler.apply(getExecutor().doSelect(query, entityClass, tableName, returnType))
-                    .flatMap(it -> getTemplate().maybeCallAfterConvert(it, tableName));
+            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
+                    .flatMap(it -> this.template.maybeCallAfterConvert(it, tableName));
         }
 
         private Flux<R> selectFlux(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Flux<R>> resultHandler) {
-            return resultHandler.apply(getExecutor().doSelect(query, entityClass, tableName, returnType))
-                    .flatMap(it -> getTemplate().maybeCallAfterConvert(it, tableName));
+            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
+                    .flatMap(it -> this.template.maybeCallAfterConvert(it, tableName));
+        }
+
+        private <E, RT> List<Expression> getSelectProjection(Table table, Query query, Class<E> entityClass, Class<RT> returnType) {
+
+            if (query.getColumns().isEmpty()) {
+
+                if (returnType.isInterface()) {
+
+                    ProjectionInformation projectionInformation = this.coordinator.projectionFactory().getProjectionInformation(returnType);
+
+                    if (projectionInformation.isClosed()) {
+                        return projectionInformation.getInputProperties().stream().map(FeatureDescriptor::getName).map(table::column).collect(Collectors.toList());
+                    }
+                }
+
+                RelationalPersistentEntity<E> entity = this.coordinator.getRequiredEntity(entityClass);
+
+                List<Expression> columns = new ArrayList<>();
+
+                boolean isQueryEntity = isAggregateEntity(entityClass);
+
+                entity.forEach(property -> {
+                    if (isPropertyExists(property)) {
+                        Expression expression;
+                        if (!isQueryEntity) {
+                            expression = table.column(property.getColumnName());
+                        } else {
+                            TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
+                            if (!isFunctionProperty(property)) {
+                                String sql = tableColumn.name();
+                                // 如果设置了别名，添加别名的语法
+                                if (!ObjectUtils.isEmpty(tableColumn.alias())) {
+                                    sql += SQL_AS + tableColumn.alias();
+                                }
+                                // 如果不是函数，直接创建标准表达式
+                                expression = Expressions.just(sql);
+                            } else {
+                                // 如果是函数，则采用函数的方式创建函数
+                                expression = SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name()))).as(tableColumn.alias());
+                            }
+                        }
+                        columns.add(expression);
+                    }
+                });
+                return columns;
+            }
+            return query.getColumns().stream().map(table::column).collect(Collectors.toList());
+        }
+
+        private <E> boolean isAggregateEntity(Class<E> entityClass) {
+            RelationalPersistentEntity<E> persistentEntity = this.coordinator.getPersistentEntity(entityClass);
+            return persistentEntity != null && isAggregateEntity(persistentEntity);
+        }
+
+        private <E> boolean isAggregateEntity(RelationalPersistentEntity<E> relationalPersistentEntity) {
+            TableEntity tableEntity = relationalPersistentEntity.findAnnotation(TableEntity.class);
+            return tableEntity != null && tableEntity.isAggregate();
+        }
+
+        private boolean isPropertyExists(RelationalPersistentProperty property) {
+            TableColumn tableColumn = property.findAnnotation(TableColumn.class);
+            return property.isIdProperty() || (tableColumn != null && tableColumn.exists());
+        }
+
+        private boolean isFunctionProperty(RelationalPersistentProperty property) {
+            TableColumn tableColumn = property.findAnnotation(TableColumn.class);
+            return tableColumn != null && !ObjectUtils.isEmpty(tableColumn.function());
         }
 
 
+        private <T> BiFunction<Row, RowMetadata, T> getRowMapper(Class<T> typeToRead) {
+            return new EntityRowMapper<>(typeToRead, this.coordinator.converter());
+        }
+
+
+        private <E, RT> RowsFetchSpec<RT> getRowsFetchSpec(DatabaseClient.GenericExecuteSpec executeSpec, Class<E> entityClass, Class<RT> returnType) {
+
+            boolean simpleType;
+
+            BiFunction<Row, RowMetadata, RT> rowMapper;
+            if (returnType.isInterface()) {
+                simpleType = this.coordinator.converter().isSimpleType(entityClass);
+                rowMapper = getRowMapper(entityClass).andThen(source -> this.coordinator.projectionFactory().createProjection(returnType, source));
+            } else {
+                simpleType = this.coordinator.converter().isSimpleType(returnType);
+                rowMapper = getRowMapper(returnType);
+            }
+
+            // avoid top-level null values if the read type is a simple one (e.g. SELECT MAX(age) via Integer.class)
+            if (simpleType) {
+                return new UnwrapOptionalFetchSpecAdapter<>(executeSpec.map((row, metadata) -> Optional.ofNullable(rowMapper.apply(row, metadata))));
+            }
+
+            return executeSpec.map(rowMapper);
+        }
+
+        private record UnwrapOptionalFetchSpecAdapter<T>(
+                RowsFetchSpec<Optional<T>> delegate) implements RowsFetchSpec<T> {
+
+            @NonNull
+            @Override
+            public Mono<T> one() {
+                return delegate.one().handle((optional, sink) -> optional.ifPresent(sink::next));
+            }
+
+            @NonNull
+            @Override
+            public Mono<T> first() {
+                return delegate.first().handle((optional, sink) -> optional.ifPresent(sink::next));
+            }
+
+            @NonNull
+            @Override
+            public Flux<T> all() {
+                return delegate.all().handle((optional, sink) -> optional.ifPresent(sink::next));
+            }
+        }
 
     }
 }

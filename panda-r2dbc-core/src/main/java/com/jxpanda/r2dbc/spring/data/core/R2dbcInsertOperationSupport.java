@@ -16,16 +16,25 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
+import org.springframework.data.r2dbc.core.StatementMapper;
+import org.springframework.data.r2dbc.mapping.OutboundRow;
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.r2dbc.core.Parameter;
+import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -69,7 +78,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcInsertSupport<>(getTemplate(), getDomainType(), tableName);
+            return new R2dbcInsertSupport<>(this.template, this.domainType, tableName);
         }
 
         /*
@@ -82,13 +91,135 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(object, "Object to insert must not be null");
 
-            return getExecutor().doInsert(object, getTableName());
+            return doInsert(object, this.tableName);
         }
 
         @Override
         public Flux<T> batchInsert(Collection<T> objectList) {
             Assert.notEmpty(objectList, "Object list to insert must not be empty");
-            return getExecutor().doBatchInsert(objectList, getTableName());
+            return doBatchInsert(objectList, this.tableName);
         }
+
+        private Mono<T> doInsert(T entity, SqlIdentifier tableName) {
+
+            RelationalPersistentEntity<T> persistentEntity = this.coordinator.getRequiredEntity(entity);
+
+            return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
+
+                T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
+
+                OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(initializedEntity);
+
+                potentiallyRemoveId(persistentEntity, outboundRow);
+
+                return template.maybeCallBeforeSave(initializedEntity, outboundRow, tableName).flatMap(entityToSave -> doInsert(entityToSave, tableName, outboundRow));
+            });
+        }
+
+        @SuppressWarnings("deprecation")
+        private Mono<T> doInsert(T entity, SqlIdentifier tableName, OutboundRow outboundRow) {
+
+            StatementMapper mapper = this.coordinator.statementMapper();
+            StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
+
+            // id生成处理
+            RelationalPersistentEntity<T> requiredEntity = this.coordinator.getRequiredEntity(entity);
+            outboundRow.computeIfAbsent(requiredEntity.getIdColumn(), (sqlIdentifier -> Parameter.from(this.coordinator.idGenerator().generate())));
+
+            for (SqlIdentifier column : outboundRow.keySet()) {
+                Parameter settableValue = outboundRow.get(column);
+                if (settableValue.hasValue()) {
+                    insert = insert.withColumn(column, settableValue);
+                }
+            }
+
+            PreparedOperation<?> operation = mapper.getMappedObject(insert);
+
+            List<SqlIdentifier> identifierColumns = getIdentifierColumns(entity.getClass());
+
+            return this.coordinator.databaseClient().sql(operation)
+                    .filter(statement -> {
+
+                        if (identifierColumns.isEmpty()) {
+                            return statement.returnGeneratedValues();
+                        }
+
+                        return statement.returnGeneratedValues(this.template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
+                    })
+                    .map(this.coordinator.converter().populateIdIfNecessary(entity)).all().last(entity)
+                    .flatMap(saved -> this.template.maybeCallAfterSave(saved, outboundRow, tableName));
+        }
+
+        /**
+         * 批量插入数据
+         * 暂时使用循环来做
+         * 后期考虑通过批量插入语句来做
+         */
+        private Flux<T> doBatchInsert(Collection<T> entityList, SqlIdentifier tableName) {
+            if (ObjectUtils.isEmpty(entityList)) {
+                return Flux.empty();
+            }
+
+            // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
+            // 需要主动管理
+            return this.coordinator.transactionalOperator()
+                    .transactional(Flux.fromStream(entityList.stream())
+                            .flatMap(entity -> doInsert(entity, tableName)));
+
+        }
+
+
+        private List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
+            return template.getDataAccessStrategy().getIdentifierColumns(clazz);
+        }
+
+        @SuppressWarnings("deprecation")
+        private void potentiallyRemoveId(RelationalPersistentEntity<?> persistentEntity, OutboundRow outboundRow) {
+
+            RelationalPersistentProperty idProperty = persistentEntity.getIdProperty();
+            if (idProperty == null) {
+                return;
+            }
+
+            SqlIdentifier columnName = idProperty.getColumnName();
+            Parameter parameter = outboundRow.get(columnName);
+
+            if (shouldSkipIdValue(parameter)) {
+                outboundRow.remove(columnName);
+            }
+        }
+
+        @SuppressWarnings("deprecation")
+        private boolean shouldSkipIdValue(@Nullable Parameter value) {
+
+            if (value == null || value.getValue() == null) {
+                return true;
+            }
+
+            if (value.getValue() instanceof Number numberValue) {
+                return numberValue.longValue() == 0L;
+            }
+
+            return false;
+        }
+
+
+        @SuppressWarnings("unchecked")
+        <E> E setVersionIfNecessary(RelationalPersistentEntity<E> persistentEntity, E entity) {
+
+            RelationalPersistentProperty versionProperty = persistentEntity.getVersionProperty();
+            if (versionProperty == null) {
+                return entity;
+            }
+
+            Class<?> versionPropertyType = versionProperty.getType();
+            Long version = versionPropertyType.isPrimitive() ? 1L : 0L;
+            ConversionService conversionService = this.coordinator.converter().getConversionService();
+            PersistentPropertyAccessor<?> propertyAccessor = persistentEntity.getPropertyAccessor(entity);
+            propertyAccessor.setProperty(versionProperty, conversionService.convert(version, versionPropertyType));
+
+            return (E) propertyAccessor.getBean();
+        }
+
     }
 }

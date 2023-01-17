@@ -1,6 +1,7 @@
 package demo.model;
 
 
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.StandardEnum;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.EnumValue;
@@ -36,6 +37,10 @@ public class Order extends StandardEntity<String> {
 
     @Serial
     private static final long serialVersionUID = 1L;
+
+//    @TableColumn
+//    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
+//    private LocalDateTime deletedDate;
 
     @TableColumn(name = "parent_id")
     private String parentId;

@@ -16,13 +16,22 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
+import org.springframework.data.mapping.IdentifierAccessor;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
+import org.springframework.data.r2dbc.core.StatementMapper;
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.query.Criteria;
+import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 
 /**
@@ -39,7 +48,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
     /*
      * (non-Javadoc)
-     * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation#delete(java.lang.Class)
+     * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation#deleteValue(java.lang.Class)
      */
     @NonNull
     @Override
@@ -69,7 +78,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcDeleteSupport<>(getTemplate(), getDomainType(), getQuery(), tableName);
+            return new R2dbcDeleteSupport<>(this.template, this.domainType, this.query, tableName);
         }
 
         /*
@@ -82,7 +91,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(query, "Query must not be null");
 
-            return new R2dbcDeleteSupport<>(getTemplate(), getDomainType(), query, getTableName());
+            return new R2dbcDeleteSupport<>(this.template, this.domainType, query, this.tableName);
         }
 
         /*
@@ -92,14 +101,66 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         @NonNull
         @Override
         public Mono<Long> all() {
-            return getExecutor().doDelete(getQuery(), getDomainType(), getTableName());
+            return doDelete(this.query, this.domainType, this.tableName);
         }
 
         @Override
         public <E> Mono<Boolean> using(E entity) {
             Assert.notNull(entity, "Entity must not be null");
 
-            return getExecutor().doDelete(entity, getTableName()).map(it -> it > 0);
+            return doDelete(entity, this.tableName).map(it -> it > 0);
         }
+
+
+        private <E> Mono<Long> doDelete(E entity, SqlIdentifier tableName) {
+            return doDelete(entity, tableName, false);
+        }
+
+        @SuppressWarnings("SameParameterValue")
+        private <E> Mono<Long> doDelete(E entity, SqlIdentifier tableName, boolean ignoreLogicDelete) {
+            RelationalPersistentEntity<E> persistentEntity = this.coordinator.getRequiredEntity(entity);
+            return doDelete(getByIdQuery(entity, persistentEntity), persistentEntity.getType(), tableName, ignoreLogicDelete);
+        }
+
+        private <E> Mono<Long> doDelete(Query query, Class<E> entityClass, SqlIdentifier tableName) {
+            return doDelete(query, entityClass, tableName, false);
+        }
+
+        private <E> Mono<Long> doDelete(Query query, Class<E> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
+
+            // 如果开启了逻辑删除，变为执行更新操作
+            if (this.coordinator.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+                return new R2dbcUpdateOperationSupport(this.template)
+                        .update(this.domainType)
+                        .matching(query)
+                        .apply(this.coordinator.createLogicDeleteUpdate(entityClass));
+            }
+
+            StatementMapper statementMapper = this.coordinator.statementMapper().forType(entityClass);
+
+            StatementMapper.DeleteSpec deleteSpec = statementMapper.createDelete(tableName);
+
+            Optional<CriteriaDefinition> criteria = query.getCriteria();
+            if (criteria.isPresent()) {
+                deleteSpec = criteria.map(deleteSpec::withCriteria).orElse(deleteSpec);
+            }
+
+            PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
+            return this.coordinator.databaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
+        }
+
+
+        private <E> Query getByIdQuery(E entity, RelationalPersistentEntity<E> persistentEntity) {
+
+            if (!persistentEntity.hasIdProperty()) {
+                throw new MappingException("No id property found for object of type " + persistentEntity.getType());
+            }
+
+            IdentifierAccessor identifierAccessor = persistentEntity.getIdentifierAccessor(entity);
+            Object id = identifierAccessor.getRequiredIdentifier();
+
+            return Query.query(Criteria.where(persistentEntity.getRequiredIdProperty().getName()).is(id));
+        }
+
     }
 }

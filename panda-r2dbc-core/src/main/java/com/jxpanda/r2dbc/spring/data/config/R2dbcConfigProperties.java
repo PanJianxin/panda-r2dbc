@@ -3,9 +3,11 @@ package com.jxpanda.r2dbc.spring.data.config;
 import com.jxpanda.r2dbc.spring.data.core.enhance.policy.NamingPolicy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @param mapping     映射相关配置
@@ -46,13 +48,46 @@ public record R2dbcConfigProperties(
      * @param deleteValue   逻辑删除「删除值」的标记
      */
     public record LogicDelete(
-            boolean enable, String field, String undeleteValue, String deleteValue
+            boolean enable, String field, Value undeleteValue, Value deleteValue
     ) {
 
         public static LogicDelete empty() {
-            return new LogicDelete(false, StringConstant.BLANK, StringConstant.BLANK, StringConstant.BLANK);
+            return new LogicDelete(false, StringConstant.BLANK, Value.empty(), Value.empty());
+        }
+
+        public record Value(String value, Class<? extends ValueHandler> handlerClass) {
+
+            private static final Map<Value, ValueHandler> HANDLER_CACHE = new HashMap<>();
+
+            public static Value empty() {
+                return new Value(StringConstant.BLANK, ValueHandler.class);
+            }
+
+            public Object get() {
+                ValueHandler valueHandler = HANDLER_CACHE.computeIfAbsent(this, (key) -> {
+                    try {
+                        return this.handlerClass().getConstructor().newInstance();
+                    } catch (Exception ignored) {
+                    }
+                    return new ValueHandler() {
+                    };
+                });
+                return valueHandler.covert(value());
+            }
+
+        }
+
+        public interface ValueHandler {
+            @NonNull
+            default Object covert(@NonNull String value) {
+                return value;
+            }
         }
 
     }
+
+
+
+
 
 }

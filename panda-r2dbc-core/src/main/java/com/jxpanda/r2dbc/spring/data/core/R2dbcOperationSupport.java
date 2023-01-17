@@ -11,11 +11,11 @@ public class R2dbcOperationSupport {
 
     protected final ReactiveEntityTemplate template;
 
-    protected final R2dbcSQLExecutor sqlExecutor;
+    protected final R2dbcOperationCoordinator coordinator;
 
     public R2dbcOperationSupport(ReactiveEntityTemplate template) {
         this.template = template;
-        this.sqlExecutor = template.getSqlExecutor();
+        this.coordinator = template.getCoordinator();
     }
 
 
@@ -25,32 +25,32 @@ public class R2dbcOperationSupport {
         /**
          * entityTemplate
          */
-        private final ReactiveEntityTemplate template;
+        protected final ReactiveEntityTemplate template;
 
         /**
          * SQL Executor
          */
-        private final R2dbcSQLExecutor executor;
+        protected final R2dbcOperationCoordinator coordinator;
 
         /**
          * 领域对象类型，通常是实体对象的类型
          */
-        private final Class<T> domainType;
+        protected final Class<T> domainType;
 
         /**
          * 返回值类型
          */
-        private final Class<R> returnType;
+        protected final Class<R> returnType;
 
         /**
          * 查询条件对象
          */
-        private final Query query;
+        protected final Query query;
 
         /**
          * 表名
          */
-        private final SqlIdentifier tableName;
+        protected final SqlIdentifier tableName;
 
 
         protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType) {
@@ -60,11 +60,11 @@ public class R2dbcOperationSupport {
 
         protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
             this.template = template;
-            this.executor = template.getSqlExecutor();
+            this.coordinator = template.getCoordinator();
             this.domainType = domainType;
             this.returnType = returnType;
             this.query = query == null ? Query.empty() : query;
-            this.tableName = tableName == null ? this.executor.getTableName(domainType) : tableName;
+            this.tableName = tableName == null ? this.coordinator.getTableName(domainType) : tableName;
         }
 
     }

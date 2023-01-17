@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.extension.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
