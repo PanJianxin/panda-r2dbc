@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core.operation.support;
+package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
 import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -87,8 +86,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
         }
 
         @Override
-        public Flux<T> batchInsert(Collection<T> entityList) {
-            return getExecutor().doBatchInsert(entityList, getTableName());
+        public Flux<T> batchInsert(Collection<T> objectList) {
+            Assert.notEmpty(objectList, "Object list to insert must not be empty");
+            return getExecutor().doBatchInsert(objectList, getTableName());
         }
     }
 }

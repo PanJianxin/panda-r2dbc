@@ -3,6 +3,9 @@ package com.jxpanda.r2dbc.spring.data.config;
 import com.jxpanda.r2dbc.spring.data.core.enhance.policy.NamingPolicy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
  * @param mapping     映射相关配置

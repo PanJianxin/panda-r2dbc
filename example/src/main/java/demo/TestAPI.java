@@ -4,7 +4,6 @@ import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import demo.model.*;
-import io.r2dbc.spi.Connection;
 import lombok.AllArgsConstructor;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
@@ -64,6 +63,7 @@ public class TestAPI {
                 });
     }
 
+//    @Transactional
     @PostMapping("/order/insert-batch")
     public Flux<Order> insertBatch(@RequestBody List<Order> orderList) {
 //        return orderService.update(order, Query.query(Criteria.where(Order.ID).is(orderId)));
@@ -153,16 +153,6 @@ public class TestAPI {
                 })
                 .sequential()
                 .collectList();
-
-//        return r2dbcEntityTemplate.insert(order)
-//                .zipWith(r2dbcEntityTemplate.insert(user))
-//                .publishOn(ForkJoinPoolScheduler.create("ForkJoin"))
-//                .log()
-////                .onErrorContinue((err, obj) -> {
-////                    System.out.println(err.getMessage());
-////                    System.out.println(obj);
-////                })
-//                .map(it -> it);
     }
 
 

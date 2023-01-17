@@ -1,6 +1,7 @@
-package com.jxpanda.r2dbc.spring.data.core.operation.support;
+package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import lombok.AccessLevel;
+import lombok.Getter;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
@@ -18,7 +19,7 @@ public class R2dbcOperationSupport {
     }
 
 
-
+    @Getter(AccessLevel.PROTECTED)
     protected static class R2dbcSupport<T, R> {
 
         /**
@@ -28,7 +29,7 @@ public class R2dbcOperationSupport {
 
         /**
          * SQL Executor
-         * */
+         */
         private final R2dbcSQLExecutor executor;
 
         /**
@@ -64,30 +65,6 @@ public class R2dbcOperationSupport {
             this.returnType = returnType;
             this.query = query == null ? Query.empty() : query;
             this.tableName = tableName == null ? this.executor.getTableName(domainType) : tableName;
-        }
-
-        protected ReactiveEntityTemplate getTemplate() {
-            return template;
-        }
-
-        protected R2dbcSQLExecutor getExecutor() {
-            return executor;
-        }
-
-        protected Class<T> getDomainType() {
-            return domainType;
-        }
-
-        protected Class<R> getReturnType() {
-            return returnType;
-        }
-
-        protected Query getQuery() {
-            return query;
-        }
-
-        protected SqlIdentifier getTableName() {
-            return tableName;
         }
 
     }

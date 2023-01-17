@@ -1,6 +1,5 @@
-package com.jxpanda.r2dbc.spring.data.core.operation.support;
+package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 

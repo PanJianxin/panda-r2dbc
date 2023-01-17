@@ -16,28 +16,66 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
-import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
+import io.r2dbc.spi.Row;
+import io.r2dbc.spi.RowMetadata;
+import lombok.AccessLevel;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.TransientDataAccessResourceException;
+import org.springframework.data.mapping.IdentifierAccessor;
+import org.springframework.data.mapping.MappingException;
+import org.springframework.data.mapping.PersistentPropertyAccessor;
+import org.springframework.data.projection.ProjectionInformation;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
+import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
+import org.springframework.data.relational.core.query.Criteria;
+import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
-import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.data.relational.core.sql.*;
+import org.springframework.data.util.Pair;
+import org.springframework.data.util.ProxyUtils;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
+import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.r2dbc.core.Parameter;
+import org.springframework.r2dbc.core.PreparedOperation;
+import org.springframework.r2dbc.core.RowsFetchSpec;
+import org.springframework.transaction.ReactiveTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.reactive.TransactionalOperator;
+import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Collection;
+import java.beans.FeatureDescriptor;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
+@Getter(AccessLevel.PACKAGE)
 public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
-
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
 
@@ -45,20 +83,20 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     private final R2dbcSQLExecutor sqlExecutor;
 
+    @Autowired
+    private IdGenerator<?> idGenerator;
+
+    @Autowired
+    private R2dbcTransactionManager r2dbcTransactionManager;
+
+    @Autowired
+    private TransactionalOperator transactionalOperator;
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter, R2dbcConfigProperties r2dbcConfigProperties) {
         super(databaseClient, dialect, converter);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
         this.r2dbcConfigProperties = r2dbcConfigProperties;
-        this.sqlExecutor = new R2dbcSQLExecutor(this, dialect, converter);
-    }
-
-    public R2dbcSQLExecutor getSqlExecutor() {
-        return sqlExecutor;
-    }
-
-    public R2dbcConfigProperties getR2dbcConfigProperties() {
-        return r2dbcConfigProperties;
+        this.sqlExecutor = new R2dbcSQLExecutor(this);
     }
 
     @Override
@@ -79,11 +117,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     @Override
     public <T> Mono<T> maybeCallAfterConvert(T object, SqlIdentifier table) {
         return super.maybeCallAfterConvert(object, table);
-    }
-
-
-    public SpelAwareProxyProjectionFactory getProjectionFactory() {
-        return projectionFactory;
     }
 
 
@@ -119,7 +152,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     @Override
     public <T> Mono<T> insert(T entity) throws DataAccessException {
-        return insert(this.sqlExecutor.getRequiredEntity(entity).getType()).using(entity);
+        return insert(this.getSqlExecutor().getRequiredEntity(entity).getType()).using(entity);
     }
 
     public <T> Flux<T> batchInsert(Collection<T> entityList, Class<T> domainType) {
@@ -148,8 +181,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     @Override
     public <T> Mono<T> delete(T entity) throws DataAccessException {
-        return delete(this.sqlExecutor.getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
+        return delete(this.getSqlExecutor().getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
     }
-
 
 }

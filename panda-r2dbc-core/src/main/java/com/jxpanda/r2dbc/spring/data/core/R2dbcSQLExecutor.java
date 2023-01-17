@@ -1,14 +1,14 @@
-package com.jxpanda.r2dbc.spring.data.core.operation.support;
+package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
-import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
+import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
-import lombok.Getter;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.TransientDataAccessResourceException;
@@ -21,7 +21,6 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.StatementMapper;
-import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -34,11 +33,15 @@ import org.springframework.data.util.Pair;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.r2dbc.core.Parameter;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.RowsFetchSpec;
+import org.springframework.transaction.ReactiveTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -48,36 +51,76 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-@Getter
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation", "unused", "SameParameterValue"})
-public final class R2dbcSQLExecutor {
+public class R2dbcSQLExecutor {
 
     private static final String SQL_AS = " AS ";
 
     private final ReactiveEntityTemplate template;
 
-    private final R2dbcConfigProperties r2dbcConfigProperties;
-
-    private final SpelAwareProxyProjectionFactory projectionFactory;
-
-    private final MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext;
-
-    private final StatementMapper statementMapper;
-
-    private final R2dbcConverter converter;
-
-    private final DatabaseClient databaseClient;
-
-    public R2dbcSQLExecutor(ReactiveEntityTemplate template, R2dbcDialect dialect, R2dbcConverter converter) {
+    R2dbcSQLExecutor(ReactiveEntityTemplate template) {
         this.template = template;
-        this.databaseClient = template.getDatabaseClient();
-        this.converter = converter;
-        this.mappingContext = this.converter.getMappingContext();
-        this.projectionFactory = template.getProjectionFactory();
-        this.r2dbcConfigProperties = template.getR2dbcConfigProperties();
-        this.statementMapper = template.getDataAccessStrategy().getStatementMapper();
     }
 
+    ReactiveEntityTemplate getTemplate() {
+        return template;
+    }
+
+    R2dbcConfigProperties r2dbcConfigProperties() {
+        return this.getTemplate().getR2dbcConfigProperties();
+    }
+
+    SpelAwareProxyProjectionFactory projectionFactory() {
+        return this.getTemplate().getProjectionFactory();
+    }
+
+    MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext() {
+        return this.getTemplate().getConverter().getMappingContext();
+    }
+
+    StatementMapper statementMapper() {
+        return this.getTemplate().getDataAccessStrategy().getStatementMapper();
+    }
+
+    R2dbcConverter converter() {
+        return this.getTemplate().getConverter();
+    }
+
+    DatabaseClient databaseClient() {
+        return this.getTemplate().getDatabaseClient();
+    }
+
+    IdGenerator<?> idGenerator() {
+        return this.getTemplate().getIdGenerator();
+    }
+
+    TransactionalOperator transactionalOperator() {
+        return this.getTemplate().getTransactionalOperator();
+    }
+
+    TransactionalOperator transactionalOperator(int propagationBehavior, int isolationLevel, int timeout, boolean readOnly) {
+        return TransactionalOperator.create(this.getTemplate().getR2dbcTransactionManager(), new TransactionDefinition() {
+            @Override
+            public int getPropagationBehavior() {
+                return propagationBehavior;
+            }
+
+            @Override
+            public int getIsolationLevel() {
+                return isolationLevel;
+            }
+
+            @Override
+            public int getTimeout() {
+                return timeout;
+            }
+
+            @Override
+            public boolean isReadOnly() {
+                return readOnly;
+            }
+        });
+    }
 
     <T> Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
         return doExists(query, entityClass, tableName, false);
@@ -86,7 +129,7 @@ public final class R2dbcSQLExecutor {
     <T> Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
         RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+        StatementMapper statementMapper = statementMapper().forType(entityClass);
 
         SqlIdentifier columnName = entity.hasIdProperty() ? entity.getRequiredIdProperty().getColumnName() : SqlIdentifier.unquoted("*");
 
@@ -96,7 +139,7 @@ public final class R2dbcSQLExecutor {
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-        return getDatabaseClient().sql(operation).map((r, md) -> r).first().hasElement();
+        return databaseClient().sql(operation).map((r, md) -> r).first().hasElement();
     }
 
     <T> Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
@@ -106,7 +149,7 @@ public final class R2dbcSQLExecutor {
     <T> Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
         RelationalPersistentEntity<T> entity = getRequiredEntity(entityClass);
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+        StatementMapper statementMapper = statementMapper().forType(entityClass);
 
         StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> {
             Expression countExpression = entity.hasIdProperty() ? table.column(entity.getRequiredIdProperty().getColumnName()) : Expressions.asterisk();
@@ -117,7 +160,7 @@ public final class R2dbcSQLExecutor {
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-        return getDatabaseClient().sql(operation).map((r, md) -> r.get(0, Long.class)).first().defaultIfEmpty(0L);
+        return databaseClient().sql(operation).map((r, md) -> r.get(0, Long.class)).first().defaultIfEmpty(0L);
     }
 
     <T, R> RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType) {
@@ -132,7 +175,7 @@ public final class R2dbcSQLExecutor {
             isQueryEntity = entityClass.getAnnotation(TableEntity.class).isAggregate();
         }
 
-        StatementMapper statementMapper = isQueryEntity ? getStatementMapper() : getStatementMapper().forType(entityClass);
+        StatementMapper statementMapper = isQueryEntity ? statementMapper() : statementMapper().forType(entityClass);
 
         StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName)
                 .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
@@ -153,7 +196,7 @@ public final class R2dbcSQLExecutor {
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-        return getRowsFetchSpec(getDatabaseClient().sql(operation), entityClass, returnType);
+        return getRowsFetchSpec(databaseClient().sql(operation), entityClass, returnType);
     }
 
 
@@ -175,8 +218,12 @@ public final class R2dbcSQLExecutor {
 
     <T> Mono<T> doInsert(T entity, SqlIdentifier tableName, OutboundRow outboundRow) {
 
-        StatementMapper mapper = getStatementMapper();
+        StatementMapper mapper = statementMapper();
         StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
+
+        // id生成处理
+        RelationalPersistentEntity<T> requiredEntity = getRequiredEntity(entity);
+        outboundRow.computeIfAbsent(requiredEntity.getIdColumn(), (sqlIdentifier -> Parameter.from(idGenerator().generate())));
 
         for (SqlIdentifier column : outboundRow.keySet()) {
             Parameter settableValue = outboundRow.get(column);
@@ -187,10 +234,9 @@ public final class R2dbcSQLExecutor {
 
         PreparedOperation<?> operation = mapper.getMappedObject(insert);
 
-
         List<SqlIdentifier> identifierColumns = getIdentifierColumns(entity.getClass());
 
-        return getDatabaseClient().sql(operation)
+        return databaseClient().sql(operation)
                 .filter(statement -> {
 
                     if (identifierColumns.isEmpty()) {
@@ -199,7 +245,7 @@ public final class R2dbcSQLExecutor {
 
                     return statement.returnGeneratedValues(template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
                 })
-                .map(getConverter().populateIdIfNecessary(entity)).all().last(entity)
+                .map(converter().populateIdIfNecessary(entity)).all().last(entity)
                 .flatMap(saved -> template.maybeCallAfterSave(saved, outboundRow, tableName));
     }
 
@@ -208,13 +254,17 @@ public final class R2dbcSQLExecutor {
      * 暂时使用循环来做
      * 后期考虑通过批量插入语句来做
      */
-    @Transactional(rollbackFor = Exception.class)
     <T> Flux<T> doBatchInsert(Collection<T> entityList, SqlIdentifier tableName) {
         if (ObjectUtils.isEmpty(entityList)) {
             return Flux.empty();
         }
-        return Flux.fromStream(entityList.stream())
-                .flatMap(entity -> doInsert(entity, tableName));
+
+        // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
+        // 需要主动管理
+        return transactionalOperator()
+                .transactional(Flux.fromStream(entityList.stream())
+                        .flatMap(entity -> doInsert(entity, tableName)));
+
     }
 
 
@@ -238,7 +288,7 @@ public final class R2dbcSQLExecutor {
             return doUpdate(query, createLogicDeleteUpdate(entityClass), entityClass, tableName);
         }
 
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+        StatementMapper statementMapper = statementMapper().forType(entityClass);
 
         StatementMapper.DeleteSpec deleteSpec = statementMapper.createDelete(tableName);
 
@@ -248,7 +298,7 @@ public final class R2dbcSQLExecutor {
         }
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
-        return getDatabaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
+        return databaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
     }
 
 
@@ -296,7 +346,7 @@ public final class R2dbcSQLExecutor {
 
     Mono<Long> doUpdate(Query query, Update update, Class<?> entityClass, SqlIdentifier tableName) {
 
-        StatementMapper statementMapper = getStatementMapper().forType(entityClass);
+        StatementMapper statementMapper = statementMapper().forType(entityClass);
 
         StatementMapper.UpdateSpec selectSpec = statementMapper.createUpdate(tableName, update);
 
@@ -306,7 +356,7 @@ public final class R2dbcSQLExecutor {
         }
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-        return getDatabaseClient().sql(operation).fetch().rowsUpdated();
+        return databaseClient().sql(operation).fetch().rowsUpdated();
     }
 
     <T> Mono<T> doUpdate(T entity, SqlIdentifier tableName, RelationalPersistentEntity<T> persistentEntity, Criteria criteria, OutboundRow outboundRow) {
@@ -314,12 +364,12 @@ public final class R2dbcSQLExecutor {
 
         Update update = Update.from((Map) outboundRow);
 
-        StatementMapper mapper = getStatementMapper();
+        StatementMapper mapper = statementMapper();
         StatementMapper.UpdateSpec updateSpec = mapper.createUpdate(tableName, update).withCriteria(criteria);
 
         PreparedOperation<?> operation = mapper.getMappedObject(updateSpec);
 
-        return getDatabaseClient().sql(operation).fetch().rowsUpdated().handle((rowsUpdated, sink) -> {
+        return databaseClient().sql(operation).fetch().rowsUpdated().handle((rowsUpdated, sink) -> {
 
             if (rowsUpdated != 0) {
                 return;
@@ -333,15 +383,15 @@ public final class R2dbcSQLExecutor {
         }).then(template.maybeCallAfterSave(entity, outboundRow, tableName));
     }
 
-    private List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
+    List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
         return template.getDataAccessStrategy().getIdentifierColumns(clazz);
     }
 
-    public <T> SqlIdentifier getTableName(Class<T> entityClass) {
+    <T> SqlIdentifier getTableName(Class<T> entityClass) {
         return getRequiredEntity(entityClass).getTableName();
     }
 
-    public <T> SqlIdentifier getTableNameOrEmpty(Class<T> entityClass) {
+    <T> SqlIdentifier getTableNameOrEmpty(Class<T> entityClass) {
 
         RelationalPersistentEntity<T> entity = getPersistentEntity(entityClass);
 
@@ -350,17 +400,17 @@ public final class R2dbcSQLExecutor {
 
 
     @Nullable
-    public <T> RelationalPersistentEntity<T> getPersistentEntity(Class<T> entityClass) {
-        return (RelationalPersistentEntity<T>) getMappingContext().getPersistentEntity(entityClass);
+    <T> RelationalPersistentEntity<T> getPersistentEntity(Class<T> entityClass) {
+        return (RelationalPersistentEntity<T>) mappingContext().getPersistentEntity(entityClass);
     }
 
-    public <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
+    <T> RelationalPersistentEntity<T> getRequiredEntity(T entity) {
         Class<?> entityType = ProxyUtils.getUserClass(entity);
         return (RelationalPersistentEntity) getRequiredEntity(entityType);
     }
 
-    public <T> RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
-        return (RelationalPersistentEntity<T>) getMappingContext().getRequiredPersistentEntity(entityClass);
+    <T> RelationalPersistentEntity<T> getRequiredEntity(Class<T> entityClass) {
+        return (RelationalPersistentEntity<T>) mappingContext().getRequiredPersistentEntity(entityClass);
     }
 
 
@@ -397,7 +447,7 @@ public final class R2dbcSQLExecutor {
     }
 
     private <T> BiFunction<Row, RowMetadata, T> getRowMapper(Class<T> typeToRead) {
-        return new EntityRowMapper<>(typeToRead, getConverter());
+        return new EntityRowMapper<>(typeToRead, converter());
     }
 
     private <T, R> List<Expression> getSelectProjection(Table table, Query query, Class<T> entityClass, Class<R> returnType) {
@@ -406,7 +456,7 @@ public final class R2dbcSQLExecutor {
 
             if (returnType.isInterface()) {
 
-                ProjectionInformation projectionInformation = getProjectionFactory().getProjectionInformation(returnType);
+                ProjectionInformation projectionInformation = projectionFactory().getProjectionInformation(returnType);
 
                 if (projectionInformation.isClosed()) {
                     return projectionInformation.getInputProperties().stream().map(FeatureDescriptor::getName).map(table::column).collect(Collectors.toList());
@@ -454,10 +504,10 @@ public final class R2dbcSQLExecutor {
 
         BiFunction<Row, RowMetadata, R> rowMapper;
         if (returnType.isInterface()) {
-            simpleType = getConverter().isSimpleType(entityClass);
-            rowMapper = getRowMapper(entityClass).andThen(source -> getProjectionFactory().createProjection(returnType, source));
+            simpleType = converter().isSimpleType(entityClass);
+            rowMapper = getRowMapper(entityClass).andThen(source -> projectionFactory().createProjection(returnType, source));
         } else {
-            simpleType = getConverter().isSimpleType(returnType);
+            simpleType = converter().isSimpleType(returnType);
             rowMapper = getRowMapper(returnType);
         }
 
@@ -478,7 +528,7 @@ public final class R2dbcSQLExecutor {
 
         Class<?> versionPropertyType = versionProperty.getType();
         Long version = versionPropertyType.isPrimitive() ? 1L : 0L;
-        ConversionService conversionService = getConverter().getConversionService();
+        ConversionService conversionService = converter().getConversionService();
         PersistentPropertyAccessor<?> propertyAccessor = persistentEntity.getPropertyAccessor(entity);
         propertyAccessor.setProperty(versionProperty, conversionService.convert(version, versionPropertyType));
 
@@ -538,7 +588,7 @@ public final class R2dbcSQLExecutor {
         Optional<RelationalPersistentProperty> versionPropertyOptional = Optional.ofNullable(persistentEntity.getVersionProperty());
 
         versionPropertyOptional.ifPresent(versionProperty -> {
-            ConversionService conversionService = getConverter().getConversionService();
+            ConversionService conversionService = converter().getConversionService();
             Optional<Object> currentVersionValue = Optional.ofNullable(propertyAccessor.getProperty(versionProperty));
 
             long newVersionValue = currentVersionValue.map(it -> conversionService.convert(it, Long.class)).map(it -> it + 1).orElse(1L);
@@ -558,7 +608,7 @@ public final class R2dbcSQLExecutor {
         RelationalPersistentEntity<?> requiredEntity = getRequiredEntity(entityClass);
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         // 默认取值是全局配置的逻辑删除字段
-        R2dbcConfigProperties.LogicDelete logicDeleteConfig = r2dbcConfigProperties.logicDelete();
+        R2dbcConfigProperties.LogicDelete logicDeleteConfig = r2dbcConfigProperties().logicDelete();
         String logicDeleteField = logicDeleteConfig.field();
         Object value = switch (whichValue) {
             case DELETE_VALUE -> logicDeleteConfig.deleteValue();
@@ -626,7 +676,7 @@ public final class R2dbcSQLExecutor {
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         if (logicDeleteProperty == null) {
             // 如果没有配置逻辑删除的字段，以全局配置为准
-            R2dbcConfigProperties.LogicDelete logicDeleteConfig = r2dbcConfigProperties.logicDelete();
+            R2dbcConfigProperties.LogicDelete logicDeleteConfig = r2dbcConfigProperties().logicDelete();
             // 开启了逻辑删除配置，并且配置了逻辑删除字段才生效
             return logicDeleteConfig.enable() && !ObjectUtils.isEmpty(logicDeleteConfig.field());
         } else {

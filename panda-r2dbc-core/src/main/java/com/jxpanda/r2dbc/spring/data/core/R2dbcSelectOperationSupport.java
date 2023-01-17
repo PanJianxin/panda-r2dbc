@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core.operation.support;
+package com.jxpanda.r2dbc.spring.data.core;
 
 
-import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.relational.core.query.Query;

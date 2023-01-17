@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.operation;
 
 import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 
 import java.util.Collection;
@@ -14,7 +15,7 @@ public interface R2dbcInsertOperation extends ReactiveInsertOperation {
 
     interface R2dbcInsert<T> extends ReactiveInsertOperation.ReactiveInsert<T> {
 
-        Flux<T> batchInsert(Collection<T> entityList);
+        Flux<T> batchInsert(Collection<T> objectList);
 
     }
 
