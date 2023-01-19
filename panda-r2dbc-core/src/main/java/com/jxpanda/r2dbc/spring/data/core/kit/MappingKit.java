@@ -73,15 +73,56 @@ public class MappingKit {
      * 返回字段是否是存在的
      * 主要用于排除虚拟字段
      */
-    public static boolean isPropertyExists(RelationalPersistentProperty property) {
+    public static boolean isPropertyExists(@Nullable RelationalPersistentProperty property) {
+        if (property == null) {
+            return false;
+        }
+        if (property.isIdProperty()) {
+            return true;
+        }
         TableColumn tableColumn = property.findAnnotation(TableColumn.class);
-        return property.isIdProperty() || (tableColumn != null && tableColumn.exists());
+        return tableColumn != null && tableColumn.exists();
     }
 
     public static boolean isFunctionProperty(RelationalPersistentProperty property) {
         TableColumn tableColumn = property.findAnnotation(TableColumn.class);
         return tableColumn != null && !ObjectUtils.isEmpty(tableColumn.function());
     }
+
+    /**
+     * 返回字段的值是否有效
+     * 处理空值，在插入/更新数据的时候判定是否需要过滤掉对应字段的判别依据
+     */
+    public static boolean isPropertyEffective(RelationalPersistentEntity<?> entity, RelationalPersistentProperty property, @Nullable Object value) {
+
+        // 判别优先级
+        // 字段上的配置 > 类上的配置 > 全局配置文件的配置
+
+        // 默认是全局校验策略
+        ValidationStrategy validationStrategy = R2dbcEnvironment.getMapping().validationStrategy();
+
+        // 类上面的校验策略
+        TableEntity tableEntity = entity.findAnnotation(TableEntity.class);
+        if (tableEntity != null && tableEntity.validationPolicy() != ValidationStrategy.DEFAULT) {
+            validationStrategy = tableEntity.validationPolicy();
+        }
+
+        // id的校验策略
+        TableId tableId = property.findAnnotation(TableId.class);
+        if (tableId != null && tableId.validationPolicy() != ValidationStrategy.DEFAULT) {
+            validationStrategy = tableId.validationPolicy();
+        }
+
+        // 字段上的校验策略
+        TableColumn tableColumn = property.findAnnotation(TableColumn.class);
+        if (tableColumn != null && tableColumn.validationPolicy() != ValidationStrategy.DEFAULT) {
+            validationStrategy = tableColumn.validationPolicy();
+        }
+
+        // 使用策略判定字段是否有效
+        return validationStrategy.isEffective(value);
+    }
+
 
     /**
      * 是否使用逻辑删除
@@ -146,40 +187,6 @@ public class MappingKit {
         return Pair.of(logicDeleteField, value);
     }
 
-
-    /**
-     * 返回字段的值是否有效
-     * 处理空值，在插入/更新数据的时候判定是否需要过滤掉对应字段的判别依据
-     */
-    public static boolean isPropertyEffective(RelationalPersistentEntity<?> entity, RelationalPersistentProperty property, @Nullable Object value) {
-
-        // 判别优先级
-        // 字段上的配置 > 类上的配置 > 全局配置文件的配置
-
-        // 默认是全局校验策略
-        ValidationStrategy validationStrategy = R2dbcEnvironment.getMapping().validationStrategy();
-
-        // 类上面的校验策略
-        TableEntity tableEntity = entity.findAnnotation(TableEntity.class);
-        if (tableEntity != null && tableEntity.validationPolicy() != ValidationStrategy.DEFAULT) {
-            validationStrategy = tableEntity.validationPolicy();
-        }
-
-        // id的校验策略
-        TableId tableId = property.findAnnotation(TableId.class);
-        if (tableId != null && tableId.validationPolicy() != ValidationStrategy.DEFAULT) {
-            validationStrategy = tableId.validationPolicy();
-        }
-
-        // 字段上的校验策略
-        TableColumn tableColumn = property.findAnnotation(TableColumn.class);
-        if (tableColumn != null && tableColumn.validationPolicy() != ValidationStrategy.DEFAULT) {
-            validationStrategy = tableColumn.validationPolicy();
-        }
-
-        // 使用策略判定字段是否有效
-        return validationStrategy.isEffective(value);
-    }
 
     public enum LogicDeleteValue {
         UNDELETE_VALUE,

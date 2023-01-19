@@ -4,3 +4,4 @@
 /.idea/
 /.fleet/settings.json
 .DS_Store
+/example/src/main/resources/application-database.yaml
