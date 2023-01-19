@@ -30,7 +30,7 @@ public class R2dbcOperationSupport {
 
 
     @Getter(AccessLevel.PROTECTED)
-    protected static class R2dbcSupport<T, R> {
+    protected static class R2dbcSupport<T> {
 
         /**
          * entityTemplate
@@ -42,10 +42,6 @@ public class R2dbcOperationSupport {
          */
         protected final Class<T> domainType;
 
-        /**
-         * 返回值类型
-         */
-        protected final Class<R> returnType;
 
         /**
          * 查询条件对象
@@ -58,15 +54,14 @@ public class R2dbcOperationSupport {
         protected final SqlIdentifier tableName;
 
 
-        protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType) {
-            this(template, domainType, returnType, null, null);
+        protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType) {
+            this(template, domainType, null, null);
         }
 
 
-        protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
+        protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
             this.template = template;
             this.domainType = domainType;
-            this.returnType = returnType;
             this.query = query == null ? Query.empty() : query;
             this.tableName = tableName == null ? MappingKit.getTableName(domainType) : tableName;
         }
@@ -77,10 +72,6 @@ public class R2dbcOperationSupport {
 
         SpelAwareProxyProjectionFactory projectionFactory() {
             return this.template.getProjectionFactory();
-        }
-
-        MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext() {
-            return this.template.getConverter().getMappingContext();
         }
 
         StatementMapper statementMapper() {

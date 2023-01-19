@@ -22,13 +22,13 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new R2dbcSaveSupport<>(this.template, domainType, domainType, Query.empty(), null);
+        return new R2dbcSaveSupport<>(this.template, domainType, Query.empty(), null);
     }
 
 
-    private final static class R2dbcSaveSupport<T> extends R2dbcSupport<T, T> implements R2dbcSaveOperation.R2dbcSave<T> {
-        R2dbcSaveSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<T> returnType, Query query, @Nullable SqlIdentifier tableName) {
-            super(template, domainType, returnType, query, tableName);
+    private final static class R2dbcSaveSupport<T> extends R2dbcSupport<T> implements R2dbcSaveOperation.R2dbcSave<T> {
+        R2dbcSaveSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query, @Nullable SqlIdentifier tableName) {
+            super(template, domainType, query, tableName);
         }
 
 

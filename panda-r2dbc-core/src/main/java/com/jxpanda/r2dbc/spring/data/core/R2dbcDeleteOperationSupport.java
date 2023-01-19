@@ -60,7 +60,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new R2dbcDeleteSupport<>(template, domainType, Query.empty(), null);
+        return new R2dbcDeleteSupport<>(template, domainType);
     }
 
     /**
@@ -93,13 +93,15 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         return criteriaOptional.map(selectSpec::withCriteria).orElse(selectSpec);
     }
 
-    private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T, Long> implements R2dbcDeleteOperation.R2dbcDelete {
+    private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T> implements R2dbcDeleteOperation.R2dbcDelete {
 
+        R2dbcDeleteSupport(ReactiveEntityTemplate template, Class<T> domainType) {
+            super(template, domainType);
+        }
 
         R2dbcDeleteSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
                            @Nullable SqlIdentifier tableName) {
-
-            super(template, domainType, Long.class, query, tableName);
+            super(template, domainType, query, tableName);
         }
 
         /*

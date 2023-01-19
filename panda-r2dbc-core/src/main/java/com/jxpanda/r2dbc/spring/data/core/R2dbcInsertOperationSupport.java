@@ -60,13 +60,17 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new R2dbcInsertSupport<>(this.template, domainType, null);
+        return new R2dbcInsertSupport<>(this.template, domainType);
     }
 
-    private final static class R2dbcInsertSupport<T> extends R2dbcSupport<T, T> implements R2dbcInsert<T> {
+    private final static class R2dbcInsertSupport<T> extends R2dbcSupport<T> implements R2dbcInsert<T> {
+
+        R2dbcInsertSupport(ReactiveEntityTemplate template, Class<T> domainType) {
+            super(template, domainType);
+        }
 
         R2dbcInsertSupport(ReactiveEntityTemplate template, Class<T> domainType, @Nullable SqlIdentifier tableName) {
-            super(template, domainType, domainType, null, tableName);
+            super(template, domainType, null, tableName);
         }
 
         /*

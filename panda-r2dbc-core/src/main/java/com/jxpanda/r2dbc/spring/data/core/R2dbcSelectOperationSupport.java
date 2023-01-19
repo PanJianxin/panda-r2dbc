@@ -73,16 +73,27 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new R2dbcSelectSupport<>(this.template, domainType, domainType, Query.empty(), null);
+        return new R2dbcSelectSupport<>(this.template, domainType, domainType);
     }
 
 
     @SuppressWarnings("SameParameterValue")
-    private final static class R2dbcSelectSupport<T, R> extends R2dbcSupport<T, R> implements R2dbcSelectOperation.R2dbcSelect<R> {
+    private final static class R2dbcSelectSupport<T, R> extends R2dbcSupport<T> implements R2dbcSelectOperation.R2dbcSelect<R> {
+
+        /**
+         * 返回值类型
+         */
+        private final Class<R> returnType;
+
+        public R2dbcSelectSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType) {
+            super(template, domainType);
+            this.returnType = returnType;
+        }
 
         private R2dbcSelectSupport(ReactiveEntityTemplate template, Class<T> domainType, Class<R> returnType, Query query,
                                    @Nullable SqlIdentifier tableName) {
-            super(template, domainType, returnType, query, tableName);
+            super(template, domainType, query, tableName);
+            this.returnType = returnType;
         }
 
         /*

@@ -63,17 +63,20 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
         Assert.notNull(domainType, "DomainType must not be null");
 
-        return new R2dbcUpdateSupport<>(this.template, domainType, Query.empty(), null);
+        return new R2dbcUpdateSupport<>(this.template, domainType);
     }
 
 
     @SuppressWarnings("unchecked")
-    private final static class R2dbcUpdateSupport<T> extends R2dbcSupport<T, Long> implements R2dbcUpdate, TerminatingUpdate {
+    private final static class R2dbcUpdateSupport<T> extends R2dbcSupport<T> implements R2dbcUpdate, TerminatingUpdate {
 
+        R2dbcUpdateSupport(ReactiveEntityTemplate template, Class<T> domainType) {
+            super(template, domainType);
+        }
 
         R2dbcUpdateSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
                            @Nullable SqlIdentifier tableName) {
-            super(template, domainType, Long.class, query, tableName);
+            super(template, domainType, query, tableName);
         }
 
         /*
