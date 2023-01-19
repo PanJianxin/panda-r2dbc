@@ -48,6 +48,13 @@ public class TestAPI {
                 .log();
     }
 
+    @PostMapping("/order/item/insert")
+    public Mono<OrderItem> itemInsert(@RequestBody OrderItem orderItem) {
+        return reactiveEntityTemplate.insert(OrderItem.class)
+                .using(orderItem)
+                .log();
+    }
+
 //    @PostMapping("/order/save")
 //    public Mono<Order> save(@RequestBody Order order) {
 //        return reactiveEntityTemplate.save(order)

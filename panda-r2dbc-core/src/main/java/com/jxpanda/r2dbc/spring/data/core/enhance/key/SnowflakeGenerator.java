@@ -14,15 +14,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * 这里使用抽象类的设计，可以在实例化对象的时候，通过匿名内部类的机制，重写cast函数，把Long对象转为期望的类型
  * 例如：转为String类型，以此来提供一定程度上ID类型的灵活性
  */
-public abstract class SnowflakeIdGenerator<T extends Serializable> implements IdGenerator<T> {
+public abstract class SnowflakeGenerator<T extends Serializable> implements IdGenerator<T> {
 
     private final Snowflake snowflake;
 
-    public SnowflakeIdGenerator() {
+    public SnowflakeGenerator() {
         snowflake = new Snowflake(0, 0);
     }
 
-    public SnowflakeIdGenerator(int dataCenterId, int workerId) {
+    public SnowflakeGenerator(int dataCenterId, int workerId) {
         snowflake = new Snowflake(dataCenterId, workerId);
     }
 

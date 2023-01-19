@@ -17,6 +17,7 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
+import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -46,8 +47,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     private final R2dbcConfigProperties r2dbcConfigProperties;
 
-    private final R2dbcOperationCoordinator coordinator;
-
     @Autowired
     private IdGenerator<?> idGenerator;
 
@@ -61,7 +60,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
         super(databaseClient, dialect, converter);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
         this.r2dbcConfigProperties = r2dbcConfigProperties;
-        this.coordinator = new R2dbcOperationCoordinator(this);
     }
 
     @Override
@@ -117,7 +115,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     @Override
     public <T> Mono<T> insert(T entity) throws DataAccessException {
-        return insert(this.getCoordinator().getRequiredEntity(entity).getType()).using(entity);
+        return insert(MappingKit.getRequiredEntity(entity).getType()).using(entity);
     }
 
     public <T> Flux<T> batchInsert(Collection<T> entityList, Class<T> domainType) {
@@ -150,7 +148,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     @Override
     public <T> Mono<T> delete(T entity) throws DataAccessException {
-        return delete(this.getCoordinator().getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
+        return delete(MappingKit.getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
     }
 
 }

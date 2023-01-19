@@ -1,5 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.annotation;
 
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import org.springframework.data.annotation.Id;
 
 import java.lang.annotation.Documented;
@@ -20,6 +22,15 @@ public @interface TableId {
      */
     String name() default "";
 
+    /**
+     * id生成策略
+     * 默认是手动处理
+     */
+    IdStrategy idPolicy() default IdStrategy.MANUAL;
 
+    /**
+     * 校验策略，默认不校验
+     */
+    ValidationStrategy validationPolicy() default ValidationStrategy.NOT_CHECK;
 
 }

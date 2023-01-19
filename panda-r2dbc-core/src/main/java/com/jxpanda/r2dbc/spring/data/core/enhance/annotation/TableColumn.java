@@ -1,7 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.annotation;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcTypeHandler;
-import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.relational.core.mapping.Column;
 
@@ -66,7 +66,7 @@ public @interface TableColumn {
      * 字段验证策略
      * 优先级列表：字段注解（@TableColumn） > 类注解（@TableEntity） > 全局配置（R2dbcProperty）
      */
-    ValidationPolicy validationPolicy() default ValidationPolicy.NOT_CHECK;
+    ValidationStrategy validationPolicy() default ValidationStrategy.NOT_CHECK;
 
 
     /**

@@ -1,10 +1,9 @@
 package com.jxpanda.r2dbc.spring.data.config;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.policy.NamingPolicy;
-import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.NamingStrategy;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,20 +25,22 @@ public record R2dbcConfigProperties(
      *                         默认是true
      * @param dataCenterId     数据中心ID，影响雪花算法ID生成规则，如果不使用雪花算法，这个配置不生效
      * @param workerId         工作节点ID，影响雪花算法ID生成规则，如果不使用雪花算法，这个配置不生效
-     * @param namingPolicy     字段命名策略，默认是不处理
-     * @param validationPolicy 字段验证策略
+     * @param namingStrategy     字段命名策略，默认是不处理
+     * @param validationStrategy 字段验证策略
      *                         优先级列表：字段注解（@TableColumn） > 类注解（@TableEntity） > 全局配置（R2dbcProperty）
      */
     public record Mapping(boolean forceQuote,
                           int dataCenterId, int workerId,
-                          NamingPolicy namingPolicy,
-                          ValidationPolicy validationPolicy) {
+                          NamingStrategy namingStrategy,
+                          ValidationStrategy validationStrategy) {
 
         public static Mapping empty() {
-            return new Mapping(false, 0, 0, NamingPolicy.DEFAULT, ValidationPolicy.NOT_CHECK);
+            return new Mapping(false, 0, 0, NamingStrategy.DEFAULT, ValidationStrategy.NOT_CHECK);
         }
 
     }
+
+
 
     /**
      * @param enable        是否开启逻辑删除
@@ -85,8 +86,6 @@ public record R2dbcConfigProperties(
         }
 
     }
-
-
 
 
 

@@ -18,6 +18,7 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
@@ -26,7 +27,6 @@ import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
-import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.*;
 import org.springframework.lang.NonNull;
@@ -181,18 +181,18 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
-            RelationalPersistentEntity<T> entity = this.coordinator.getRequiredEntity(entityClass);
-            StatementMapper statementMapper = this.coordinator.statementMapper().forType(entityClass);
+            RelationalPersistentEntity<T> entity = MappingKit.getRequiredEntity(entityClass);
+            StatementMapper statementMapper = this.statementMapper().forType(entityClass);
 
             SqlIdentifier columnName = entity.hasIdProperty() ? entity.getRequiredIdProperty().getColumnName() : SqlIdentifier.unquoted("*");
 
             StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).withProjection(columnName).limit(1);
 
-            selectSpec = this.coordinator.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = R2dbcDeleteOperationSupport.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-            return this.coordinator.databaseClient().sql(operation).map((r, md) -> r).first().hasElement();
+            return this.databaseClient().sql(operation).map((r, md) -> r).first().hasElement();
         }
 
         private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
@@ -201,19 +201,19 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
-            RelationalPersistentEntity<T> entity = this.coordinator.getRequiredEntity(entityClass);
-            StatementMapper statementMapper = this.coordinator.statementMapper().forType(entityClass);
+            RelationalPersistentEntity<T> entity = MappingKit.getRequiredEntity(entityClass);
+            StatementMapper statementMapper = this.statementMapper().forType(entityClass);
 
             StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> {
                 Expression countExpression = entity.hasIdProperty() ? table.column(entity.getRequiredIdProperty().getColumnName()) : Expressions.asterisk();
                 return spec.withProjection(Functions.count(countExpression));
             });
 
-            selectSpec = this.coordinator.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = R2dbcDeleteOperationSupport.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-            return this.coordinator.databaseClient().sql(operation).map((r, md) -> r.get(0, Long.class)).first().defaultIfEmpty(0L);
+            return this.databaseClient().sql(operation).map((r, md) -> r.get(0, Long.class)).first().defaultIfEmpty(0L);
         }
 
         private RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType) {
@@ -228,7 +228,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 isQueryEntity = entityClass.getAnnotation(TableEntity.class).isAggregate();
             }
 
-            StatementMapper statementMapper = isQueryEntity ? this.coordinator.statementMapper() : this.coordinator.statementMapper().forType(entityClass);
+            StatementMapper statementMapper = isQueryEntity ? this.statementMapper() : this.statementMapper().forType(entityClass);
 
             StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName)
                     .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
@@ -245,11 +245,11 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 selectSpec = selectSpec.withSort(query.getSort());
             }
 
-            selectSpec = this.coordinator.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = R2dbcDeleteOperationSupport.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-            return getRowsFetchSpec(this.coordinator.databaseClient().sql(operation), entityClass, returnType);
+            return getRowsFetchSpec(this.databaseClient().sql(operation), entityClass, returnType);
         }
 
 
@@ -271,27 +271,27 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
                 if (returnType.isInterface()) {
 
-                    ProjectionInformation projectionInformation = this.coordinator.projectionFactory().getProjectionInformation(returnType);
+                    ProjectionInformation projectionInformation = this.projectionFactory().getProjectionInformation(returnType);
 
                     if (projectionInformation.isClosed()) {
                         return projectionInformation.getInputProperties().stream().map(FeatureDescriptor::getName).map(table::column).collect(Collectors.toList());
                     }
                 }
 
-                RelationalPersistentEntity<E> entity = this.coordinator.getRequiredEntity(entityClass);
+                RelationalPersistentEntity<E> entity = MappingKit.getRequiredEntity(entityClass);
 
                 List<Expression> columns = new ArrayList<>();
 
-                boolean isQueryEntity = isAggregateEntity(entityClass);
+                boolean isQueryEntity = MappingKit.isAggregateEntity(entityClass);
 
                 entity.forEach(property -> {
-                    if (isPropertyExists(property)) {
+                    if (MappingKit.isPropertyExists(property)) {
                         Expression expression;
                         if (!isQueryEntity) {
                             expression = table.column(property.getColumnName());
                         } else {
                             TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
-                            if (!isFunctionProperty(property)) {
+                            if (!MappingKit.isFunctionProperty(property)) {
                                 String sql = tableColumn.name();
                                 // 如果设置了别名，添加别名的语法
                                 if (!ObjectUtils.isEmpty(tableColumn.alias())) {
@@ -312,29 +312,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             return query.getColumns().stream().map(table::column).collect(Collectors.toList());
         }
 
-        private <E> boolean isAggregateEntity(Class<E> entityClass) {
-            RelationalPersistentEntity<E> persistentEntity = this.coordinator.getPersistentEntity(entityClass);
-            return persistentEntity != null && isAggregateEntity(persistentEntity);
-        }
 
-        private <E> boolean isAggregateEntity(RelationalPersistentEntity<E> relationalPersistentEntity) {
-            TableEntity tableEntity = relationalPersistentEntity.findAnnotation(TableEntity.class);
-            return tableEntity != null && tableEntity.isAggregate();
-        }
-
-        private boolean isPropertyExists(RelationalPersistentProperty property) {
-            TableColumn tableColumn = property.findAnnotation(TableColumn.class);
-            return property.isIdProperty() || (tableColumn != null && tableColumn.exists());
-        }
-
-        private boolean isFunctionProperty(RelationalPersistentProperty property) {
-            TableColumn tableColumn = property.findAnnotation(TableColumn.class);
-            return tableColumn != null && !ObjectUtils.isEmpty(tableColumn.function());
-        }
-
-
-        private <T> BiFunction<Row, RowMetadata, T> getRowMapper(Class<T> typeToRead) {
-            return new EntityRowMapper<>(typeToRead, this.coordinator.converter());
+        private <E> BiFunction<Row, RowMetadata, E> getRowMapper(Class<E> typeToRead) {
+            return new EntityRowMapper<>(typeToRead, this.converter());
         }
 
 
@@ -344,10 +324,10 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             BiFunction<Row, RowMetadata, RT> rowMapper;
             if (returnType.isInterface()) {
-                simpleType = this.coordinator.converter().isSimpleType(entityClass);
-                rowMapper = getRowMapper(entityClass).andThen(source -> this.coordinator.projectionFactory().createProjection(returnType, source));
+                simpleType = this.converter().isSimpleType(entityClass);
+                rowMapper = getRowMapper(entityClass).andThen(source -> this.projectionFactory().createProjection(returnType, source));
             } else {
-                simpleType = this.coordinator.converter().isSimpleType(returnType);
+                simpleType = this.converter().isSimpleType(returnType);
                 rowMapper = getRowMapper(returnType);
             }
 

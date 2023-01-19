@@ -15,6 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
+import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -118,7 +119,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
         private <E> Mono<E> doUpdate(E entity, SqlIdentifier tableName) {
 
 
-            RelationalPersistentEntity<E> persistentEntity = this.coordinator.getRequiredEntity(entity);
+            RelationalPersistentEntity<E> persistentEntity = MappingKit.getRequiredEntity(entity);
 
             return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
 
@@ -159,7 +160,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
         private <E> Mono<Long> doUpdate(Query query, Update update, Class<E> entityClass, SqlIdentifier tableName) {
 
-            StatementMapper statementMapper = this.coordinator.statementMapper().forType(entityClass);
+            StatementMapper statementMapper = this.statementMapper().forType(entityClass);
 
             StatementMapper.UpdateSpec selectSpec = statementMapper.createUpdate(tableName, update);
 
@@ -169,7 +170,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
             }
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-            return this.coordinator.databaseClient().sql(operation).fetch().rowsUpdated();
+            return this.databaseClient().sql(operation).fetch().rowsUpdated();
         }
 
         @SuppressWarnings("rawtypes")
@@ -178,12 +179,12 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
             Update update = Update.from((Map) outboundRow);
 
-            StatementMapper mapper = this.coordinator.statementMapper();
+            StatementMapper mapper = this.statementMapper();
             StatementMapper.UpdateSpec updateSpec = mapper.createUpdate(tableName, update).withCriteria(criteria);
 
             PreparedOperation<?> operation = mapper.getMappedObject(updateSpec);
 
-            return this.coordinator.databaseClient().sql(operation).fetch().rowsUpdated().handle((rowsUpdated, sink) -> {
+            return this.databaseClient().sql(operation).fetch().rowsUpdated().handle((rowsUpdated, sink) -> {
 
                 if (rowsUpdated != 0) {
                     return;
@@ -223,7 +224,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
             Optional<RelationalPersistentProperty> versionPropertyOptional = Optional.ofNullable(persistentEntity.getVersionProperty());
 
             versionPropertyOptional.ifPresent(versionProperty -> {
-                ConversionService conversionService = this.coordinator.converter().getConversionService();
+                ConversionService conversionService = this.converter().getConversionService();
                 Optional<Object> currentVersionValue = Optional.ofNullable(propertyAccessor.getProperty(versionProperty));
 
                 long newVersionValue = currentVersionValue.map(it -> conversionService.convert(it, Long.class)).map(it -> it + 1).orElse(1L);

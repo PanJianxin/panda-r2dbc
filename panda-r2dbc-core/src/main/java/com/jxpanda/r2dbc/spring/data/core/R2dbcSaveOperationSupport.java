@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
+import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSaveOperation;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.query.Query;
@@ -33,7 +34,7 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
 
         @Override
         public Mono<T> save(T object) {
-            RelationalPersistentEntity<T> requiredEntity = this.coordinator.getRequiredEntity(object);
+            RelationalPersistentEntity<T> requiredEntity = MappingKit.getRequiredEntity(object);
 
             return null;
         }

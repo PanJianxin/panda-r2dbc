@@ -15,6 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
+import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -102,7 +103,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
         private Mono<T> doInsert(T entity, SqlIdentifier tableName) {
 
-            RelationalPersistentEntity<T> persistentEntity = this.coordinator.getRequiredEntity(entity);
+            RelationalPersistentEntity<T> persistentEntity = MappingKit.getRequiredEntity(entity);
 
             return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
 
@@ -119,12 +120,13 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
         @SuppressWarnings("deprecation")
         private Mono<T> doInsert(T entity, SqlIdentifier tableName, OutboundRow outboundRow) {
 
-            StatementMapper mapper = this.coordinator.statementMapper();
+            StatementMapper mapper = this.statementMapper();
             StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
 
             // id生成处理
-            RelationalPersistentEntity<T> requiredEntity = this.coordinator.getRequiredEntity(entity);
-            outboundRow.computeIfAbsent(requiredEntity.getIdColumn(), (sqlIdentifier -> Parameter.from(this.coordinator.idGenerator().generate())));
+
+            RelationalPersistentEntity<T> requiredEntity = MappingKit.getRequiredEntity(entity);
+            outboundRow.computeIfAbsent(requiredEntity.getIdColumn(), (sqlIdentifier -> Parameter.from(this.idGenerator().generate())));
 
             for (SqlIdentifier column : outboundRow.keySet()) {
                 Parameter settableValue = outboundRow.get(column);
@@ -137,7 +139,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             List<SqlIdentifier> identifierColumns = getIdentifierColumns(entity.getClass());
 
-            return this.coordinator.databaseClient().sql(operation)
+            return this.databaseClient().sql(operation)
                     .filter(statement -> {
 
                         if (identifierColumns.isEmpty()) {
@@ -146,7 +148,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
                         return statement.returnGeneratedValues(this.template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
                     })
-                    .map(this.coordinator.converter().populateIdIfNecessary(entity)).all().last(entity)
+                    .map(this.converter().populateIdIfNecessary(entity)).all().last(entity)
                     .flatMap(saved -> this.template.maybeCallAfterSave(saved, outboundRow, tableName));
         }
 
@@ -162,7 +164,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
             // 需要主动管理
-            return this.coordinator.transactionalOperator()
+            return this.transactionalOperator()
                     .transactional(Flux.fromStream(entityList.stream())
                             .flatMap(entity -> doInsert(entity, tableName)));
 
@@ -214,7 +216,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             Class<?> versionPropertyType = versionProperty.getType();
             Long version = versionPropertyType.isPrimitive() ? 1L : 0L;
-            ConversionService conversionService = this.coordinator.converter().getConversionService();
+            ConversionService conversionService = this.converter().getConversionService();
             PersistentPropertyAccessor<?> propertyAccessor = persistentEntity.getPropertyAccessor(entity);
             propertyAccessor.setProperty(versionProperty, conversionService.convert(version, versionPropertyType));
 

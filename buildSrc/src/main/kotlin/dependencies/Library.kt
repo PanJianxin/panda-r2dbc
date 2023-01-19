@@ -18,6 +18,8 @@ object Version {
 
     const val KOTLIN_COROUTINES = "1.6.3"
 
+    const val JAKARTA = "2.1.1"
+
 }
 
 
@@ -55,7 +57,13 @@ object Library {
     const val R2DBC_SPI = "io.r2dbc:r2dbc-spi:${Version.R2DBC_SPI}"
     const val R2DBC_POOL = "io.r2dbc:r2dbc-pool:${Version.R2DBC_POLL}"
     const val R2DBC_PROXY = "io.r2dbc:r2dbc-proxy:${Version.R2DBC_PROXY}"
+
     // https://mvnrepository.com/artifact/io.r2dbc/r2dbc-postgresql
     const val R2DBC_POSTGRESQL = "io.r2dbc:r2dbc-postgresql:${Version.R2DBC_POSTGRESQL}"
+
+
+    // https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
+    const val JAKARTA_ANNOTATION_API = "jakarta.annotation:jakarta.annotation-api:${Version.JAKARTA}"
+
 
 }

@@ -56,9 +56,9 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
     @Override
     public Mono<T> insert(T entity) {
         return Mono.just(idGenerator)
-                .map(IdGenerator::generate)
+//                .map(IdGenerator::generate)
                 .flatMap(id -> {
-                    entity.setId(id);
+//                    entity.setId(id);
                     return reactiveEntityTemplate.insert(entity);
                 });
     }

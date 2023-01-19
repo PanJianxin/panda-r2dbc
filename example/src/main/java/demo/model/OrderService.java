@@ -12,10 +12,6 @@ public class OrderService extends ServiceImpl<Order, String> {
         super(reactiveEntityTemplate);
     }
 
-//    public OrderService(R2dbcEntityTemplate r2dbcEntityTemplate, OrderRepository repository) {
-//        super(r2dbcEntityTemplate, repository);
-//    }
-
     @Override
     public Mono<Order> selectById(String s) {
         return super.selectById(s);

@@ -17,6 +17,7 @@ package com.jxpanda.r2dbc.spring.data.dialect;
 
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.relational.core.dialect.ArrayColumns;
+import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -44,6 +45,10 @@ public class MySqlDialect extends org.springframework.data.r2dbc.dialect.MySqlDi
         return MySqlArrayColumns.INSTANCE;
     }
 
+    @Override
+    public String renderForGeneratedValues(SqlIdentifier identifier) {
+        return super.renderForGeneratedValues(identifier);
+    }
 
     protected enum MySqlArrayColumns implements ArrayColumns {
 

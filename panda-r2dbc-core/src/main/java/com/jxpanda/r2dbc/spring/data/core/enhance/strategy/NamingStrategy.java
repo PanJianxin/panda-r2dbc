@@ -1,11 +1,10 @@
-package com.jxpanda.r2dbc.spring.data.core.enhance.policy;
+package com.jxpanda.r2dbc.spring.data.core.enhance.strategy;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.AllArgsConstructor;
-import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.util.ParsingUtils;
 import org.springframework.lang.NonNull;
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
  * 命名策略
  */
 @AllArgsConstructor
-public enum NamingPolicy implements NamingStrategy {
+public enum NamingStrategy implements org.springframework.data.relational.core.mapping.NamingStrategy {
 
     /**
      * 默认不做任何处理
@@ -31,11 +30,11 @@ public enum NamingPolicy implements NamingStrategy {
     /**
      * 下划线分隔命名
      */
-    CAMEL_CASE_TO_SNAKE_CASE(NamingPolicy::camelCase2snakeCase),
+    CAMEL_CASE_TO_SNAKE_CASE(NamingStrategy::camelCase2snakeCase),
     /**
      * 驼峰命名
      */
-    SNAKE_CASE_TO_CAMEL_CASE(NamingPolicy::snakeCase2camelCase);
+    SNAKE_CASE_TO_CAMEL_CASE(NamingStrategy::snakeCase2camelCase);
 
     private final Function<String, String> converter;
 

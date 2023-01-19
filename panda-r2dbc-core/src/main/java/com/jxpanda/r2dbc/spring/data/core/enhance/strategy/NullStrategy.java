@@ -1,9 +1,9 @@
-package com.jxpanda.r2dbc.spring.data.core.enhance.policy;
+package com.jxpanda.r2dbc.spring.data.core.enhance.strategy;
 
 /**
  * 空值处理策略
  */
-public enum NullPolicy {
+public enum NullStrategy {
 
     /**
      * 允许为空
@@ -29,6 +29,7 @@ public enum NullPolicy {
      * 不论读、写，全都是用默认值替换null值
      */
     NONNULL,
+
 
 
 }

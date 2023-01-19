@@ -15,7 +15,9 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
+import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
@@ -24,7 +26,9 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentEnti
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
+import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.data.util.Pair;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.PreparedOperation;
@@ -57,6 +61,36 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         Assert.notNull(domainType, "DomainType must not be null");
 
         return new R2dbcDeleteSupport<>(template, domainType, Query.empty(), null);
+    }
+
+    /**
+     * 创建逻辑删除的Update对象
+     *
+     * @param entityClass entityClass
+     */
+    static <T> Update createLogicDeleteUpdate(Class<T> entityClass) {
+        Pair<String, Object> logicDeleteColumn = MappingKit.getLogicDeleteColumn(entityClass, MappingKit.LogicDeleteValue.DELETE_VALUE);
+        return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
+    }
+
+    static <T> StatementMapper.SelectSpec selectWithCriteria(StatementMapper.SelectSpec selectSpec, Query query, Class<T> entityClass, boolean ignoreLogicDelete) {
+        Optional<CriteriaDefinition> criteriaOptional = query.getCriteria();
+        if (MappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+            criteriaOptional = query.getCriteria()
+                    .or(() -> Optional.of(Criteria.empty()))
+                    .map(criteriaDefinition -> {
+                        // 获取查询对象中的逻辑删除字段和值，写入到criteria中
+                        Pair<String, Object> logicDeleteColumn = MappingKit.getLogicDeleteColumn(entityClass, MappingKit.LogicDeleteValue.UNDELETE_VALUE);
+                        if (criteriaDefinition instanceof Criteria criteria) {
+                            return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                        }
+                        if (criteriaDefinition instanceof LambdaCriteria lambdaCriteria) {
+                            return lambdaCriteria.and(LambdaCriteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                        }
+                        return criteriaDefinition;
+                    });
+        }
+        return criteriaOptional.map(selectSpec::withCriteria).orElse(selectSpec);
     }
 
     private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T, Long> implements R2dbcDeleteOperation.R2dbcDelete {
@@ -118,7 +152,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
         @SuppressWarnings("SameParameterValue")
         private <E> Mono<Long> doDelete(E entity, SqlIdentifier tableName, boolean ignoreLogicDelete) {
-            RelationalPersistentEntity<E> persistentEntity = this.coordinator.getRequiredEntity(entity);
+            RelationalPersistentEntity<E> persistentEntity = MappingKit.getRequiredEntity(entity);
             return doDelete(getByIdQuery(entity, persistentEntity), persistentEntity.getType(), tableName, ignoreLogicDelete);
         }
 
@@ -129,14 +163,14 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         private <E> Mono<Long> doDelete(Query query, Class<E> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
             // 如果开启了逻辑删除，变为执行更新操作
-            if (this.coordinator.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+            if (MappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
                 return new R2dbcUpdateOperationSupport(this.template)
                         .update(this.domainType)
                         .matching(query)
-                        .apply(this.coordinator.createLogicDeleteUpdate(entityClass));
+                        .apply(createLogicDeleteUpdate(entityClass));
             }
 
-            StatementMapper statementMapper = this.coordinator.statementMapper().forType(entityClass);
+            StatementMapper statementMapper = this.statementMapper().forType(entityClass);
 
             StatementMapper.DeleteSpec deleteSpec = statementMapper.createDelete(tableName);
 
@@ -146,7 +180,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
             }
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
-            return this.coordinator.databaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
+            return this.databaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L);
         }
 
 

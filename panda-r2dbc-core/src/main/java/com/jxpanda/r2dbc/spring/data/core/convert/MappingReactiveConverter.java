@@ -16,9 +16,7 @@
 package com.jxpanda.r2dbc.spring.data.core.convert;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
-import com.jxpanda.r2dbc.spring.data.core.enhance.policy.ValidationPolicy;
+import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -39,6 +37,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.function.BiFunction;
 
 /**
  * Converter for R2DBC.
@@ -74,7 +73,12 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         return typeHandlers;
     }
 
-    // ----------------------------------
+    @Override
+    public <T> BiFunction<Row, RowMetadata, T> populateIdIfNecessary(T object) {
+        return super.populateIdIfNecessary(object);
+    }
+
+// ----------------------------------
     // Entity reading
     // ----------------------------------
 
@@ -274,7 +278,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
         for (RelationalPersistentProperty property : entity) {
 
-            if (!property.isWritable() || !isPropertyExists(property)) {
+            if (!property.isWritable() || !MappingKit.isPropertyExists(property)) {
                 continue;
             }
 
@@ -289,7 +293,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
                 value = accessor.getProperty(property);
             }
 
-            if (!isPropertyEffective(entity, property, value)) {
+            if (!MappingKit.isPropertyEffective(entity, property, value)) {
                 // 基于配置进行一次过滤
                 continue;
             } else if (value == null) {
@@ -339,40 +343,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         throw new InvalidDataAccessApiUsageException("Nested entities are not supported");
     }
 
-    /**
-     * 返回字段是否是存在的
-     * 主要用于排除虚拟字段
-     */
-    private boolean isPropertyExists(RelationalPersistentProperty property) {
-        TableColumn tableColumn = property.findAnnotation(TableColumn.class);
-        return property.isIdProperty() || (tableColumn != null && tableColumn.exists());
-    }
 
-    /**
-     * 返回字段的值是否有效
-     * 处理空值，在插入/更新数据的时候判定是否需要过滤掉对应字段的判别依据
-     */
-    private boolean isPropertyEffective(RelationalPersistentEntity<?> entity, RelationalPersistentProperty property, @Nullable Object value) {
-
-        // 判别优先级
-        // 字段上的配置 > 类上的配置 > 全局配置文件的配置
-        // TableId注解不需要判断，因为Id的语义本来就是强制存在的
-
-        // 全局校验策略
-        ValidationPolicy validationPolicy = mappingProperties.validationPolicy();
-        // 类上面的校验策略
-        TableEntity tableEntity = entity.findAnnotation(TableEntity.class);
-        if (tableEntity != null && tableEntity.validationPolicy() != ValidationPolicy.NOT_CHECK) {
-            validationPolicy = tableEntity.validationPolicy();
-        }
-        // 字段上的校验策略
-        TableColumn tableColumn = property.findAnnotation(TableColumn.class);
-        if (tableColumn != null && tableColumn.validationPolicy() != ValidationPolicy.NOT_CHECK) {
-            validationPolicy = tableColumn.validationPolicy();
-        }
-        // 使用策略判定字段是否有效
-        return validationPolicy.isEffective(value);
-    }
 
     private void writeNullInternal(OutboundRow sink, RelationalPersistentProperty property) {
         sink.put(property.getColumnName(), Parameter.empty(getPotentiallyConvertedSimpleNullType(property.getType())));
