@@ -15,7 +15,6 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
@@ -45,7 +44,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
 
-    private final R2dbcConfigProperties r2dbcConfigProperties;
+//    private final R2dbcConfigProperties r2dbcConfigProperties;
 
     @Autowired
     private IdGenerator<?> idGenerator;
@@ -56,10 +55,13 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     @Autowired
     private TransactionalOperator transactionalOperator;
 
-    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter, R2dbcConfigProperties r2dbcConfigProperties) {
+    private final R2dbcDialect dialect;
+
+    public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {
         super(databaseClient, dialect, converter);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
-        this.r2dbcConfigProperties = r2dbcConfigProperties;
+//        this.r2dbcConfigProperties = r2dbcConfigProperties;
+        this.dialect = dialect;
     }
 
     @Override

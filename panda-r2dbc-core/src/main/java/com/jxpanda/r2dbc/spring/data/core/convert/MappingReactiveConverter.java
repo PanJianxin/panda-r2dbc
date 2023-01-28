@@ -50,8 +50,6 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
     private final R2dbcCustomTypeHandlers typeHandlers;
 
-    private final R2dbcConfigProperties.Mapping mappingProperties;
-
     /**
      * Creates a new {@link MappingReactiveConverter} given {@link MappingContext} and {@link CustomConversions} and {@link R2dbcCustomTypeHandlers}.
      *
@@ -62,11 +60,9 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     public MappingReactiveConverter(
             MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context,
             CustomConversions conversions,
-            R2dbcCustomTypeHandlers typeHandlers,
-            R2dbcConfigProperties.Mapping mappingProperties) {
+            R2dbcCustomTypeHandlers typeHandlers) {
         super(context, conversions);
         this.typeHandlers = typeHandlers;
-        this.mappingProperties = mappingProperties;
     }
 
     public R2dbcCustomTypeHandlers getTypeHandlers() {

@@ -2,6 +2,7 @@ package com.jxpanda.r2dbc.spring.data.core.kit;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
+import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
@@ -9,6 +10,8 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
+import org.springframework.data.mapping.IdentifierAccessor;
+import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -25,12 +28,16 @@ public class MappingKit {
 
     private final MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext;
 
+    private final R2dbcCustomTypeHandlers typeHandlers;
+
     private static MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> staticMappingContext;
+    private static R2dbcCustomTypeHandlers staticTypeHandlers;
 
 
     @PostConstruct
     private void init() {
         staticMappingContext = mappingContext;
+        staticTypeHandlers = typeHandlers;
     }
 
     public static <T> SqlIdentifier getTableName(Class<T> entityClass) {
@@ -89,11 +96,35 @@ public class MappingKit {
         return tableColumn != null && !ObjectUtils.isEmpty(tableColumn.function());
     }
 
+    public static <T> Object getPropertyValue(T entity, RelationalPersistentEntity<T> relationalPersistentEntity, RelationalPersistentProperty property) {
+        Object value;
+
+        PersistentPropertyAccessor<T> accessor = relationalPersistentEntity.getPropertyAccessor(entity);
+        if (property.isIdProperty()) {
+            IdentifierAccessor identifierAccessor = relationalPersistentEntity.getIdentifierAccessor(accessor.getBean());
+            value = identifierAccessor.getIdentifier();
+        } else if (staticTypeHandlers.hasTypeHandler(property)) {
+            value = staticTypeHandlers.write(accessor.getProperty(property), property);
+        } else {
+            value = accessor.getProperty(property);
+        }
+        return value;
+    }
+
+    public static <T> boolean isPropertyEffective(T entity, RelationalPersistentProperty property) {
+        RelationalPersistentEntity<T> requiredEntity = getRequiredEntity(entity);
+        return isPropertyEffective(entity, requiredEntity, property);
+    }
+
+    public static <T> boolean isPropertyEffective(T entity, RelationalPersistentEntity<T> relationalPersistentEntity, RelationalPersistentProperty property) {
+        return isPropertyEffective(relationalPersistentEntity, property, getPropertyValue(entity, relationalPersistentEntity, property));
+    }
+
     /**
      * 返回字段的值是否有效
      * 处理空值，在插入/更新数据的时候判定是否需要过滤掉对应字段的判别依据
      */
-    public static boolean isPropertyEffective(RelationalPersistentEntity<?> entity, RelationalPersistentProperty property, @Nullable Object value) {
+    public static <T> boolean isPropertyEffective(RelationalPersistentEntity<T> entity, RelationalPersistentProperty property, @Nullable Object value) {
 
         // 判别优先级
         // 字段上的配置 > 类上的配置 > 全局配置文件的配置

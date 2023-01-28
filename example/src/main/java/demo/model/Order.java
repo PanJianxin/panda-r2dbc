@@ -1,12 +1,10 @@
 package demo.model;
 
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.*;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.StandardEnum;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.EnumValue;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,16 +29,19 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Accessors(chain = true)
+//@Accessors(chain = true)
 @TableEntity(name = "order")
 public class Order extends StandardEntity<String> {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-//    @TableColumn
-//    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
-//    private LocalDateTime deletedDate;
+//    @TableId(validationPolicy = ValidationStrategy.NOT_EMPTY)
+//    private String id;
+
+    @TableColumn
+    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
+    private LocalDateTime deletedDate;
 
     @TableColumn(name = "parent_id")
     private String parentId;

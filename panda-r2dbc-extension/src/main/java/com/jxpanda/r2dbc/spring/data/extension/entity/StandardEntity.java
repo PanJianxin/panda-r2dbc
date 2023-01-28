@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.util.ObjectUtils;
@@ -22,7 +23,7 @@ public class StandardEntity<ID> implements Entity<ID> {
     /**
      * 主键ID
      */
-    @TableId
+    @TableId(validationPolicy = ValidationStrategy.NOT_EMPTY)
     @JsonSerialize(using = ToStringSerializer.class)
     private ID id;
 

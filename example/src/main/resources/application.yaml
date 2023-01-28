@@ -9,8 +9,8 @@ panda:
   r2dbc:
     mapping:
       force-quote: true
-      validation-policy: NOT_EMPTY
-      naming-policy: CAMEL_CASE_TO_SNAKE_CASE
+      validation-strategy: NOT_EMPTY
+      naming-strategy: CAMEL_CASE_TO_SNAKE_CASE
     logic-delete:
       enable: true
       undelete-value:

@@ -19,7 +19,8 @@ public class OrderService extends ServiceImpl<Order, String> {
 
     @Override
     public Mono<Order> insert(Order entity) {
-        return super.insert(entity.setNumber(getIdGenerator().generate()));
+        entity.setNumber(getIdGenerator().generate());
+        return super.insert(entity);
     }
 
     public Mono<Order> selectByNumber(String number) {

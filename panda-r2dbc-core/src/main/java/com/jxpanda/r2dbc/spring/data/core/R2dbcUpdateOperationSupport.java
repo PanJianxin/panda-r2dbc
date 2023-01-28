@@ -137,16 +137,16 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
                     matchingVersionCriteria = null;
                 }
 
-                OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(entityToUse);
+                OutboundRow outboundRow = getOutboundRow(entityToUse);
 
                 return template.maybeCallBeforeSave(entityToUse, outboundRow, tableName).flatMap(onBeforeSave -> {
 
                     SqlIdentifier idColumn = persistentEntity.getRequiredIdProperty().getColumnName();
                     Parameter id = outboundRow.remove(idColumn);
 
-                    persistentEntity.forEach(p -> {
-                        if (p.isInsertOnly()) {
-                            outboundRow.remove(p.getColumnName());
+                    persistentEntity.forEach(property -> {
+                        if (property.isInsertOnly() || !MappingKit.isPropertyEffective(entityToUse, persistentEntity, property)) {
+                            outboundRow.remove(property.getColumnName());
                         }
                     });
 

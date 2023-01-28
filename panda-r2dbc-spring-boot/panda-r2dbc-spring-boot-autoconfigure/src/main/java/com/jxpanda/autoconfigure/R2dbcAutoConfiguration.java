@@ -1,5 +1,6 @@
 package com.jxpanda.autoconfigure;
 
+import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
@@ -45,9 +46,14 @@ public class R2dbcAutoConfiguration {
     }
 
     @Bean
+    public R2dbcConfigProperties r2dbcConfigProperties(R2dbcProperties r2dbcProperties) {
+        return r2dbcProperties.transfer();
+    }
+
+    @Bean
     @ConditionalOnMissingBean
     public ReactiveEntityTemplate r2dbcEntityTemplate(MappingReactiveConverter r2dbcConverter) {
-        return new ReactiveEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter, this.r2dbcProperties.transfer());
+        return new ReactiveEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
     }
 
 
@@ -56,7 +62,7 @@ public class R2dbcAutoConfiguration {
     public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
                                                    R2dbcCustomConversions r2dbcCustomConversions,
                                                    R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
-        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers, this.r2dbcProperties.mapping());
+        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
     }
 
 

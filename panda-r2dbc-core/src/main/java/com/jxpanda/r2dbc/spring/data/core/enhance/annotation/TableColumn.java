@@ -66,7 +66,7 @@ public @interface TableColumn {
      * 字段验证策略
      * 优先级列表：字段注解（@TableColumn） > 类注解（@TableEntity） > 全局配置（R2dbcProperty）
      */
-    ValidationStrategy validationPolicy() default ValidationStrategy.NOT_CHECK;
+    ValidationStrategy validationPolicy() default ValidationStrategy.DEFAULT;
 
 
     /**

@@ -35,7 +35,7 @@ public record R2dbcConfigProperties(
                           ValidationStrategy validationStrategy) {
 
         public static Mapping empty() {
-            return new Mapping(false, 0, 0, NamingStrategy.DEFAULT, ValidationStrategy.NOT_CHECK);
+            return new Mapping(false, 0, 0, NamingStrategy.DEFAULT, ValidationStrategy.DEFAULT);
         }
 
     }

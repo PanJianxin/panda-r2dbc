@@ -1,6 +1,7 @@
 package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
+import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import demo.model.*;
@@ -45,6 +46,14 @@ public class TestAPI {
     @PostMapping("/order/insert")
     public Mono<Order> insert(@RequestBody Order order) {
         return orderService.insert(order)
+                .log();
+    }
+
+    @PostMapping("/order/save")
+    public Mono<Order> save(@RequestBody Order order) {
+        order.setNumber(IdentifierKit.nextIdString());
+        return reactiveEntityTemplate.save(Order.class)
+                .save(order)
                 .log();
     }
 
