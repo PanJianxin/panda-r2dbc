@@ -15,12 +15,12 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
+import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
-import io.r2dbc.spi.Row;
-import io.r2dbc.spi.RowMetadata;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
@@ -186,10 +186,11 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
                 return;
             }
 
-            Object generatedIdValue = idGenerator().generate();
-            ConversionService conversionService = this.template.getConverter().getConversionService();
-            propertyAccessor.setProperty(idProperty, conversionService.convert(generatedIdValue, idProperty.getType()));
-
+            if (shouldGeneratorIdValue(idProperty)) {
+                Object generatedIdValue = idGenerator().generate();
+                ConversionService conversionService = this.template.getConverter().getConversionService();
+                propertyAccessor.setProperty(idProperty, conversionService.convert(generatedIdValue, idProperty.getType()));
+            }
         }
 
         @SuppressWarnings("deprecation")
@@ -220,6 +221,24 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
             }
 
             return false;
+        }
+
+        /**
+         * 返回是否需要生成id
+         * 基于IdStrategy的配置来判断
+         *
+         * @param idProperty idProperty
+         */
+        private boolean shouldGeneratorIdValue(RelationalPersistentProperty idProperty) {
+
+            IdStrategy idStrategy = R2dbcEnvironment.getDatabase().idStrategy();
+
+            TableId tableId = idProperty.findAnnotation(TableId.class);
+            if (tableId != null) {
+                idStrategy = tableId.idStrategy() == IdStrategy.DEFAULT ? idStrategy : tableId.idStrategy();
+            }
+
+            return idStrategy == IdStrategy.USE_GENERATOR;
         }
 
 

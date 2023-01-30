@@ -9,9 +9,9 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 public enum IdStrategy {
 
     /**
-     * 手动处理
+     * 默认的，优先级低于全局配置
      */
-    MANUAL,
+    DEFAULT,
 
     /**
      * 数据库自增，需要数据库配置自增
@@ -20,6 +20,7 @@ public enum IdStrategy {
 
     /**
      * 使用generator，需要配置一个idGenerator的bean
+     * 具体生成方式由生成器控制（默认是雪花算法）
      * {@link IdGenerator}
      */
     USE_GENERATOR

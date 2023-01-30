@@ -26,7 +26,7 @@ public @interface TableId {
      * id生成策略
      * 默认是手动处理
      */
-    IdStrategy idPolicy() default IdStrategy.MANUAL;
+    IdStrategy idStrategy() default IdStrategy.DEFAULT;
 
     /**
      * 校验策略，默认不校验

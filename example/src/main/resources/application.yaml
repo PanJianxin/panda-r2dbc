@@ -8,7 +8,6 @@ spring:
 panda:
   r2dbc:
     mapping:
-      force-quote: true
       validation-strategy: NOT_EMPTY
       naming-strategy: CAMEL_CASE_TO_SNAKE_CASE
     logic-delete:
@@ -19,6 +18,9 @@ panda:
         value: CURRENT_TIMESTAMP
         handler-class: demo.covert.DeleteDateTimeHandler
       field: deleted_date
+    database:
+      id-strategy: USE_GENERATOR
+      force-quote: true
 
 
 #logging:
