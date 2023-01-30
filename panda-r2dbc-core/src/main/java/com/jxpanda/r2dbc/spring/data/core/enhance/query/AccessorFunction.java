@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.core.query;
+package com.jxpanda.r2dbc.spring.data.core.enhance.query;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;

@@ -91,10 +91,8 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
      * @see org.springframework.data.r2dbc.convert.R2dbcConverter#read(java.lang.Class, io.r2dbc.spi.Row, io.r2dbc.spi.RowMetadata)
      */
     @Override
-    @SuppressWarnings("ConstantConditions")
     public <R> R read(Class<R> type, Row row, @Nullable RowMetadata metadata) {
 
-//        TypeInformation<? extends R> typeInfo = ClassTypeInformation.from(type);
         TypeInformation<R> typeInfo = TypeInformation.of(type);
         Class<? extends R> rawType = typeInfo.getType();
 
@@ -178,9 +176,9 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
             return readValue(value, property.getTypeInformation());
 
-        } catch (Exception o_O) {
+        } catch (Exception ex) {
             throw new MappingException(String.format("Could not read property %s from column %s!", property, identifier),
-                    o_O);
+                    ex);
         }
     }
 
@@ -223,8 +221,8 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
         if (persistenceConstructor != null && persistenceConstructor.hasParameters()) {
 
-            SpELContext spELContext = new SpELContext(new RowPropertyAccessor(rowMetadata));
-            SpELExpressionEvaluator expressionEvaluator = new DefaultSpELExpressionEvaluator(row, spELContext);
+            SpELContext spElContext = new SpELContext(new RowPropertyAccessor(rowMetadata));
+            SpELExpressionEvaluator expressionEvaluator = new DefaultSpELExpressionEvaluator(row, spElContext);
             provider = new SpELExpressionParameterValueProvider<>(expressionEvaluator, getConversionService(),
                     new RowParameterValueProvider(row, rowMetadata, entity, this, prefix));
         } else {
@@ -318,7 +316,6 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     private void writePropertyInternal(OutboundRow outboundRow, Object value, boolean isNew,
                                        RelationalPersistentProperty property) {
 
-//        TypeInformation<?> valueType = ClassTypeInformation.from(value.getClass());
         TypeInformation<?> valueType = TypeInformation.of(value.getClass());
 
         if (valueType.isCollectionLike()) {
@@ -431,6 +428,9 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
     enum NoOpParameterValueProvider implements ParameterValueProvider<RelationalPersistentProperty> {
 
+        /**
+         * INSTANCE
+         * */
         INSTANCE;
 
         @Override
@@ -482,8 +482,8 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
             try {
                 return this.converter.getConversionService().convert(value, type);
-            } catch (Exception o_O) {
-                throw new MappingException(String.format("Couldn't read parameter %s.", parameter.getName()), o_O);
+            } catch (Exception ex) {
+                throw new MappingException(String.format("Couldn't read parameter %s.", parameter.getName()), ex);
             }
         }
     }

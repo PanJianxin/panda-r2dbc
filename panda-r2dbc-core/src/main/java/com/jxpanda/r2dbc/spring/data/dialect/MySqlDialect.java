@@ -52,20 +52,23 @@ public class MySqlDialect extends org.springframework.data.r2dbc.dialect.MySqlDi
 
     protected enum MySqlArrayColumns implements ArrayColumns {
 
+        /**
+         * INSTANCE
+         * */
         INSTANCE;
 
-        /*
+        /**
          * (non-Javadoc)
-         * @see org.springframework.data.relational.core.dialect.ArrayColumns#isSupported()
+         * @see ArrayColumns#isSupported()
          */
         @Override
         public boolean isSupported() {
             return true;
         }
 
-        /*
+        /**
          * (non-Javadoc)
-         * @see org.springframework.data.relational.core.dialect.ArrayColumns#getArrayType(java.lang.Class)
+         * @see ArrayColumns#getArrayType(Class)
          */
         @Override
         public Class<?> getArrayType(Class<?> userType) {

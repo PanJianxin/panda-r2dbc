@@ -4,6 +4,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.NamingStrategy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
+import lombok.EqualsAndHashCode;
 import org.springframework.lang.NonNull;
 
 import java.util.HashMap;
@@ -60,6 +61,7 @@ public record R2dbcConfigProperties(Database database, Mapping mapping, LogicDel
             return new LogicDelete(false, StringConstant.BLANK, Value.empty(), Value.empty());
         }
 
+        @EqualsAndHashCode(callSuper = true)
         public record Value(String value, Class<? extends ValueHandler> handlerClass) {
 
             private static final Map<Value, ValueHandler> HANDLER_CACHE = new HashMap<>();
@@ -79,7 +81,6 @@ public record R2dbcConfigProperties(Database database, Mapping mapping, LogicDel
                 });
                 return valueHandler.covert(value());
             }
-
         }
 
         public interface ValueHandler {

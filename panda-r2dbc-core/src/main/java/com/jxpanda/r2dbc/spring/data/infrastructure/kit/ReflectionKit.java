@@ -16,7 +16,7 @@
 package com.jxpanda.r2dbc.spring.data.infrastructure.kit;
 
 
-import com.jxpanda.r2dbc.spring.data.core.query.AccessorFunction;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.AccessorFunction;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.SneakyThrows;
 import org.springframework.core.GenericTypeResolver;

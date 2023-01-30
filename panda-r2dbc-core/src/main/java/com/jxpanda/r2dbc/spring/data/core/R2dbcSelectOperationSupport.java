@@ -20,7 +20,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
-import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.LambdaCriteria;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.springframework.data.projection.ProjectionInformation;

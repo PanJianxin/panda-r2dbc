@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.core.query;
+package com.jxpanda.r2dbc.spring.data.core.enhance.query;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
@@ -281,25 +281,6 @@ public class LambdaCriteria implements CriteriaDefinition {
         return previous != null;
     }
 
-//    private static String getColumnNameFromLambda(AccessorFunction<?, ?> accessorFunction) {
-//        Field field = ReflectionKit.getField(accessorFunction);
-//
-//        String columnName = StringConstant.BLANK;
-//
-//        TableId tableId = field.getAnnotation(TableId.class);
-//        if (tableId != null) {
-//            columnName = tableId.name();
-//        }
-//
-//        if (StringKit.isBlank(columnName)) {
-//            TableColumn tableColumn = field.getAnnotation(TableColumn.class);
-//            if (tableColumn != null) {
-//                columnName = tableColumn.name();
-//            }
-//        }
-//
-//        return StringKit.isBlank(columnName) ? field.getName() : columnName;
-//    }
 
     /**
      * @return {@literal true} if this {@link LambdaCriteria} is empty.

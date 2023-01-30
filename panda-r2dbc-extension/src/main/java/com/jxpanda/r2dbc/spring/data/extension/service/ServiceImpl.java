@@ -1,7 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.LambdaCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;

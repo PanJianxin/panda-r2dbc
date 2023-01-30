@@ -1,9 +1,8 @@
 package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
-import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.LambdaCriteria;
 import demo.model.*;
 import lombok.AllArgsConstructor;
 import org.springframework.data.relational.core.query.Criteria;
@@ -18,6 +17,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.logging.Level;
 
 @RestController
 @RequestMapping("test")
@@ -39,6 +39,7 @@ public class TestAPI {
     @GetMapping(path = "select", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<Order> selectList(int duration) {
         return reactiveEntityTemplate.select(Order.class)
+                .matching(Query.query(LambdaCriteria.where(Order::getId).greaterThan("206975615562153985")).limit(2).offset(0))
                 .all()
                 .delayElements(Duration.of(duration, ChronoUnit.SECONDS));
     }
