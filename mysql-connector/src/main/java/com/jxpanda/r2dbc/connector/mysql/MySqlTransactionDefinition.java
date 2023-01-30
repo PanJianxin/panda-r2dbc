@@ -127,15 +127,17 @@ public final class MySqlTransactionDefinition implements TransactionDefinition {
          */
         public MySqlTransactionDefinition build() {
             switch (this.options.size()) {
-                case 0:
+                case 0 -> {
                     return EMPTY;
-                case 1:
+                }
+                case 1 -> {
                     Map.Entry<Option<?>, Object> entry = this.options.entrySet().iterator().next();
-
                     return new MySqlTransactionDefinition(Collections.singletonMap(entry.getKey(),
-                        entry.getValue()));
-                default:
+                            entry.getValue()));
+                }
+                default -> {
                     return new MySqlTransactionDefinition(new HashMap<>(this.options));
+                }
             }
         }
 

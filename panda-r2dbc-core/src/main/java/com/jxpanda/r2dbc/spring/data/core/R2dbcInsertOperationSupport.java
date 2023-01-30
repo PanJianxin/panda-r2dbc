@@ -17,7 +17,10 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
+import io.r2dbc.spi.Row;
+import io.r2dbc.spi.RowMetadata;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
@@ -113,6 +116,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
                 T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
 
+                // id生成处理
+                potentiallyGeneratorId(persistentEntity.getPropertyAccessor(entity), persistentEntity.getIdProperty());
+
                 OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(initializedEntity);
 
                 potentiallyRemoveId(persistentEntity, outboundRow);
@@ -122,17 +128,13 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
             });
         }
 
-        @SuppressWarnings("deprecation")
         private Mono<T> doInsert(T entity, SqlIdentifier tableName, OutboundRow outboundRow) {
 
             StatementMapper mapper = this.statementMapper();
             StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
 
-            // id生成处理
-//            RelationalPersistentEntity<T> requiredEntity = MappingKit.getRequiredEntity(entity);
-//            outboundRow.computeIfAbsent(requiredEntity.getIdColumn(), (sqlIdentifier -> Parameter.from(this.idGenerator().generate())));
-
             for (SqlIdentifier column : outboundRow.keySet()) {
+                @SuppressWarnings("deprecation")
                 Parameter settableValue = outboundRow.get(column);
                 if (settableValue.hasValue()) {
                     insert = insert.withColumn(column, settableValue);
@@ -176,6 +178,18 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
         private List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
             return template.getDataAccessStrategy().getIdentifierColumns(clazz);
+        }
+
+        private void potentiallyGeneratorId(PersistentPropertyAccessor<?> propertyAccessor, @Nullable RelationalPersistentProperty idProperty) {
+
+            if (idProperty == null) {
+                return;
+            }
+
+            Object generatedIdValue = idGenerator().generate();
+            ConversionService conversionService = this.template.getConverter().getConversionService();
+            propertyAccessor.setProperty(idProperty, conversionService.convert(generatedIdValue, idProperty.getType()));
+
         }
 
         @SuppressWarnings("deprecation")
