@@ -8,6 +8,8 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentProp
  */
 public abstract class R2dbcJsonTypeHandler<O, V> implements R2dbcTypeHandler<O, V> {
 
+    protected abstract O readFromJson(byte[] jsonBytes, RelationalPersistentProperty property);
+
     protected abstract O readFromJson(V json, RelationalPersistentProperty property);
 
     protected abstract V writeToJson(O object);
@@ -19,7 +21,12 @@ public abstract class R2dbcJsonTypeHandler<O, V> implements R2dbcTypeHandler<O, 
 
     @Override
     public Reader<O, V> getReader(RelationalPersistentProperty property) {
-        return v -> readFromJson(v, property);
+        return (v -> {
+            if (v instanceof byte[] bytes) {
+                return readFromJson(bytes, property);
+            }
+            return readFromJson(v, property);
+        });
     }
 
 }

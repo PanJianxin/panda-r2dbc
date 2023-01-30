@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.handler;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,10 +9,13 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 
+@Slf4j
 @AllArgsConstructor
 public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> {
 
@@ -19,6 +23,7 @@ public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> 
      * jackson的objectMapper
      */
     private final ObjectMapper objectMapper;
+
 
     /**
      * 默认构造器使用内置的objectMapper
@@ -40,22 +45,44 @@ public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> 
     }
 
     @Override
-    @SneakyThrows
+    protected T readFromJson(byte[] jsonBytes, RelationalPersistentProperty property) {
+        try {
+            return objectMapper.readValue(jsonBytes, typeReference(property));
+        } catch (IOException e) {
+            log.error("[JSON READ ERROR]", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     protected T readFromJson(String json, RelationalPersistentProperty property) {
-        return objectMapper.readValue(json, new TypeReference<>() {
+        try {
+            return objectMapper.readValue(json, typeReference(property));
+        } catch (JsonProcessingException e) {
+            log.error("[JSON READ ERROR]", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    protected String writeToJson(T object) {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            log.error("[JSON WRITE ERROR]", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private TypeReference<T> typeReference(RelationalPersistentProperty property) {
+        return new TypeReference<>() {
             @Override
             public Type getType() {
                 assert property.getField() != null;
                 return property.getField().getGenericType();
             }
-        });
-    }
-
-
-    @Override
-    @SneakyThrows
-    protected String writeToJson(T object) {
-        return objectMapper.writeValueAsString(object);
+        };
     }
 
 
