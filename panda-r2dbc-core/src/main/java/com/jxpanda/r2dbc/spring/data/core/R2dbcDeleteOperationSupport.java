@@ -17,7 +17,6 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
-import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
@@ -180,4 +179,19 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         }
 
     }
+
+    /**
+     * 提供给物理删除使用的适配器
+     */
+    record R2dbcDestroyAdapter(ReactiveEntityTemplate template) {
+        <E> Mono<Long> doDestroy(E entity, SqlIdentifier tableName) {
+            return new R2dbcDeleteSupport<>(template, entity.getClass()).doDelete(entity, tableName, true);
+        }
+
+        <E> Mono<Long> doDestroy(Query query, Class<E> entityClass, SqlIdentifier tableName) {
+            return new R2dbcDeleteSupport<>(template, entityClass).doDelete(query, entityClass, tableName, true);
+        }
+    }
+
+
 }

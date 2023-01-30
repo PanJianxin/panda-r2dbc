@@ -117,11 +117,17 @@ public class TestAPI {
                 .build());
     }
 
-    @GetMapping("/order/destroy/{id}")
-    public Mono<OrderSum> destroy(@PathVariable("id") String id) {
-        return reactiveEntityTemplate.select(OrderSum.class)
-                .matching(Query.query(Criteria.where(Order.ID).greaterThan("3005542952022835202")))
-                .one();
+    @DeleteMapping("/order/destroy/{id}")
+    public Mono<Boolean> destroy(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.destroy(OrderSum.class)
+                .using(Order.builder().id(id).build());
+    }
+
+    @DeleteMapping("/order/destroy/all")
+    public Mono<Long> destroy() {
+        return reactiveEntityTemplate.destroy(OrderSum.class)
+                .matching(Query.query(Criteria.where(Order.ID).greaterThan("3007718830303608834")))
+                .all();
     }
 
     @Transactional

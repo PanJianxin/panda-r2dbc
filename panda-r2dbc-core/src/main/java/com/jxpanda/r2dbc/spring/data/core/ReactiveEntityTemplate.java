@@ -140,6 +140,10 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
         return new R2dbcSaveOperationSupport(this).save(domainType);
     }
 
+    public <T> Flux<T> batchSave(Collection<T> entityList, Class<T> domainType) {
+        return save(domainType).batchSave(entityList);
+    }
+
     @Override
     public R2dbcDeleteOperation.R2dbcDelete delete(Class<?> domainType) {
         return new R2dbcDeleteOperationSupport(this).delete(domainType);
@@ -149,5 +153,16 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     public <T> Mono<T> delete(T entity) throws DataAccessException {
         return delete(MappingKit.getRequiredEntity(entity).getType()).using(entity).thenReturn(entity);
     }
+
+    public R2dbcDestroyOperation.R2dbcDestroy destroy(Class<?> domainType) {
+        return new R2dbcDestroyOperationSupport(this).destroy(domainType);
+    }
+
+    public <T> Mono<T> destroy(T entity) throws DataAccessException {
+        return destroy(MappingKit.getRequiredEntity(entity).getType())
+                .using(entity)
+                .thenReturn(entity);
+    }
+
 
 }
