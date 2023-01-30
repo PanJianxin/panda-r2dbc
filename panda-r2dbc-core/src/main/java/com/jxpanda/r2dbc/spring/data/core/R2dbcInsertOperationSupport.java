@@ -117,7 +117,8 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
                 potentiallyRemoveId(persistentEntity, outboundRow);
 
-                return template.maybeCallBeforeSave(initializedEntity, outboundRow, tableName).flatMap(entityToSave -> doInsert(entityToSave, tableName, outboundRow));
+                return template.maybeCallBeforeSave(initializedEntity, outboundRow, tableName)
+                        .flatMap(entityToSave -> doInsert(entityToSave, tableName, outboundRow));
             });
         }
 
@@ -128,9 +129,8 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
             StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
 
             // id生成处理
-
-            RelationalPersistentEntity<T> requiredEntity = MappingKit.getRequiredEntity(entity);
-            outboundRow.computeIfAbsent(requiredEntity.getIdColumn(), (sqlIdentifier -> Parameter.from(this.idGenerator().generate())));
+//            RelationalPersistentEntity<T> requiredEntity = MappingKit.getRequiredEntity(entity);
+//            outboundRow.computeIfAbsent(requiredEntity.getIdColumn(), (sqlIdentifier -> Parameter.from(this.idGenerator().generate())));
 
             for (SqlIdentifier column : outboundRow.keySet()) {
                 Parameter settableValue = outboundRow.get(column);
@@ -162,18 +162,15 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
          * 后期考虑通过批量插入语句来做
          */
         private Flux<T> doBatchInsert(Collection<T> entityList, SqlIdentifier tableName) {
-            if (ObjectUtils.isEmpty(entityList)) {
-                return Flux.empty();
-            }
-
             // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
             // 需要主动管理
-            return this.transactionalOperator()
-                    .transactional(Flux.fromStream(entityList.stream())
-                            .flatMap(entity -> doInsert(entity, tableName)))
-                    .onErrorResume(Mono::error)
-                    .log();
-
+            return this.transactionalOperator().transactional(
+                    Mono.just(entityList)
+                            .filter(list -> !ObjectUtils.isEmpty(list))
+                            .flatMapMany(list -> Flux.fromStream(list.stream()))
+                            .flatMap(entity -> doInsert(entity, tableName))
+                            .switchIfEmpty(Flux.empty())
+            );
         }
 
 

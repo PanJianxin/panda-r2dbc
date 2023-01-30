@@ -51,13 +51,13 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
 
         @Override
         public Flux<T> batchSave(Collection<T> objectList) {
-            return this.transactionalOperator()
-                    .transactional(
-                            Mono.just(objectList)
-                                    .filter(list -> !ObjectUtils.isEmpty(objectList))
-                                    .flatMapMany(list -> Flux.fromStream(list.stream()))
-                                    .flatMap(this::save)
-                    );
+            return this.transactionalOperator().transactional(
+                    Mono.just(objectList)
+                            .filter(list -> !ObjectUtils.isEmpty(objectList))
+                            .flatMapMany(list -> Flux.fromStream(list.stream()))
+                            .flatMap(this::save)
+                            .switchIfEmpty(Flux.empty())
+            );
         }
 
         /**
