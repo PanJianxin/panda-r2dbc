@@ -73,25 +73,6 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
     }
 
-    static <T> StatementMapper.SelectSpec selectWithCriteria(StatementMapper.SelectSpec selectSpec, Query query, Class<T> entityClass, boolean ignoreLogicDelete) {
-        Optional<CriteriaDefinition> criteriaOptional = query.getCriteria();
-        if (MappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
-            criteriaOptional = query.getCriteria()
-                    .or(() -> Optional.of(Criteria.empty()))
-                    .map(criteriaDefinition -> {
-                        // 获取查询对象中的逻辑删除字段和值，写入到criteria中
-                        Pair<String, Object> logicDeleteColumn = MappingKit.getLogicDeleteColumn(entityClass, MappingKit.LogicDeleteValue.UNDELETE_VALUE);
-                        if (criteriaDefinition instanceof Criteria criteria) {
-                            return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
-                        }
-                        if (criteriaDefinition instanceof LambdaCriteria lambdaCriteria) {
-                            return lambdaCriteria.and(LambdaCriteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
-                        }
-                        return criteriaDefinition;
-                    });
-        }
-        return criteriaOptional.map(selectSpec::withCriteria).orElse(selectSpec);
-    }
 
     private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T> implements R2dbcDeleteOperation.R2dbcDelete {
 

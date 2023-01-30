@@ -70,11 +70,16 @@ public class TestAPI {
 //                .log();
 //    }
 
-    //    @Transactional
     @PostMapping("/order/insert-batch")
     public Flux<Order> insertBatch(@RequestBody List<Order> orderList) {
         return reactiveEntityTemplate.insert(Order.class)
                 .batchInsert(orderList);
+    }
+
+    @PostMapping("/order/save-batch")
+    public Flux<Order> saveBatch(@RequestBody List<Order> orderList) {
+        return reactiveEntityTemplate.save(Order.class)
+                .batchSave(orderList);
     }
 
     @PostMapping("/order/update")

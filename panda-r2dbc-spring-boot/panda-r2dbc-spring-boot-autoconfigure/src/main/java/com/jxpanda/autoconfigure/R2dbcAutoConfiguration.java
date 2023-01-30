@@ -1,12 +1,12 @@
 package com.jxpanda.autoconfigure;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
+import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
-import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.SnowflakeGenerator;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -99,6 +99,12 @@ public class R2dbcAutoConfiguration {
     public R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers() {
         return new R2dbcCustomTypeHandlers();
     }
+
+//    @Bean
+//    @ConditionalOnMissingBean
+//    public TransactionalOperator transactionalOperator(ReactiveTransactionManager reactiveTransactionManager) {
+//        return new TransactionalOperatorImpl(reactiveTransactionManager, TransactionDefinition.withDefaults());
+//    }
 
 
     @Bean

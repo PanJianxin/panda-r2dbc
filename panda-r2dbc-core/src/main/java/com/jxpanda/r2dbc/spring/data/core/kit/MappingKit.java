@@ -26,12 +26,15 @@ import org.springframework.util.ObjectUtils;
 @AllArgsConstructor
 public class MappingKit {
 
+    private final R2dbcCustomTypeHandlers typeHandlers;
     private final MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext;
 
-    private final R2dbcCustomTypeHandlers typeHandlers;
 
-    private static MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> staticMappingContext;
+    /**
+     * 静态引用
+     */
     private static R2dbcCustomTypeHandlers staticTypeHandlers;
+    private static MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> staticMappingContext;
 
 
     @PostConstruct
@@ -96,7 +99,12 @@ public class MappingKit {
         return tableColumn != null && !ObjectUtils.isEmpty(tableColumn.function());
     }
 
-    public static <T> Object getPropertyValue(T entity, RelationalPersistentEntity<T> relationalPersistentEntity, RelationalPersistentProperty property) {
+    public static <T> Object getPropertyValue(T entity, RelationalPersistentEntity<T> relationalPersistentEntity, @Nullable RelationalPersistentProperty property) {
+
+        if (property == null) {
+            return null;
+        }
+
         Object value;
 
         PersistentPropertyAccessor<T> accessor = relationalPersistentEntity.getPropertyAccessor(entity);
@@ -111,12 +119,7 @@ public class MappingKit {
         return value;
     }
 
-    public static <T> boolean isPropertyEffective(T entity, RelationalPersistentProperty property) {
-        RelationalPersistentEntity<T> requiredEntity = getRequiredEntity(entity);
-        return isPropertyEffective(entity, requiredEntity, property);
-    }
-
-    public static <T> boolean isPropertyEffective(T entity, RelationalPersistentEntity<T> relationalPersistentEntity, RelationalPersistentProperty property) {
+    public static <T> boolean isPropertyEffective(T entity, RelationalPersistentEntity<T> relationalPersistentEntity, @Nullable RelationalPersistentProperty property) {
         return isPropertyEffective(relationalPersistentEntity, property, getPropertyValue(entity, relationalPersistentEntity, property));
     }
 
@@ -124,8 +127,12 @@ public class MappingKit {
      * 返回字段的值是否有效
      * 处理空值，在插入/更新数据的时候判定是否需要过滤掉对应字段的判别依据
      */
-    public static <T> boolean isPropertyEffective(RelationalPersistentEntity<T> entity, RelationalPersistentProperty property, @Nullable Object value) {
+    public static <T> boolean isPropertyEffective(RelationalPersistentEntity<T> entity, @Nullable RelationalPersistentProperty property, @Nullable Object value) {
 
+        // 如果字段不存在，直接返回false
+        if (property == null) {
+            return false;
+        }
         // 判别优先级
         // 字段上的配置 > 类上的配置 > 全局配置文件的配置
 

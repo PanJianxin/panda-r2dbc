@@ -40,6 +40,7 @@ import reactor.netty.Connection;
 import reactor.netty.FutureMono;
 import reactor.util.Logger;
 import reactor.util.Loggers;
+import reactor.util.concurrent.Queues;
 import reactor.util.context.Context;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -72,13 +73,19 @@ final class ReactorNettyClient implements Client {
     /**
      * TODO: use new API.
      */
-    @SuppressWarnings("deprecation")
-    private final reactor.core.publisher.EmitterProcessor<ServerMessage> responseProcessor =
-            reactor.core.publisher.EmitterProcessor.create(false);
+//    @SuppressWarnings("deprecation")
+    private final Sinks.ManyWithUpstream<ServerMessage> responseProcessor =
+            Sinks.unsafe().manyWithUpstream().multicastOnBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
 
     private final RequestQueue requestQueue = new RequestQueue();
 
     private final AtomicBoolean closing = new AtomicBoolean();
+
+    public static void main(String[] args) {
+        Sinks.Many<ServerMessage> responseProcessor = Sinks.many().multicast().onBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
+        Sinks.ManyWithUpstream<ServerMessage> objectManyWithUpstream = Sinks.unsafe().manyWithUpstream().multicastOnBackpressureBuffer(Queues.SMALL_BUFFER_SIZE, false);
+
+    }
 
     ReactorNettyClient(Connection connection, MySqlSslConfiguration ssl, ConnectionContext context) {
         requireNonNull(connection, "connection must not be null");
@@ -109,11 +116,11 @@ final class ReactorNettyClient implements Client {
 
         connection.inbound().receiveObject()
                 .doOnNext(it -> {
-                    if (it instanceof ServerMessage) {
-                        if (it instanceof ReferenceCounted) {
-                            ((ReferenceCounted) it).retain();
+                    if (it instanceof ServerMessage serverMessage) {
+                        if (it instanceof ReferenceCounted referenceCounted) {
+                            referenceCounted.retain();
                         }
-                        sink.next((ServerMessage) it);
+                        sink.next(serverMessage);
                     } else {
                         // ReferenceCounted will released by Netty.
                         throw ClientExceptions.unsupportedProtocol(it.getClass().getTypeName());
@@ -150,6 +157,7 @@ final class ReactorNettyClient implements Client {
             }
 
             Flux<T> responses = OperatorUtils.discardOnCancel(responseProcessor
+                            .asFlux()
                             .doOnSubscribe(ignored -> emitNextRequest(request))
                             .handle(handler)
                             .doOnTerminate(requestQueue))
@@ -176,6 +184,7 @@ final class ReactorNettyClient implements Client {
             }
 
             Flux<T> responses = responseProcessor
+                    .asFlux()
                     .doOnSubscribe(ignored -> exchangeable.subscribe(this::emitNextRequest,
                             e -> requests.emitError(e, Sinks.EmitFailureHandler.FAIL_FAST)))
                     .handle(exchangeable)
@@ -272,7 +281,7 @@ final class ReactorNettyClient implements Client {
 
     private void drainError(R2dbcException e) {
         this.requestQueue.dispose();
-        this.responseProcessor.onError(e);
+        this.responseProcessor.emitError(e, Sinks.EmitFailureHandler.FAIL_FAST);
     }
 
     private void handleClose() {
@@ -297,14 +306,10 @@ final class ReactorNettyClient implements Client {
             this.sink = sink;
         }
 
-        @Override
-        public Context currentContext() {
-            return ReactorNettyClient.this.responseProcessor.currentContext();
-        }
 
         @Override
         public void onSubscribe(Subscription s) {
-            ReactorNettyClient.this.responseProcessor.onSubscribe(s);
+            ReactorNettyClient.this.responseProcessor.subscribeTo(subscriber -> subscriber.onSubscribe(s));
         }
 
         @Override
@@ -332,12 +337,12 @@ final class ReactorNettyClient implements Client {
 
         @Override
         public Context currentContext() {
-            return ReactorNettyClient.this.responseProcessor.currentContext();
+            return Context.empty();
         }
 
         @Override
         public void error(Throwable e) {
-            ReactorNettyClient.this.responseProcessor.onError(ClientExceptions.wrap(e));
+            ReactorNettyClient.this.responseProcessor.emitError(ClientExceptions.wrap(e), Sinks.EmitFailureHandler.FAIL_FAST);
         }
 
         @Override
@@ -355,7 +360,7 @@ final class ReactorNettyClient implements Client {
                 logger.debug("Response: {}", message);
             }
 
-            ReactorNettyClient.this.responseProcessor.onNext(message);
+            ReactorNettyClient.this.responseProcessor.emitNext(message, Sinks.EmitFailureHandler.FAIL_FAST);
         }
     }
 

@@ -20,6 +20,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
+import com.jxpanda.r2dbc.spring.data.core.query.LambdaCriteria;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.springframework.data.projection.ProjectionInformation;
@@ -27,8 +28,11 @@ import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.query.Criteria;
+import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.*;
+import org.springframework.data.util.Pair;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
@@ -199,7 +203,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).withProjection(columnName).limit(1);
 
-            selectSpec = R2dbcDeleteOperationSupport.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -220,7 +224,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 return spec.withProjection(Functions.count(countExpression));
             });
 
-            selectSpec = R2dbcDeleteOperationSupport.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -256,7 +260,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 selectSpec = selectSpec.withSort(query.getSort());
             }
 
-            selectSpec = R2dbcDeleteOperationSupport.selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -274,6 +278,29 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Flux<R>> resultHandler) {
             return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
                     .flatMap(it -> this.template.maybeCallAfterConvert(it, tableName));
+        }
+
+        /**
+         * 创建查询单元，加入了逻辑删除的判断
+         */
+        private static <T> StatementMapper.SelectSpec selectWithCriteria(StatementMapper.SelectSpec selectSpec, Query query, Class<T> entityClass, boolean ignoreLogicDelete) {
+            Optional<CriteriaDefinition> criteriaOptional = query.getCriteria();
+            if (MappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+                criteriaOptional = query.getCriteria()
+                        .or(() -> Optional.of(Criteria.empty()))
+                        .map(criteriaDefinition -> {
+                            // 获取查询对象中的逻辑删除字段和值，写入到criteria中
+                            Pair<String, Object> logicDeleteColumn = MappingKit.getLogicDeleteColumn(entityClass, MappingKit.LogicDeleteValue.UNDELETE_VALUE);
+                            if (criteriaDefinition instanceof Criteria criteria) {
+                                return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                            }
+                            if (criteriaDefinition instanceof LambdaCriteria lambdaCriteria) {
+                                return lambdaCriteria.and(LambdaCriteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                            }
+                            return criteriaDefinition;
+                        });
+            }
+            return criteriaOptional.map(selectSpec::withCriteria).orElse(selectSpec);
         }
 
         private <E, RT> List<Expression> getSelectProjection(Table table, Query query, Class<E> entityClass, Class<RT> returnType) {

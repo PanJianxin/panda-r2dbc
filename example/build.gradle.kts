@@ -16,10 +16,14 @@ dependencies {
     implementation(project(ProjectDependency.PANDA_R2DBC_SPRING_BOOT_STARTER))
 //    implementation(project(ProjectDependency.PANDA_R2DBC_SPRING_DATA))
 //    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-    implementation(project(ProjectDependency.MYSQL_CONNECTOR))
+//    implementation(project(ProjectDependency.MYSQL_CONNECTOR))
     //    implementation("dev.miku:r2dbc-mysql:0.8.2.RELEASE")
     // https://mvnrepository.com/artifact/com.github.jasync-sql/jasync-r2dbc-mysql
 //    implementation("com.github.jasync-sql:jasync-r2dbc-mysql:2.1.7")
+
+    // https://mvnrepository.com/artifact/org.mariadb/r2dbc-mariadb
+    implementation("org.mariadb:r2dbc-mariadb:1.1.3")
+
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 

@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 import java.lang.reflect.Type;
 
+@AllArgsConstructor
 public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> {
 
     /**
@@ -35,13 +37,6 @@ public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> 
         this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
 
         this.objectMapper.registerModule(new JavaTimeModule());
-    }
-
-    /**
-     * 支持使用外部构造好的objectMapper来替换
-     */
-    public R2dbcJacksonTypeHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
     }
 
     @Override

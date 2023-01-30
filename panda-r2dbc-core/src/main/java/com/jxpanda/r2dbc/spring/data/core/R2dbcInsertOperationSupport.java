@@ -170,7 +170,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
             // 需要主动管理
             return this.transactionalOperator()
                     .transactional(Flux.fromStream(entityList.stream())
-                            .flatMap(entity -> doInsert(entity, tableName)));
+                            .flatMap(entity -> doInsert(entity, tableName)))
+                    .onErrorResume(Mono::error)
+                    .log();
 
         }
 

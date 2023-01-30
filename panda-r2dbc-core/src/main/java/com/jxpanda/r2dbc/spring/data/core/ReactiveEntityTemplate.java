@@ -44,8 +44,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
 
     private final SpelAwareProxyProjectionFactory projectionFactory;
 
-//    private final R2dbcConfigProperties r2dbcConfigProperties;
-
     @Autowired
     private IdGenerator<?> idGenerator;
 
@@ -60,7 +58,6 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {
         super(databaseClient, dialect, converter);
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
-//        this.r2dbcConfigProperties = r2dbcConfigProperties;
         this.dialect = dialect;
     }
 
