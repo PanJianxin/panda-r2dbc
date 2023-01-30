@@ -1,6 +1,5 @@
 package com.jxpanda.r2dbc.spring.data.core.operation;
 
-import org.springframework.data.r2dbc.core.ReactiveInsertOperation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

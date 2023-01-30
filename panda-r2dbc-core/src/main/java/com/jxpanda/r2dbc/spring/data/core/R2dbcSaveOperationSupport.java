@@ -2,7 +2,6 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSaveOperation;
-import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Query;
@@ -12,11 +11,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements R2dbcSaveOperation {
     public R2dbcSaveOperationSupport(ReactiveEntityTemplate template) {

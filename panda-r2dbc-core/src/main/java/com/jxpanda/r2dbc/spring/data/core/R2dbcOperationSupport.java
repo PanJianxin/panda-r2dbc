@@ -1,12 +1,10 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
-import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.StatementMapper;
@@ -18,7 +16,6 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentEnti
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
-import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.r2dbc.core.Parameter;

@@ -15,7 +15,6 @@
  */
 package com.jxpanda.r2dbc.spring.data.core.convert;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
