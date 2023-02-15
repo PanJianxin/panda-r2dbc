@@ -118,7 +118,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     }
 
     public <T> Flux<T> batchInsert(Collection<T> entityList, Class<T> domainType) {
-        return insert(domainType).batchInsert(entityList);
+        return insert(domainType).batch(entityList);
     }
 
     @Override
@@ -141,7 +141,7 @@ public class ReactiveEntityTemplate extends R2dbcEntityTemplate {
     }
 
     public <T> Flux<T> batchSave(Collection<T> entityList, Class<T> domainType) {
-        return save(domainType).batchSave(entityList);
+        return save(domainType).batch(entityList);
     }
 
     @Override

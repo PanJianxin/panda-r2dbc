@@ -2,22 +2,35 @@ package demo;
 
 import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.LambdaCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Paging;
 import demo.model.*;
 import lombok.AllArgsConstructor;
+import org.reactivestreams.Publisher;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StopWatch;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.ParallelFlux;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.logging.Level;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("test")
@@ -31,6 +44,12 @@ public class TestAPI {
     private final OrderService orderService;
 
 
+    @GetMapping("/page")
+    public Mono<Pagination<Order>> paginationMono(Long current, Integer size, Boolean isQueryCount) {
+        return reactiveEntityTemplate.select(Order.class)
+                .paging(new Paging(current, size, isQueryCount));
+    }
+
     @GetMapping("{userId}")
     public Mono<User> getUser(@PathVariable("userId") String userId) {
         return userRepository.findById(userId);
@@ -39,7 +58,7 @@ public class TestAPI {
     @GetMapping(path = "select", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<Order> selectList(int duration) {
         return reactiveEntityTemplate.select(Order.class)
-                .matching(Query.query(LambdaCriteria.where(Order::getId).greaterThan("206975615562153985")).limit(2).offset(0))
+                .matching(Query.query(EnhancedCriteria.where(Order::getId).greaterThan("206975615562153985")).limit(2).offset(0))
                 .all()
                 .delayElements(Duration.of(duration, ChronoUnit.SECONDS));
     }
@@ -54,7 +73,7 @@ public class TestAPI {
     public Mono<Order> save(@RequestBody Order order) {
         order.setNumber(IdentifierKit.nextIdString());
         return reactiveEntityTemplate.save(Order.class)
-                .save(order)
+                .using(order)
                 .log();
     }
 
@@ -65,27 +84,21 @@ public class TestAPI {
                 .log();
     }
 
-//    @PostMapping("/order/save")
-//    public Mono<Order> save(@RequestBody Order order) {
-//        return reactiveEntityTemplate.save(order)
-//                .log();
-//    }
-
     @PostMapping("/order/insert-batch")
     public Flux<Order> insertBatch(@RequestBody List<Order> orderList) {
         return reactiveEntityTemplate.insert(Order.class)
-                .batchInsert(orderList);
+                .batch(orderList);
     }
 
     @PostMapping("/order/save-batch")
     public Flux<Order> saveBatch(@RequestBody List<Order> orderList) {
         return reactiveEntityTemplate.save(Order.class)
-                .batchSave(orderList);
+                .batch(orderList);
     }
 
     @PostMapping("/order/update")
     public Mono<Order> update(@RequestBody Order order, String orderId) {
-        return reactiveEntityTemplate.update(Order.class).matching(Query.query(LambdaCriteria.where(Order::getId).is(orderId)))
+        return reactiveEntityTemplate.update(Order.class).matching(Query.query(EnhancedCriteria.where(Order::getId).is(orderId)))
                 .apply(Update.update(Order.AMOUNT, order.getAmount()))
                 .map(l -> {
                     order.setId(orderId);
@@ -107,7 +120,7 @@ public class TestAPI {
     @GetMapping("/order/sum")
     public Mono<OrderSum> getOrderSum() {
         return reactiveEntityTemplate.select(OrderSum.class)
-                .matching(Query.query(LambdaCriteria.where(Order::getId).greaterThan("3005542952022835202")))
+                .matching(Query.query(EnhancedCriteria.where(Order::getId).greaterThan("3005542952022835202")))
                 .one();
     }
 

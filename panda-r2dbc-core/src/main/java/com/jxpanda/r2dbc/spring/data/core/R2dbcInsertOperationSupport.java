@@ -37,6 +37,7 @@ import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -103,7 +104,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
         }
 
         @Override
-        public Flux<T> batchInsert(Collection<T> objectList) {
+        public Flux<T> batch(Collection<T> objectList) {
             Assert.notEmpty(objectList, "Object list to insert must not be empty");
             return doBatchInsert(objectList, this.tableName);
         }
@@ -166,15 +167,13 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
         private Flux<T> doBatchInsert(Collection<T> entityList, SqlIdentifier tableName) {
             // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
             // 需要主动管理
-            return this.transactionalOperator().transactional(
-                    Mono.just(entityList)
-                            .filter(list -> !ObjectUtils.isEmpty(list))
-                            .flatMapMany(list -> Flux.fromStream(list.stream()))
-                            .flatMap(entity -> doInsert(entity, tableName))
-                            .switchIfEmpty(Flux.empty())
-            );
+            return Mono.just(entityList)
+                    .filter(list -> !ObjectUtils.isEmpty(list))
+                    .flatMapMany(Flux::fromIterable)
+                    .flatMap(entity -> doInsert(entity, tableName))
+                    .switchIfEmpty(Flux.empty())
+                    .as(this.transactionalOperator()::transactional);
         }
-
 
         private List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
             return template.getDataAccessStrategy().getIdentifierColumns(clazz);

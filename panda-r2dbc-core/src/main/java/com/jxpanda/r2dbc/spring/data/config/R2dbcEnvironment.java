@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Component
 @AllArgsConstructor
-public class R2dbcEnvironment {
+public final class R2dbcEnvironment {
 
     private final R2dbcConfigProperties r2dbcConfigProperties;
     private static Optional<R2dbcConfigProperties> propertiesOptional = Optional.empty();

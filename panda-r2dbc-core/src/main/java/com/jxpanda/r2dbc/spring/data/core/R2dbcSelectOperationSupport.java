@@ -18,9 +18,12 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Page;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Paging;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.LambdaCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.springframework.data.projection.ProjectionInformation;
@@ -189,6 +192,33 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             return selectFlux(this.query, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all);
         }
 
+        @Override
+        public Mono<Pagination<R>> paging() {
+            Mono<Long> countMono = doCount(this.query, this.domainType, this.tableName);
+
+            Mono<List<R>> recordsMono = selectFlux(this.query, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all)
+                    .collectList();
+
+            return Mono.zip(countMono, recordsMono, (count, records) -> Pagination.with(this.query.getOffset(), this.query.getLimit(), count, records));
+        }
+
+        @Override
+        public Mono<Pagination<R>> paging(Page page) {
+            Query pageQuery = this.query.offset(page.getOffset()).limit(page.getLimit());
+
+            Mono<Long> countMono = Mono.defer(() -> {
+                if (page.isQueryCount()) {
+                    return doCount(pageQuery, this.domainType, this.tableName);
+                }
+                return Mono.just(-1L);
+            });
+
+            Mono<List<R>> recordsMono = selectFlux(pageQuery, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all)
+                    .collectList();
+
+            return Mono.zip(countMono, recordsMono, (count, records) -> new Pagination<>(page.getCurrent(), page.getSize(), count, records));
+        }
+
 
         private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
             return doExists(query, entityClass, tableName, false);
@@ -294,8 +324,8 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                             if (criteriaDefinition instanceof Criteria criteria) {
                                 return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
                             }
-                            if (criteriaDefinition instanceof LambdaCriteria lambdaCriteria) {
-                                return lambdaCriteria.and(LambdaCriteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                            if (criteriaDefinition instanceof EnhancedCriteria enhancedCriteria) {
+                                return enhancedCriteria.and(EnhancedCriteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
                             }
                             return criteriaDefinition;
                         });

@@ -40,20 +40,19 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
 
 
         @Override
-        public Mono<T> save(T object) {
+        public Mono<T> using(T object) {
             return isUpdate(object)
                     .flatMap(isUpdate -> isUpdate ? this.template.update(object) : this.template.insert(object));
         }
 
         @Override
-        public Flux<T> batchSave(Collection<T> objectList) {
-            return this.transactionalOperator().transactional(
-                    Mono.just(objectList)
-                            .filter(list -> !ObjectUtils.isEmpty(objectList))
-                            .flatMapMany(list -> Flux.fromStream(list.stream()))
-                            .flatMap(this::save)
-                            .switchIfEmpty(Flux.empty())
-            );
+        public Flux<T> batch(Collection<T> objectList) {
+            return Mono.just(objectList)
+                    .filter(list -> !ObjectUtils.isEmpty(objectList))
+                    .flatMapMany(Flux::fromIterable)
+                    .flatMap(this::using)
+                    .switchIfEmpty(Flux.empty())
+                    .as(this.transactionalOperator()::transactional);
         }
 
         /**

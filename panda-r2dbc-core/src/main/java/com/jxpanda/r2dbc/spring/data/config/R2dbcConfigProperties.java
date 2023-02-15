@@ -61,7 +61,6 @@ public record R2dbcConfigProperties(Database database, Mapping mapping, LogicDel
             return new LogicDelete(false, StringConstant.BLANK, Value.empty(), Value.empty());
         }
 
-        @EqualsAndHashCode(callSuper = true)
         public record Value(String value, Class<? extends ValueHandler> handlerClass) {
 
             private static final Map<Value, ValueHandler> HANDLER_CACHE = new HashMap<>();

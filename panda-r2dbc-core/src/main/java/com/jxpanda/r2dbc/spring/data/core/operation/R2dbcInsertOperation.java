@@ -14,7 +14,7 @@ public interface R2dbcInsertOperation extends ReactiveInsertOperation {
 
     interface R2dbcInsert<T> extends ReactiveInsertOperation.ReactiveInsert<T> {
 
-        Flux<T> batchInsert(Collection<T> objectList);
+        Flux<T> batch(Collection<T> objectList);
 
     }
 

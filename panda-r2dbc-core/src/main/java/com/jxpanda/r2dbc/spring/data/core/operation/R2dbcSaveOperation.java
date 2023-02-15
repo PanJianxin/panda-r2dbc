@@ -17,9 +17,9 @@ public interface R2dbcSaveOperation {
         /**
          * 保存一条数据，有id则更新，没有id则创建
          */
-        Mono<T> save(T object);
+        Mono<T> using(T object);
 
-        Flux<T> batchSave(Collection<T> objectList);
+        Flux<T> batch(Collection<T> objectList);
 
     }
 

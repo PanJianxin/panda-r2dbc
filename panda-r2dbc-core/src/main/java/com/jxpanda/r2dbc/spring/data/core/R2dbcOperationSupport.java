@@ -40,7 +40,7 @@ public class R2dbcOperationSupport {
 
     @SuppressWarnings("deprecation")
     @Getter(AccessLevel.PROTECTED)
-    protected static class R2dbcSupport<T> {
+    protected static class R2dbcSupport<T>  {
 
         /**
          * entityTemplate

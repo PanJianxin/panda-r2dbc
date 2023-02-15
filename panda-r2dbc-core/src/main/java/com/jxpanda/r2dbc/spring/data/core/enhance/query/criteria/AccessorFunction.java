@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.core.enhance.query;
+package com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
@@ -8,21 +8,17 @@ import com.jxpanda.r2dbc.spring.data.infrastructure.kit.StringKit;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 @FunctionalInterface
 public interface AccessorFunction<T, R> extends Function<T, R>, Serializable {
 
-    Map<AccessorFunction<?, ?>, String> CACHE = new HashMap<>();
-
     /**
      * 获取字段名
      */
     default String getColumnName() {
-        if (CACHE.containsKey(this)) {
-            return CACHE.get(this);
+        if (AccessorCache.containsKey(this)) {
+            return AccessorCache.get(this);
         }
 
         Field field = ReflectionKit.getField(this);
@@ -40,7 +36,7 @@ public interface AccessorFunction<T, R> extends Function<T, R>, Serializable {
         }
 
         columnName = StringKit.isBlank(columnName) ? field.getName() : columnName;
-        CACHE.put(this, columnName);
+        AccessorCache.put(this, columnName);
 
         return columnName;
     }

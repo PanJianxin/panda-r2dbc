@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.core.enhance.query;
+package com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
@@ -13,32 +13,31 @@ import java.util.*;
 
 /**
  * 直接复制了Criteria的源码
- * 添加了lambda的支持，其他都没有变
+ * 在原来的基础上增加了Lambda的支持
  */
 @SuppressWarnings({"unused", "BooleanMethodIsAlwaysInverted"})
-public class LambdaCriteria implements CriteriaDefinition {
-    static final LambdaCriteria EMPTY = new LambdaCriteria(SqlIdentifier.EMPTY, Comparator.INITIAL, null);
+public class EnhancedCriteria implements CriteriaDefinition {
+    static final EnhancedCriteria EMPTY = new EnhancedCriteria(SqlIdentifier.EMPTY, Comparator.INITIAL, null);
 
-    private final @Nullable LambdaCriteria previous;
+    private final @Nullable EnhancedCriteria previous;
     private final Combinator combinator;
     private final List<CriteriaDefinition> group;
-
     private final @Nullable SqlIdentifier column;
     private final @Nullable Comparator comparator;
     private final @Nullable Object value;
     private final boolean ignoreCase;
 
-    private LambdaCriteria(SqlIdentifier column, Comparator comparator, @Nullable Object value) {
+    private EnhancedCriteria(SqlIdentifier column, Comparator comparator, @Nullable Object value) {
         this(null, Combinator.INITIAL, Collections.emptyList(), column, comparator, value, false);
     }
 
-    private LambdaCriteria(@Nullable LambdaCriteria previous, Combinator combinator, List<CriteriaDefinition> group,
-                           @Nullable SqlIdentifier column, @Nullable Comparator comparator, @Nullable Object value) {
+    private EnhancedCriteria(@Nullable EnhancedCriteria previous, Combinator combinator, List<CriteriaDefinition> group,
+                             @Nullable SqlIdentifier column, @Nullable Comparator comparator, @Nullable Object value) {
         this(previous, combinator, group, column, comparator, value, false);
     }
 
-    private LambdaCriteria(@Nullable LambdaCriteria previous, Combinator combinator, List<CriteriaDefinition> group,
-                           @Nullable SqlIdentifier column, @Nullable Comparator comparator, @Nullable Object value, boolean ignoreCase) {
+    private EnhancedCriteria(@Nullable EnhancedCriteria previous, Combinator combinator, List<CriteriaDefinition> group,
+                             @Nullable SqlIdentifier column, @Nullable Comparator comparator, @Nullable Object value, boolean ignoreCase) {
 
         this.previous = previous;
         this.combinator = previous != null && previous.isEmpty() ? Combinator.INITIAL : combinator;
@@ -49,7 +48,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         this.ignoreCase = ignoreCase;
     }
 
-    private LambdaCriteria(@Nullable LambdaCriteria previous, Combinator combinator, List<CriteriaDefinition> group) {
+    private EnhancedCriteria(@Nullable EnhancedCriteria previous, Combinator combinator, List<CriteriaDefinition> group) {
 
         this.previous = previous;
         this.combinator = previous != null && previous.isEmpty() ? Combinator.INITIAL : combinator;
@@ -63,18 +62,18 @@ public class LambdaCriteria implements CriteriaDefinition {
     /**
      * Static factory method to create an empty LambdaCriteria.
      *
-     * @return an empty {@link LambdaCriteria}.
+     * @return an empty {@link EnhancedCriteria}.
      */
-    public static LambdaCriteria empty() {
+    public static EnhancedCriteria empty() {
         return EMPTY;
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it as group with {@code AND} using the provided {@link List LambdaCriterias}.
+     * Create a new {@link EnhancedCriteria} and combine it as group with {@code AND} using the provided {@link List LambdaCriterias}.
      *
-     * @return new {@link LambdaCriteria}.
+     * @return new {@link EnhancedCriteria}.
      */
-    public static LambdaCriteria from(LambdaCriteria... criteria) {
+    public static EnhancedCriteria from(EnhancedCriteria... criteria) {
 
         Assert.notNull(criteria, "LambdaCriteria must not be null");
         Assert.noNullElements(criteria, "LambdaCriteria must not contain null elements");
@@ -83,11 +82,11 @@ public class LambdaCriteria implements CriteriaDefinition {
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it as group with {@code AND} using the provided {@link List LambdaCriterias}.
+     * Create a new {@link EnhancedCriteria} and combine it as group with {@code AND} using the provided {@link List LambdaCriterias}.
      *
-     * @return new {@link LambdaCriteria}.
+     * @return new {@link EnhancedCriteria}.
      */
-    public static LambdaCriteria from(List<LambdaCriteria> criteria) {
+    public static EnhancedCriteria from(List<EnhancedCriteria> criteria) {
 
         Assert.notNull(criteria, "LambdaCriteria must not be null");
         Assert.noNullElements(criteria, "LambdaCriteria must not contain null elements");
@@ -107,9 +106,9 @@ public class LambdaCriteria implements CriteriaDefinition {
      * Static factory method to create a LambdaCriteria using the provided {@code column} name.
      *
      * @param accessorFunction Must not be {@literal null} or empty.
-     * @return a new {@link LambdaCriteria.LambdaCriteriaStep} object to complete the first {@link LambdaCriteria}.
+     * @return a new {@link EnhancedCriteriaStep} object to complete the first {@link EnhancedCriteria}.
      */
-    public static <T> LambdaCriteria.LambdaCriteriaStep where(AccessorFunction<T, ?> accessorFunction) {
+    public static <T> EnhancedCriteriaStep where(AccessorFunction<T, ?> accessorFunction) {
 
         Assert.notNull(accessorFunction, "Accessor function must not be null or empty");
 
@@ -121,22 +120,22 @@ public class LambdaCriteria implements CriteriaDefinition {
      * Static factory method to create a LambdaCriteria using the provided {@code column} name.
      *
      * @param column Must not be {@literal null} or empty.
-     * @return a new {@link LambdaCriteria.LambdaCriteriaStep} object to complete the first {@link LambdaCriteria}.
+     * @return a new {@link EnhancedCriteriaStep} object to complete the first {@link EnhancedCriteria}.
      */
-    public static LambdaCriteria.LambdaCriteriaStep where(String column) {
+    public static EnhancedCriteriaStep where(String column) {
 
         Assert.hasText(column, "Column name must not be null or empty");
 
-        return new LambdaCriteria.DefaultLambdaCriteriaStep(SqlIdentifier.unquoted(column));
+        return new DefaultEnhancedCriteriaStep(SqlIdentifier.unquoted(column));
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it with {@code AND} using the provided {@code column} name.
+     * Create a new {@link EnhancedCriteria} and combine it with {@code AND} using the provided {@code column} name.
      *
      * @param accessorFunction Must not be {@literal null} or empty.
-     * @return a new {@link LambdaCriteria.LambdaCriteriaStep} object to complete the next {@link LambdaCriteria}.
+     * @return a new {@link EnhancedCriteriaStep} object to complete the next {@link EnhancedCriteria}.
      */
-    public <T> LambdaCriteria.LambdaCriteriaStep and(AccessorFunction<T, ?> accessorFunction) {
+    public <T> EnhancedCriteriaStep and(AccessorFunction<T, ?> accessorFunction) {
 
         Assert.notNull(accessorFunction, "Accessor function must not be null or empty");
 
@@ -145,32 +144,32 @@ public class LambdaCriteria implements CriteriaDefinition {
 
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it with {@code AND} using the provided {@code column} name.
+     * Create a new {@link EnhancedCriteria} and combine it with {@code AND} using the provided {@code column} name.
      *
      * @param column Must not be {@literal null} or empty.
-     * @return a new {@link LambdaCriteria.LambdaCriteriaStep} object to complete the next {@link LambdaCriteria}.
+     * @return a new {@link EnhancedCriteriaStep} object to complete the next {@link EnhancedCriteria}.
      */
-    public LambdaCriteria.LambdaCriteriaStep and(String column) {
+    public EnhancedCriteriaStep and(String column) {
 
         Assert.hasText(column, "Column name must not be null or empty");
 
         SqlIdentifier identifier = SqlIdentifier.unquoted(column);
-        return new LambdaCriteria.DefaultLambdaCriteriaStep(identifier) {
+        return new DefaultEnhancedCriteriaStep(identifier) {
             @Override
-            protected LambdaCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
-                return new LambdaCriteria(LambdaCriteria.this, Combinator.AND, Collections.emptyList(), identifier, comparator, value);
+            protected EnhancedCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
+                return new EnhancedCriteria(EnhancedCriteria.this, Combinator.AND, Collections.emptyList(), identifier, comparator, value);
             }
         };
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it as group with {@code AND} using the provided {@link LambdaCriteria} group.
+     * Create a new {@link EnhancedCriteria} and combine it as group with {@code AND} using the provided {@link EnhancedCriteria} group.
      *
      * @param criteria criteria object.
-     * @return a new {@link LambdaCriteria} object.
+     * @return a new {@link EnhancedCriteria} object.
      * @since 1.1
      */
-    public LambdaCriteria and(CriteriaDefinition criteria) {
+    public EnhancedCriteria and(CriteriaDefinition criteria) {
 
         Assert.notNull(criteria, "LambdaCriteria must not be null");
 
@@ -178,45 +177,45 @@ public class LambdaCriteria implements CriteriaDefinition {
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it as group with {@code AND} using the provided {@link LambdaCriteria} group.
+     * Create a new {@link EnhancedCriteria} and combine it as group with {@code AND} using the provided {@link EnhancedCriteria} group.
      *
      * @param criteria criteria objects.
-     * @return a new {@link LambdaCriteria} object.
+     * @return a new {@link EnhancedCriteria} object.
      */
     @SuppressWarnings("unchecked")
-    public LambdaCriteria and(List<? extends CriteriaDefinition> criteria) {
+    public EnhancedCriteria and(List<? extends CriteriaDefinition> criteria) {
 
         Assert.notNull(criteria, "LambdaCriteria must not be null");
 
-        return new LambdaCriteria(LambdaCriteria.this, Combinator.AND, (List<CriteriaDefinition>) criteria);
+        return new EnhancedCriteria(EnhancedCriteria.this, Combinator.AND, (List<CriteriaDefinition>) criteria);
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it with {@code OR} using the provided {@code column} name.
+     * Create a new {@link EnhancedCriteria} and combine it with {@code OR} using the provided {@code column} name.
      *
      * @param column Must not be {@literal null} or empty.
-     * @return a new {@link LambdaCriteria.LambdaCriteriaStep} object to complete the next {@link LambdaCriteria}.
+     * @return a new {@link EnhancedCriteriaStep} object to complete the next {@link EnhancedCriteria}.
      */
-    public LambdaCriteria.LambdaCriteriaStep or(String column) {
+    public EnhancedCriteriaStep or(String column) {
 
         Assert.hasText(column, "Column name must not be null or empty");
 
         SqlIdentifier identifier = SqlIdentifier.unquoted(column);
-        return new LambdaCriteria.DefaultLambdaCriteriaStep(identifier) {
+        return new DefaultEnhancedCriteriaStep(identifier) {
             @Override
-            protected LambdaCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
-                return new LambdaCriteria(LambdaCriteria.this, Combinator.OR, Collections.emptyList(), identifier, comparator, value);
+            protected EnhancedCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
+                return new EnhancedCriteria(EnhancedCriteria.this, Combinator.OR, Collections.emptyList(), identifier, comparator, value);
             }
         };
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it with {@code OR} using the provided {@code column} name.
+     * Create a new {@link EnhancedCriteria} and combine it with {@code OR} using the provided {@code column} name.
      *
      * @param accessorFunction Must not be {@literal null} or empty.
-     * @return a new {@link LambdaCriteria.LambdaCriteriaStep} object to complete the next {@link LambdaCriteria}.
+     * @return a new {@link EnhancedCriteriaStep} object to complete the next {@link EnhancedCriteria}.
      */
-    public <T> LambdaCriteria.LambdaCriteriaStep or(AccessorFunction<T, ?> accessorFunction) {
+    public <T> EnhancedCriteriaStep or(AccessorFunction<T, ?> accessorFunction) {
 
         Assert.notNull(accessorFunction, "Accessor function must not be null or empty");
 
@@ -224,13 +223,13 @@ public class LambdaCriteria implements CriteriaDefinition {
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it as group with {@code OR} using the provided {@link LambdaCriteria} group.
+     * Create a new {@link EnhancedCriteria} and combine it as group with {@code OR} using the provided {@link EnhancedCriteria} group.
      *
      * @param criteria criteria object.
-     * @return a new {@link LambdaCriteria} object.
+     * @return a new {@link EnhancedCriteria} object.
      * @since 1.1
      */
-    public LambdaCriteria or(CriteriaDefinition criteria) {
+    public EnhancedCriteria or(CriteriaDefinition criteria) {
 
         Assert.notNull(criteria, "LambdaCriteria must not be null");
 
@@ -238,44 +237,44 @@ public class LambdaCriteria implements CriteriaDefinition {
     }
 
     /**
-     * Create a new {@link LambdaCriteria} and combine it as group with {@code OR} using the provided {@link LambdaCriteria} group.
+     * Create a new {@link EnhancedCriteria} and combine it as group with {@code OR} using the provided {@link EnhancedCriteria} group.
      *
      * @param criteria criteria object.
-     * @return a new {@link LambdaCriteria} object.
+     * @return a new {@link EnhancedCriteria} object.
      * @since 1.1
      */
     @SuppressWarnings("unchecked")
-    public LambdaCriteria or(List<? extends CriteriaDefinition> criteria) {
+    public EnhancedCriteria or(List<? extends CriteriaDefinition> criteria) {
 
         Assert.notNull(criteria, "LambdaCriteria must not be null");
 
-        return new LambdaCriteria(LambdaCriteria.this, Combinator.OR, (List<CriteriaDefinition>) criteria);
+        return new EnhancedCriteria(EnhancedCriteria.this, Combinator.OR, (List<CriteriaDefinition>) criteria);
     }
 
     /**
-     * Creates a new {@link LambdaCriteria} with the given "ignore case" flag.
+     * Creates a new {@link EnhancedCriteria} with the given "ignore case" flag.
      *
      * @param ignoreCase {@literal true} if comparison should be done in case-insensitive way
-     * @return a new {@link LambdaCriteria} object
+     * @return a new {@link EnhancedCriteria} object
      */
-    public LambdaCriteria ignoreCase(boolean ignoreCase) {
+    public EnhancedCriteria ignoreCase(boolean ignoreCase) {
         if (this.ignoreCase != ignoreCase) {
-            return new LambdaCriteria(previous, combinator, group, column, comparator, value, ignoreCase);
+            return new EnhancedCriteria(previous, combinator, group, column, comparator, value, ignoreCase);
         }
         return this;
     }
 
     /**
-     * @return the previous {@link LambdaCriteria} object. Can be {@literal null} if there is no previous {@link LambdaCriteria}.
+     * @return the previous {@link EnhancedCriteria} object. Can be {@literal null} if there is no previous {@link EnhancedCriteria}.
      * @see #hasPrevious()
      */
     @Nullable
-    public LambdaCriteria getPrevious() {
+    public EnhancedCriteria getPrevious() {
         return previous;
     }
 
     /**
-     * @return {@literal true} if this {@link LambdaCriteria} has a previous one.
+     * @return {@literal true} if this {@link EnhancedCriteria} has a previous one.
      */
     public boolean hasPrevious() {
         return previous != null;
@@ -283,7 +282,7 @@ public class LambdaCriteria implements CriteriaDefinition {
 
 
     /**
-     * @return {@literal true} if this {@link LambdaCriteria} is empty.
+     * @return {@literal true} if this {@link EnhancedCriteria} is empty.
      * @since 1.1
      */
     @Override
@@ -293,7 +292,7 @@ public class LambdaCriteria implements CriteriaDefinition {
             return false;
         }
 
-        LambdaCriteria parent = this.previous;
+        EnhancedCriteria parent = this.previous;
 
         while (parent != null) {
 
@@ -328,7 +327,7 @@ public class LambdaCriteria implements CriteriaDefinition {
     }
 
     /**
-     * @return {@literal true} if this {@link LambdaCriteria} is empty.
+     * @return {@literal true} if this {@link EnhancedCriteria} is empty.
      */
     public boolean isGroup() {
         return !this.group.isEmpty();
@@ -478,14 +477,14 @@ public class LambdaCriteria implements CriteriaDefinition {
 
     private static String renderValue(@Nullable Object value) {
 
-        if (value instanceof Number) {
-            return value.toString();
+        if (value instanceof Number number) {
+            return number.toString();
         }
 
-        if (value instanceof Collection) {
+        if (value instanceof Collection<?> collection) {
 
             StringJoiner joiner = new StringJoiner(", ");
-            ((Collection<?>) value).forEach(o -> joiner.add(renderValue(o)));
+            collection.forEach(o -> joiner.add(renderValue(o)));
             return joiner.toString();
         }
 
@@ -497,151 +496,151 @@ public class LambdaCriteria implements CriteriaDefinition {
     }
 
     /**
-     * Interface declaring terminal builder methods to build a {@link LambdaCriteria}.
+     * Interface declaring terminal builder methods to build a {@link EnhancedCriteria}.
      */
-    public interface LambdaCriteriaStep {
+    public interface EnhancedCriteriaStep {
 
         /**
-         * Creates a {@link LambdaCriteria} using equality.
+         * Creates a {@link EnhancedCriteria} using equality.
          *
          * @param value must not be {@literal null}.
          */
-        LambdaCriteria is(Object value);
+        EnhancedCriteria is(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using equality (is not).
+         * Creates a {@link EnhancedCriteria} using equality (is not).
          *
          * @param value must not be {@literal null}.
          */
-        LambdaCriteria not(Object value);
+        EnhancedCriteria not(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code IN}.
+         * Creates a {@link EnhancedCriteria} using {@code IN}.
          *
          * @param values must not be {@literal null}.
          */
-        LambdaCriteria in(Object... values);
+        EnhancedCriteria in(Object... values);
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code IN}.
+         * Creates a {@link EnhancedCriteria} using {@code IN}.
          *
          * @param values must not be {@literal null}.
          */
-        LambdaCriteria in(Collection<?> values);
+        EnhancedCriteria in(Collection<?> values);
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code NOT IN}.
+         * Creates a {@link EnhancedCriteria} using {@code NOT IN}.
          *
          * @param values must not be {@literal null}.
          */
-        LambdaCriteria notIn(Object... values);
+        EnhancedCriteria notIn(Object... values);
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code NOT IN}.
+         * Creates a {@link EnhancedCriteria} using {@code NOT IN}.
          *
          * @param values must not be {@literal null}.
          */
-        LambdaCriteria notIn(Collection<?> values);
+        EnhancedCriteria notIn(Collection<?> values);
 
         /**
-         * Creates a {@link LambdaCriteria} using between ({@literal BETWEEN begin AND end}).
+         * Creates a {@link EnhancedCriteria} using between ({@literal BETWEEN begin AND end}).
          *
          * @param begin must not be {@literal null}.
          * @param end   must not be {@literal null}.
          * @since 2.2
          */
-        LambdaCriteria between(Object begin, Object end);
+        EnhancedCriteria between(Object begin, Object end);
 
         /**
-         * Creates a {@link LambdaCriteria} using not between ({@literal NOT BETWEEN begin AND end}).
+         * Creates a {@link EnhancedCriteria} using not between ({@literal NOT BETWEEN begin AND end}).
          *
          * @param begin must not be {@literal null}.
          * @param end   must not be {@literal null}.
          * @since 2.2
          */
-        LambdaCriteria notBetween(Object begin, Object end);
+        EnhancedCriteria notBetween(Object begin, Object end);
 
         /**
-         * Creates a {@link LambdaCriteria} using less-than ({@literal <}).
+         * Creates a {@link EnhancedCriteria} using less-than ({@literal <}).
          *
          * @param value must not be {@literal null}.
          */
-        LambdaCriteria lessThan(Object value);
+        EnhancedCriteria lessThan(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using less-than or equal to ({@literal <=}).
+         * Creates a {@link EnhancedCriteria} using less-than or equal to ({@literal <=}).
          *
          * @param value must not be {@literal null}.
          */
-        LambdaCriteria lessThanOrEquals(Object value);
+        EnhancedCriteria lessThanOrEquals(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using greater-than({@literal >}).
+         * Creates a {@link EnhancedCriteria} using greater-than({@literal >}).
          *
          * @param value must not be {@literal null}.
          */
-        LambdaCriteria greaterThan(Object value);
+        EnhancedCriteria greaterThan(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using greater-than or equal to ({@literal >=}).
+         * Creates a {@link EnhancedCriteria} using greater-than or equal to ({@literal >=}).
          *
          * @param value must not be {@literal null}.
          */
-        LambdaCriteria greaterThanOrEquals(Object value);
+        EnhancedCriteria greaterThanOrEquals(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code LIKE}.
+         * Creates a {@link EnhancedCriteria} using {@code LIKE}.
          *
          * @param value must not be {@literal null}.
          */
-        LambdaCriteria like(Object value);
+        EnhancedCriteria like(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code NOT LIKE}.
+         * Creates a {@link EnhancedCriteria} using {@code NOT LIKE}.
          *
          * @param value must not be {@literal null}
-         * @return a new {@link LambdaCriteria} object
+         * @return a new {@link EnhancedCriteria} object
          */
-        LambdaCriteria notLike(Object value);
+        EnhancedCriteria notLike(Object value);
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code IS NULL}.
+         * Creates a {@link EnhancedCriteria} using {@code IS NULL}.
          */
-        LambdaCriteria isNull();
+        EnhancedCriteria isNull();
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code IS NOT NULL}.
+         * Creates a {@link EnhancedCriteria} using {@code IS NOT NULL}.
          */
-        LambdaCriteria isNotNull();
+        EnhancedCriteria isNotNull();
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code IS TRUE}.
+         * Creates a {@link EnhancedCriteria} using {@code IS TRUE}.
          *
-         * @return a new {@link LambdaCriteria} object
+         * @return a new {@link EnhancedCriteria} object
          */
-        LambdaCriteria isTrue();
+        EnhancedCriteria isTrue();
 
         /**
-         * Creates a {@link LambdaCriteria} using {@code IS FALSE}.
+         * Creates a {@link EnhancedCriteria} using {@code IS FALSE}.
          *
-         * @return a new {@link LambdaCriteria} object
+         * @return a new {@link EnhancedCriteria} object
          */
-        LambdaCriteria isFalse();
+        EnhancedCriteria isFalse();
     }
 
     /**
-     * Default {@link LambdaCriteria.LambdaCriteriaStep} implementation.
+     * Default {@link EnhancedCriteriaStep} implementation.
      */
-    static class DefaultLambdaCriteriaStep implements LambdaCriteria.LambdaCriteriaStep {
+    static class DefaultEnhancedCriteriaStep implements EnhancedCriteriaStep {
 
         private final SqlIdentifier property;
 
-        DefaultLambdaCriteriaStep(SqlIdentifier property) {
+        DefaultEnhancedCriteriaStep(SqlIdentifier property) {
             this.property = property;
         }
 
         @Override
-        public LambdaCriteria is(Object value) {
+        public EnhancedCriteria is(Object value) {
 
             Assert.notNull(value, "Value must not be null");
 
@@ -649,7 +648,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria not(Object value) {
+        public EnhancedCriteria not(Object value) {
 
             Assert.notNull(value, "Value must not be null");
 
@@ -657,7 +656,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria in(Object... values) {
+        public EnhancedCriteria in(Object... values) {
 
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values, "Values must not contain a null value");
@@ -671,7 +670,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria in(Collection<?> values) {
+        public EnhancedCriteria in(Collection<?> values) {
 
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values.toArray(), "Values must not contain a null value");
@@ -680,7 +679,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria notIn(Object... values) {
+        public EnhancedCriteria notIn(Object... values) {
 
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values, "Values must not contain a null value");
@@ -694,7 +693,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria notIn(Collection<?> values) {
+        public EnhancedCriteria notIn(Collection<?> values) {
 
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values.toArray(), "Values must not contain a null value");
@@ -703,7 +702,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria between(Object begin, Object end) {
+        public EnhancedCriteria between(Object begin, Object end) {
 
             Assert.notNull(begin, "Begin value must not be null");
             Assert.notNull(end, "End value must not be null");
@@ -712,7 +711,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria notBetween(Object begin, Object end) {
+        public EnhancedCriteria notBetween(Object begin, Object end) {
 
             Assert.notNull(begin, "Begin value must not be null");
             Assert.notNull(end, "End value must not be null");
@@ -721,7 +720,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria lessThan(Object value) {
+        public EnhancedCriteria lessThan(Object value) {
 
             Assert.notNull(value, "Value must not be null");
 
@@ -729,7 +728,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria lessThanOrEquals(Object value) {
+        public EnhancedCriteria lessThanOrEquals(Object value) {
 
             Assert.notNull(value, "Value must not be null");
 
@@ -737,7 +736,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria greaterThan(Object value) {
+        public EnhancedCriteria greaterThan(Object value) {
 
             Assert.notNull(value, "Value must not be null");
 
@@ -745,7 +744,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria greaterThanOrEquals(Object value) {
+        public EnhancedCriteria greaterThanOrEquals(Object value) {
 
             Assert.notNull(value, "Value must not be null");
 
@@ -753,7 +752,7 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria like(Object value) {
+        public EnhancedCriteria like(Object value) {
 
             Assert.notNull(value, "Value must not be null");
 
@@ -761,33 +760,33 @@ public class LambdaCriteria implements CriteriaDefinition {
         }
 
         @Override
-        public LambdaCriteria notLike(Object value) {
+        public EnhancedCriteria notLike(Object value) {
             Assert.notNull(value, "Value must not be null");
             return createLambdaCriteria(Comparator.NOT_LIKE, value);
         }
 
         @Override
-        public LambdaCriteria isNull() {
+        public EnhancedCriteria isNull() {
             return createLambdaCriteria(Comparator.IS_NULL, null);
         }
 
         @Override
-        public LambdaCriteria isNotNull() {
+        public EnhancedCriteria isNotNull() {
             return createLambdaCriteria(Comparator.IS_NOT_NULL, null);
         }
 
         @Override
-        public LambdaCriteria isTrue() {
+        public EnhancedCriteria isTrue() {
             return createLambdaCriteria(Comparator.IS_TRUE, true);
         }
 
         @Override
-        public LambdaCriteria isFalse() {
+        public EnhancedCriteria isFalse() {
             return createLambdaCriteria(Comparator.IS_FALSE, false);
         }
 
-        protected LambdaCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
-            return new LambdaCriteria(this.property, comparator, value);
+        protected EnhancedCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
+            return new EnhancedCriteria(this.property, comparator, value);
         }
     }
 }

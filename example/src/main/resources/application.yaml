@@ -23,6 +23,6 @@ panda:
       force-quote: true
 
 
-#logging:
-#  level:
-#    root: debug
+logging:
+  level:
+    root: info

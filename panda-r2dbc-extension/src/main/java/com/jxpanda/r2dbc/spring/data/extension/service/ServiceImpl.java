@@ -1,7 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.LambdaCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
@@ -83,7 +83,7 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Mono<T> selectById(ID id) {
-        return this.selectOne(Query.query(LambdaCriteria.where(StandardEntity<ID>::getId).is(id)));
+        return this.selectOne(Query.query(EnhancedCriteria.where(StandardEntity<ID>::getId).is(id)));
     }
 
     @Override
