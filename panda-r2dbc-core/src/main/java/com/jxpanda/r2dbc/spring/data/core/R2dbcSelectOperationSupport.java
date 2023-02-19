@@ -194,20 +194,22 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         @Override
         public Mono<Pagination<R>> paging() {
-            Mono<Long> countMono = doCount(this.query, this.domainType, this.tableName);
-
-            Mono<List<R>> recordsMono = selectFlux(this.query, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all)
-                    .collectList();
-
-            return Mono.zip(countMono, recordsMono, (count, records) -> Pagination.with(this.query.getOffset(), this.query.getLimit(), count, records));
+            return paging(this.query.getOffset(), this.query.getLimit(), true);
         }
 
         @Override
         public Mono<Pagination<R>> paging(Page page) {
-            Query pageQuery = this.query.offset(page.getOffset()).limit(page.getLimit());
+            return paging(page.getOffset(), page.getLimit(), page.isQueryCount());
+        }
+
+        private Mono<Pagination<R>> paging(long offset, int limit, boolean isQueryCount) {
+            // 创建一个新的Query对象，limit在原来的基础上+1，以探测是否还有下一页数据
+            Query pageQuery = Query.query(query.getCriteria().orElse(CriteriaDefinition.empty()))
+                    .offset(offset)
+                    .limit(limit + 1);
 
             Mono<Long> countMono = Mono.defer(() -> {
-                if (page.isQueryCount()) {
+                if (isQueryCount) {
                     return doCount(pageQuery, this.domainType, this.tableName);
                 }
                 return Mono.just(-1L);
@@ -216,7 +218,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             Mono<List<R>> recordsMono = selectFlux(pageQuery, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all)
                     .collectList();
 
-            return Mono.zip(countMono, recordsMono, (count, records) -> new Pagination<>(page.getCurrent(), page.getSize(), count, records));
+            return Mono.zip(countMono, recordsMono, (count, records) -> new Pagination<>(Page.calculateCurrent(offset, limit), records.size() > limit, limit, count, records.subList(0, Math.min(limit, records.size()))));
         }
 
 

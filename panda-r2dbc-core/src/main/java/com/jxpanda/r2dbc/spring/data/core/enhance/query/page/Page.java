@@ -1,7 +1,5 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.query.page;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 public interface Page {
 
 
@@ -44,11 +42,7 @@ public interface Page {
      * 返回分页的偏移值，对应Query中的offset
      */
     default long getOffset() {
-        long current = getCurrent();
-        if (current <= 1L) {
-            return 0L;
-        }
-        return Math.max((current - 1) * getSize(), 0L);
+        return calculateOffset(getCurrent(), getSize());
     }
 
     /**
@@ -56,6 +50,17 @@ public interface Page {
      */
     default int getLimit() {
         return getSize();
+    }
+
+    static long calculateCurrent(long offset, int limit) {
+        return offset / limit + 1;
+    }
+
+    static long calculateOffset(long current, int size) {
+        if (current < 1L) {
+            throw new RuntimeException("current must granter than 1");
+        }
+        return Math.max((current - 1) * size, 0L);
     }
 
 }
