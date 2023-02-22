@@ -34,7 +34,7 @@ public interface Page {
     /**
      * 是否做一次count查询，以获取总数据量
      */
-    default boolean isQueryCount() {
+    default boolean isNeedCount() {
         return true;
     }
 

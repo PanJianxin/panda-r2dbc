@@ -12,7 +12,7 @@ public class Paging implements Page {
 
     private long current;
     private int size;
-    private boolean queryCount;
+    private boolean needCount;
 
     public Paging(long current, int size) {
         this(current, size, true);

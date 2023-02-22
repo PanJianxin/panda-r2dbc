@@ -198,17 +198,17 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         @Override
         public Mono<Pagination<R>> paging(Page page) {
-            return paging(page.getOffset(), page.getLimit(), page.isQueryCount());
+            return paging(page.getOffset(), page.getLimit(), page.isNeedCount());
         }
 
-        private Mono<Pagination<R>> paging(long offset, int limit, boolean isQueryCount) {
+        private Mono<Pagination<R>> paging(long offset, int limit, boolean needCount) {
             // 创建一个新的Query对象，limit在原来的基础上+1，以探测是否还有下一页数据
             Query pageQuery = Query.query(query.getCriteria().orElse(CriteriaDefinition.empty()))
                     .offset(offset)
                     .limit(limit + 1);
 
             Mono<Long> countMono = Mono.defer(() -> {
-                if (isQueryCount) {
+                if (needCount) {
                     return doCount(pageQuery, this.domainType, this.tableName);
                 }
                 return Mono.just(-1L);
