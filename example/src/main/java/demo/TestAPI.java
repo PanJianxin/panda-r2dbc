@@ -47,8 +47,7 @@ public class TestAPI {
     @GetMapping("/page")
     public Mono<Pagination<Order>> paginationMono(Long current, Integer size, Boolean isQueryCount) {
         return reactiveEntityTemplate.select(Order.class)
-                .paging(new Paging(current, size, isQueryCount))
-                .cast();
+                .paging(new Paging(current, size, isQueryCount));
     }
 
     @GetMapping("{userId}")

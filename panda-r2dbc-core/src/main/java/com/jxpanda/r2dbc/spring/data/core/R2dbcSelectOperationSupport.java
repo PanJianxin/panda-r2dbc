@@ -20,7 +20,6 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Page;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Paging;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
@@ -218,7 +217,11 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             Mono<List<R>> recordsMono = selectFlux(pageQuery, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all)
                     .collectList();
 
-            return Mono.zip(countMono, recordsMono, (count, records) -> new Pagination<>(Page.calculateCurrent(offset, limit), records.size() > limit, limit, count, records.subList(0, Math.min(limit, records.size()))));
+            return Mono.zip(countMono, recordsMono, (count, records) -> Pagination.<R>offsetBuilder(offset, limit)
+                    .total(count)
+                    .hasNext(records.size() > limit)
+                    .records(records.subList(0, Math.min(limit, records.size())))
+                    .build());
         }
 
 
