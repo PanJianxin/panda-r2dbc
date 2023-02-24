@@ -1,6 +1,7 @@
 package com.jxpanda.autoconfigure;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
+import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplateAdapter;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.dialect.DialectResolver;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
@@ -52,8 +54,13 @@ public class R2dbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ReactiveEntityTemplate r2dbcEntityTemplate(MappingReactiveConverter r2dbcConverter) {
+    public ReactiveEntityTemplate reactiveEntityTemplate(MappingReactiveConverter r2dbcConverter) {
         return new ReactiveEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
+    }
+
+    @Bean
+    public R2dbcEntityTemplate r2dbcEntityTemplate(ReactiveEntityTemplate reactiveEntityTemplate) {
+        return new R2dbcEntityTemplateAdapter(reactiveEntityTemplate);
     }
 
 

@@ -37,7 +37,6 @@ import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -106,7 +105,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
         @Override
         public Flux<T> batch(Collection<T> objectList) {
             Assert.notEmpty(objectList, "Object list to insert must not be empty");
-            return doBatchInsert(objectList, this.tableName);
+            return doInsertBatch(objectList, this.tableName);
         }
 
         private Mono<T> doInsert(T entity, SqlIdentifier tableName) {
@@ -164,7 +163,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
          * 暂时使用循环来做
          * 后期考虑通过批量插入语句来做
          */
-        private Flux<T> doBatchInsert(Collection<T> entityList, SqlIdentifier tableName) {
+        private Flux<T> doInsertBatch(Collection<T> entityList, SqlIdentifier tableName) {
             // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
             // 需要主动管理
             return Mono.just(entityList)

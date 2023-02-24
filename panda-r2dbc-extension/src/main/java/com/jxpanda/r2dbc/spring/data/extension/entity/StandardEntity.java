@@ -9,6 +9,8 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.util.ObjectUtils;
 
 /**
+ * 标准entity对象
+ *
  * @author Panda
  */
 @Getter
@@ -30,5 +32,6 @@ public class StandardEntity<ID> implements Entity<ID> {
     public boolean isEffective() {
         return !ObjectUtils.isEmpty(getId());
     }
+
 
 }

@@ -7,30 +7,19 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Paging;
 import demo.model.*;
 import lombok.AllArgsConstructor;
-import org.reactivestreams.Publisher;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StopWatch;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.ParallelFlux;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("test")
@@ -40,6 +29,8 @@ public class TestAPI {
     private final UserRepository userRepository;
 
     private final ReactiveEntityTemplate reactiveEntityTemplate;
+
+    private final R2dbcEntityTemplate r2dbcEntityTemplate;
 
     private final OrderService orderService;
 
@@ -108,12 +99,11 @@ public class TestAPI {
 
     @GetMapping("/order/{id}")
     public Mono<Order> getOrder(@PathVariable("id") String id) {
-        return orderService.selectById(id)
-                .doOnSuccess(order -> {
-                    if (order != null) {
-                        orderService.forEachColum(order, System.out::println);
-                    }
-                });
+//        return reactiveEntityTemplate.select(Order.class)
+//                .byId(id);
+        return r2dbcEntityTemplate.select(Order.class)
+                .matching(Query.query(Criteria.where("id").is(id)))
+                .one();
     }
 
 
@@ -133,7 +123,7 @@ public class TestAPI {
 
     @DeleteMapping("/order/destroy/{id}")
     public Mono<Boolean> destroy(@PathVariable("id") String id) {
-        return reactiveEntityTemplate.destroy(OrderSum.class)
+        return reactiveEntityTemplate.destroy(Order.class)
                 .using(Order.builder().id(id).build());
     }
 

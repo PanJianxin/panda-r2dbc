@@ -24,6 +24,8 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
+import java.util.Collection;
+
 
 /**
  * Implementation of {@link ReactiveDeleteOperation}.
@@ -39,12 +41,12 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
     }
 
     @Override
-    public R2dbcDestroy destroy(Class<?> domainType) {
+    public <T> R2dbcDestroy<T> destroy(Class<T> domainType) {
         return new R2dbcDestroySupport<>(this.template, domainType);
     }
 
 
-    private final static class R2dbcDestroySupport<T> extends R2dbcSupport<T> implements R2dbcDestroyOperation.R2dbcDestroy {
+    private final static class R2dbcDestroySupport<T> extends R2dbcSupport<T> implements R2dbcDestroyOperation.R2dbcDestroy<T> {
 
         private final R2dbcDeleteOperationSupport.R2dbcDestroyAdapter r2DbcDestroyAdapter;
 
@@ -94,10 +96,20 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
 
         @NonNull
         @Override
-        public <E> Mono<Boolean> using(E entity) {
+        public Mono<Boolean> using(T entity) {
             Assert.notNull(entity, "Entity must not be null");
 
             return r2DbcDestroyAdapter.doDestroy(entity, this.tableName).map(it -> it > 0);
+        }
+
+        @Override
+        public <ID> Mono<Boolean> byId(ID id) {
+            return r2DbcDestroyAdapter.doDestroyById(id, this.domainType);
+        }
+
+        @Override
+        public <ID> Mono<Long> byIds(Collection<ID> ids) {
+            return r2DbcDestroyAdapter.doDestroyByIds(ids, this.domainType);
         }
 
 

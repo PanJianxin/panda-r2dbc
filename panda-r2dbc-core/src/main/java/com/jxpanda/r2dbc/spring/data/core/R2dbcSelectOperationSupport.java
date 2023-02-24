@@ -21,12 +21,14 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Page;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.springframework.data.projection.ProjectionInformation;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
@@ -46,10 +48,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.beans.FeatureDescriptor;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -192,6 +191,18 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         }
 
         @Override
+        public <ID> Mono<R> byId(ID id) {
+            Query query = QueryKit.queryById(this.domainType, id);
+            return selectMono(query, this.domainType, this.tableName, this.returnType, RowsFetchSpec::one);
+        }
+
+        @Override
+        public <ID> Flux<R> byIds(Collection<ID> ids) {
+            Query query = QueryKit.queryById(this.domainType, ids);
+            return selectFlux(query, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all);
+        }
+
+        @Override
         public Mono<Pagination<R>> paging() {
             return paging(this.query.getOffset(), this.query.getLimit(), true);
         }
@@ -299,7 +310,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-            return getRowsFetchSpec(this.databaseClient().sql(operation), entityClass, returnType);
+            return template.getRowsFetchSpec(this.databaseClient().sql(operation), entityClass, returnType);
         }
 
 
@@ -385,54 +396,6 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             return query.getColumns().stream().map(table::column).collect(Collectors.toList());
         }
 
-
-        private <E> BiFunction<Row, RowMetadata, E> getRowMapper(Class<E> typeToRead) {
-            return new EntityRowMapper<>(typeToRead, this.converter());
-        }
-
-
-        private <E, RT> RowsFetchSpec<RT> getRowsFetchSpec(DatabaseClient.GenericExecuteSpec executeSpec, Class<E> entityClass, Class<RT> returnType) {
-
-            boolean simpleType;
-
-            BiFunction<Row, RowMetadata, RT> rowMapper;
-            if (returnType.isInterface()) {
-                simpleType = this.converter().isSimpleType(entityClass);
-                rowMapper = getRowMapper(entityClass).andThen(source -> this.projectionFactory().createProjection(returnType, source));
-            } else {
-                simpleType = this.converter().isSimpleType(returnType);
-                rowMapper = getRowMapper(returnType);
-            }
-
-            // avoid top-level null values if the read type is a simple one (e.g. SELECT MAX(age) via Integer.class)
-            if (simpleType) {
-                return new UnwrapOptionalFetchSpecAdapter<>(executeSpec.map((row, metadata) -> Optional.ofNullable(rowMapper.apply(row, metadata))));
-            }
-
-            return executeSpec.map(rowMapper);
-        }
-
-        private record UnwrapOptionalFetchSpecAdapter<T>(
-                RowsFetchSpec<Optional<T>> delegate) implements RowsFetchSpec<T> {
-
-            @NonNull
-            @Override
-            public Mono<T> one() {
-                return delegate.one().handle((optional, sink) -> optional.ifPresent(sink::next));
-            }
-
-            @NonNull
-            @Override
-            public Mono<T> first() {
-                return delegate.first().handle((optional, sink) -> optional.ifPresent(sink::next));
-            }
-
-            @NonNull
-            @Override
-            public Flux<T> all() {
-                return delegate.all().handle((optional, sink) -> optional.ifPresent(sink::next));
-            }
-        }
 
     }
 }

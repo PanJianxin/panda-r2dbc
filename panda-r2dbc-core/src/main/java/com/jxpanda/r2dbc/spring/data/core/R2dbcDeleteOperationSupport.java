@@ -16,6 +16,7 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.mapping.MappingException;
@@ -34,7 +35,7 @@ import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
+import java.util.*;
 
 
 /**
@@ -43,7 +44,7 @@ import java.util.Optional;
  * @author Mark Paluch
  * @since 1.1
  */
-public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport implements ReactiveDeleteOperation {
+public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport implements R2dbcDeleteOperation {
 
     public R2dbcDeleteOperationSupport(ReactiveEntityTemplate template) {
         super(template);
@@ -55,7 +56,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
      */
     @NonNull
     @Override
-    public R2dbcDeleteOperation.R2dbcDelete delete(@NonNull Class<?> domainType) {
+    public <T> R2dbcDeleteOperation.R2dbcDelete<T> delete(@NonNull Class<T> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
@@ -73,7 +74,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
     }
 
 
-    private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T> implements R2dbcDeleteOperation.R2dbcDelete {
+    private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T> implements R2dbcDeleteOperation.R2dbcDelete<T> {
 
         R2dbcDeleteSupport(ReactiveEntityTemplate template, Class<T> domainType) {
             super(template, domainType);
@@ -90,7 +91,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
          */
         @NonNull
         @Override
-        public DeleteWithQuery from(@NonNull SqlIdentifier tableName) {
+        public ReactiveDeleteOperation.DeleteWithQuery from(@NonNull SqlIdentifier tableName) {
 
             Assert.notNull(tableName, "Table name must not be null");
 
@@ -103,7 +104,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
          */
         @NonNull
         @Override
-        public TerminatingDelete matching(@NonNull Query query) {
+        public ReactiveDeleteOperation.TerminatingDelete matching(@NonNull Query query) {
 
             Assert.notNull(query, "Query must not be null");
 
@@ -121,10 +122,34 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         }
 
         @Override
-        public <E> Mono<Boolean> using(E entity) {
+        public Mono<Boolean> using(T entity) {
             Assert.notNull(entity, "Entity must not be null");
 
             return doDelete(entity, this.tableName).map(it -> it > 0);
+        }
+
+        @Override
+        public <ID> Mono<Boolean> byId(ID id) {
+            Assert.notNull(id, "ID must not be empty");
+            return byId(id, false);
+        }
+
+        @Override
+        public <ID> Mono<Long> byIds(Collection<ID> ids) {
+            return byIds(ids, false);
+        }
+
+        private <ID> Mono<Boolean> byId(ID id, boolean ignoreLogicDelete) {
+            Assert.notNull(id, "ID must not be empty");
+            Query query = QueryKit.queryById(this.domainType, id);
+            return doDelete(query, this.domainType, this.tableName)
+                    .map(it -> it > 0);
+        }
+
+        private <ID> Mono<Long> byIds(Collection<ID> ids, boolean ignoreLogicDelete) {
+            Assert.notEmpty(ids, "ID must not be empty");
+            Query query = QueryKit.queryById(this.domainType, ids);
+            return doDelete(query, this.domainType, this.tableName, ignoreLogicDelete);
         }
 
 
@@ -184,6 +209,16 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
      * 提供给物理删除使用的适配器
      */
     record R2dbcDestroyAdapter(ReactiveEntityTemplate template) {
+
+        <E, ID> Mono<Boolean> doDestroyById(ID id, Class<E> entityClass) {
+            return new R2dbcDeleteSupport<>(template, entityClass).byId(id, true);
+        }
+
+        <E, ID> Mono<Long> doDestroyByIds(Collection<ID> ids, Class<E> entityClass) {
+            return new R2dbcDeleteSupport<>(template, entityClass).byIds(ids, true);
+        }
+
+
         <E> Mono<Long> doDestroy(E entity, SqlIdentifier tableName) {
             return new R2dbcDeleteSupport<>(template, entity.getClass()).doDelete(entity, tableName, true);
         }

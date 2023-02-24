@@ -9,7 +9,7 @@ import java.io.Serializable;
  */
 public interface Entity<I> extends Serializable {
 
-   String ID = "id";
+    String ID = "id";
 
     I getId();
 

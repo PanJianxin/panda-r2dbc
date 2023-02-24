@@ -34,11 +34,6 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
             super(template, domainType);
         }
 
-        R2dbcSaveSupport(ReactiveEntityTemplate template, Class<T> domainType, Query query, @Nullable SqlIdentifier tableName) {
-            super(template, domainType, query, tableName);
-        }
-
-
         @Override
         public Mono<T> using(T object) {
             return isUpdate(object)

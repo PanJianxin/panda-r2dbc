@@ -21,6 +21,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
+import org.springframework.data.r2dbc.core.ReactiveUpdateOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
@@ -35,8 +36,11 @@ import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.Parameter;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
@@ -59,7 +63,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
      */
     @NonNull
     @Override
-    public R2dbcUpdate update(@NonNull Class<?> domainType) {
+    public <T> R2dbcUpdate<T> update(@NonNull Class<T> domainType) {
 
         Assert.notNull(domainType, "DomainType must not be null");
 
@@ -68,7 +72,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
 
     @SuppressWarnings("unchecked")
-    private final static class R2dbcUpdateSupport<T> extends R2dbcSupport<T> implements R2dbcUpdate, TerminatingUpdate {
+    private final static class R2dbcUpdateSupport<T> extends R2dbcSupport<T> implements R2dbcUpdate<T>, ReactiveUpdateOperation.TerminatingUpdate {
 
         R2dbcUpdateSupport(ReactiveEntityTemplate template, Class<T> domainType) {
             super(template, domainType);
@@ -85,7 +89,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
          */
         @NonNull
         @Override
-        public UpdateWithQuery inTable(@NonNull SqlIdentifier tableName) {
+        public ReactiveUpdateOperation.UpdateWithQuery inTable(@NonNull SqlIdentifier tableName) {
 
             Assert.notNull(tableName, "Table name must not be null");
 
@@ -98,7 +102,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
          */
         @NonNull
         @Override
-        public TerminatingUpdate matching(@NonNull Query query) {
+        public ReactiveUpdateOperation.TerminatingUpdate matching(@NonNull Query query) {
 
             Assert.notNull(query, "Query must not be null");
 
@@ -113,8 +117,13 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
         }
 
         @Override
-        public <E> Mono<E> using(E entity) {
+        public Mono<T> using(T entity) {
             return doUpdate(entity, this.tableName);
+        }
+
+        @Override
+        public Flux<T> batch(Collection<T> objectList) {
+            return doUpdateBatch(objectList, this.tableName);
         }
 
 
@@ -201,6 +210,21 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
             }).then(template.maybeCallAfterSave(entity, outboundRow, tableName));
         }
 
+        /**
+         * 批量插入数据
+         * 暂时使用循环来做
+         * 后期考虑通过批量插入语句来做
+         */
+        private <E> Flux<E> doUpdateBatch(Collection<E> entityList, SqlIdentifier tableName) {
+            // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
+            // 需要主动管理
+            return Mono.just(entityList)
+                    .filter(list -> !ObjectUtils.isEmpty(list))
+                    .flatMapMany(Flux::fromIterable)
+                    .flatMap(entity -> doUpdate(entity, tableName))
+                    .switchIfEmpty(Flux.empty())
+                    .as(this.transactionalOperator()::transactional);
+        }
 
         private <E> Criteria createMatchingVersionCriteria(E entity, RelationalPersistentEntity<E> persistentEntity) {
 

@@ -1,6 +1,7 @@
 package demo.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.*;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
@@ -36,10 +37,8 @@ public class Order extends StandardEntity<String> {
     @Serial
     private static final long serialVersionUID = 1L;
 
-//    @TableId(validationPolicy = ValidationStrategy.NOT_EMPTY)
-//    private String id;
-
     @TableColumn
+    @JsonIgnore
     @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
     private LocalDateTime deletedDate;
 
