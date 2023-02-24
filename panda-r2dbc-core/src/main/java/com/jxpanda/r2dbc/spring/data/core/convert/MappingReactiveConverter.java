@@ -15,7 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.core.convert;
 
-import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -271,7 +271,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
         for (RelationalPersistentProperty property : entity) {
 
-            if (!property.isWritable() || !MappingKit.isPropertyExists(property)) {
+            if (!property.isWritable() || !R2dbcMappingKit.isPropertyExists(property)) {
                 continue;
             }
 
@@ -286,7 +286,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
                 value = accessor.getProperty(property);
             }
 
-            if (!MappingKit.isPropertyEffective(entity, property, value)) {
+            if (!R2dbcMappingKit.isPropertyEffective(entity, property, value)) {
                 // 基于配置进行一次过滤
                 continue;
             } else if (value == null) {

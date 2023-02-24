@@ -20,15 +20,11 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Page;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
-import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
-import io.r2dbc.spi.Row;
-import io.r2dbc.spi.RowMetadata;
 import org.springframework.data.projection.ProjectionInformation;
-import org.springframework.data.r2dbc.convert.EntityRowMapper;
-import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
@@ -39,7 +35,6 @@ import org.springframework.data.relational.core.sql.*;
 import org.springframework.data.util.Pair;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
-import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.RowsFetchSpec;
 import org.springframework.util.Assert;
@@ -49,7 +44,6 @@ import reactor.core.publisher.Mono;
 
 import java.beans.FeatureDescriptor;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -242,7 +236,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
-            RelationalPersistentEntity<T> entity = MappingKit.getRequiredEntity(entityClass);
+            RelationalPersistentEntity<T> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
             StatementMapper statementMapper = this.statementMapper().forType(entityClass);
 
             SqlIdentifier columnName = entity.hasIdProperty() ? entity.getRequiredIdProperty().getColumnName() : SqlIdentifier.unquoted("*");
@@ -262,7 +256,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
-            RelationalPersistentEntity<T> entity = MappingKit.getRequiredEntity(entityClass);
+            RelationalPersistentEntity<T> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
             StatementMapper statementMapper = this.statementMapper().forType(entityClass);
 
             StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).doWithTable((table, spec) -> {
@@ -331,12 +325,12 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          */
         private static <T> StatementMapper.SelectSpec selectWithCriteria(StatementMapper.SelectSpec selectSpec, Query query, Class<T> entityClass, boolean ignoreLogicDelete) {
             Optional<CriteriaDefinition> criteriaOptional = query.getCriteria();
-            if (MappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+            if (R2dbcMappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
                 criteriaOptional = query.getCriteria()
                         .or(() -> Optional.of(Criteria.empty()))
                         .map(criteriaDefinition -> {
                             // 获取查询对象中的逻辑删除字段和值，写入到criteria中
-                            Pair<String, Object> logicDeleteColumn = MappingKit.getLogicDeleteColumn(entityClass, MappingKit.LogicDeleteValue.UNDELETE_VALUE);
+                            Pair<String, Object> logicDeleteColumn = R2dbcMappingKit.getLogicDeleteColumn(entityClass, R2dbcMappingKit.LogicDeleteValue.UNDELETE_VALUE);
                             if (criteriaDefinition instanceof Criteria criteria) {
                                 return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
                             }
@@ -362,20 +356,20 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                     }
                 }
 
-                RelationalPersistentEntity<E> entity = MappingKit.getRequiredEntity(entityClass);
+                RelationalPersistentEntity<E> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
 
                 List<Expression> columns = new ArrayList<>();
 
-                boolean isQueryEntity = MappingKit.isAggregateEntity(entityClass);
+                boolean isQueryEntity = R2dbcMappingKit.isAggregateEntity(entityClass);
 
                 entity.forEach(property -> {
-                    if (MappingKit.isPropertyExists(property)) {
+                    if (R2dbcMappingKit.isPropertyExists(property)) {
                         Expression expression;
                         if (!isQueryEntity) {
                             expression = table.column(property.getColumnName());
                         } else {
                             TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
-                            if (!MappingKit.isFunctionProperty(property)) {
+                            if (!R2dbcMappingKit.isFunctionProperty(property)) {
                                 String sql = tableColumn.name();
                                 // 如果设置了别名，添加别名的语法
                                 if (!ObjectUtils.isEmpty(tableColumn.alias())) {

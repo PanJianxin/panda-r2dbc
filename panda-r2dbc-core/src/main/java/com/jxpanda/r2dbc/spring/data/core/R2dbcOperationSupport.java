@@ -1,7 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
-import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import lombok.AccessLevel;
 import lombok.Getter;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
@@ -73,7 +73,7 @@ public class R2dbcOperationSupport {
             this.template = template;
             this.domainType = domainType;
             this.query = query == null ? Query.empty() : query;
-            this.tableName = tableName == null ? MappingKit.getTableName(domainType) : tableName;
+            this.tableName = tableName == null ? R2dbcMappingKit.getTableName(domainType) : tableName;
         }
 
 //        protected R2dbcConfigProperties r2dbcConfigProperties() {
@@ -142,7 +142,7 @@ public class R2dbcOperationSupport {
 
             this.converter().write(object, row);
 
-            RelationalPersistentEntity<?> entity = MappingKit.getRequiredEntity(ClassUtils.getUserClass(object));
+            RelationalPersistentEntity<?> entity = R2dbcMappingKit.getRequiredEntity(ClassUtils.getUserClass(object));
 
             for (RelationalPersistentProperty property : entity) {
 

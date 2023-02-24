@@ -30,7 +30,7 @@ public class QueryKit {
         }
 
         public Criteria.CriteriaStep whereId() {
-            RelationalPersistentEntity<T> requiredEntity = MappingKit.getRequiredEntity(this.clazz);
+            RelationalPersistentEntity<T> requiredEntity = R2dbcMappingKit.getRequiredEntity(this.clazz);
             Assert.isTrue(requiredEntity.hasIdProperty(), "Domain type must has id property");
             return Criteria.where(requiredEntity.getIdColumn().getReference());
         }

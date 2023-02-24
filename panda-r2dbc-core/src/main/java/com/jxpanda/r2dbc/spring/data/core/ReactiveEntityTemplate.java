@@ -16,24 +16,18 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
-import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import lombok.Getter;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
-import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
 import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
@@ -58,7 +52,6 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 @Getter
 @SuppressWarnings({"unused", "UnusedReturnValue","deprecation"})
@@ -181,7 +174,7 @@ public class ReactiveEntityTemplate {
     }
 
     public <T> Mono<T> insert(T entity) throws DataAccessException {
-        return insert(MappingKit.getRequiredEntity(entity).getType()).using(entity);
+        return insert(R2dbcMappingKit.getRequiredEntity(entity).getType()).using(entity);
     }
 
     public <T> Flux<T> insertBatch(Collection<T> entityList, Class<T> domainType) {
@@ -190,7 +183,7 @@ public class ReactiveEntityTemplate {
 
     public <T> Mono<T> update(T entity) throws DataAccessException {
         return new R2dbcUpdateOperationSupport(this)
-                .update(MappingKit.getRequiredEntity(entity).getType())
+                .update(R2dbcMappingKit.getRequiredEntity(entity).getType())
                 .using(entity);
     }
 
@@ -201,7 +194,7 @@ public class ReactiveEntityTemplate {
 
 
     public <T> Mono<T> save(T entity) throws DataAccessException {
-        return save(MappingKit.getRequiredEntity(entity).getType()).using(entity);
+        return save(R2dbcMappingKit.getRequiredEntity(entity).getType()).using(entity);
     }
 
     public <T> Flux<T> saveBatch(Collection<T> entityList, Class<T> domainType) {
@@ -212,7 +205,7 @@ public class ReactiveEntityTemplate {
 
     public <T> Mono<T> delete(T entity) throws DataAccessException {
         return new R2dbcDeleteOperationSupport(this)
-                .delete(MappingKit.getRequiredEntity(entity).getType())
+                .delete(R2dbcMappingKit.getRequiredEntity(entity).getType())
                 .using(entity)
                 .thenReturn(entity);
     }
@@ -226,7 +219,7 @@ public class ReactiveEntityTemplate {
 
 
     public <T> Mono<T> destroy(T entity) throws DataAccessException {
-        return destroy(MappingKit.getRequiredEntity(entity).getType())
+        return destroy(R2dbcMappingKit.getRequiredEntity(entity).getType())
                 .using(entity)
                 .thenReturn(entity);
     }
@@ -248,7 +241,7 @@ public class ReactiveEntityTemplate {
         Assert.notNull(entityClass, "Entity class must not be null");
 
         return new EntityCallbackAdapter<>(getRowsFetchSpec(getDatabaseClient().sql(operation), entityClass, entityClass),
-                MappingKit.getTableNameOrEmpty(entityClass));
+                R2dbcMappingKit.getTableNameOrEmpty(entityClass));
     }
 
     <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, BiFunction<Row, RowMetadata, E> rowMapper) {
@@ -266,7 +259,7 @@ public class ReactiveEntityTemplate {
         Assert.notNull(entityClass, "Entity class must not be null");
         Assert.notNull(rowMapper, "Row mapper must not be null");
 
-        return new EntityCallbackAdapter<>(getDatabaseClient().sql(operation).map(rowMapper), MappingKit.getTableNameOrEmpty(entityClass));
+        return new EntityCallbackAdapter<>(getDatabaseClient().sql(operation).map(rowMapper), R2dbcMappingKit.getTableNameOrEmpty(entityClass));
     }
 
 

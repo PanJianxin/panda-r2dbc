@@ -1,25 +1,23 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Page;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
-import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
-import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import lombok.Getter;
 import lombok.ToString;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
-import org.springframework.data.relational.core.mapping.NamingStrategy;
+import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
-import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,30 +30,21 @@ import java.util.function.Predicate;
 @SuppressWarnings("unchecked")
 public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
-    protected final ReactiveEntityTemplate reactiveEntityTemplate;
-
-    private  R2dbcRepository<T, ID> repository;
+    @Autowired
+    protected ReactiveEntityTemplate reactiveEntityTemplate;
 
     @Autowired
-    private NamingStrategy namingStrategy;
+    private R2dbcEntityTemplate r2dbcEntityTemplate;
 
-    @Autowired
-    private IdGenerator<ID> idGenerator;
+    private R2dbcRepository<T, ID> repository;
 
-    private Class<ID> idClass;
+    private final Class<ID> idClass;
 
-    private Class<T> entityClass;
+    private final Class<T> entityClass;
 
-    public ServiceImpl(ReactiveEntityTemplate reactiveEntityTemplate) {
-        this.reactiveEntityTemplate = reactiveEntityTemplate;
-        RelationalPersistentEntity<T> requiredPersistentEntity = (RelationalPersistentEntity<T>) getMappingContext().getRequiredPersistentEntity(getEntityClass());
-        MappingRelationalEntityInformation<T, ID> entity = new MappingRelationalEntityInformation<>(requiredPersistentEntity, getIdClass());
-//        this.repository = new ServiceRepository<>(entity, reactiveEntityTemplate, reactiveEntityTemplate.getConverter());
-    }
-
-    public ServiceImpl(ReactiveEntityTemplate reactiveEntityTemplate, R2dbcRepository<T, ID> repository) {
-        this.reactiveEntityTemplate = reactiveEntityTemplate;
-        this.repository = repository;
+    protected ServiceImpl() {
+        this.idClass = takeIdClass();
+        this.entityClass = takeEntityClass();
     }
 
     @Override
@@ -65,7 +54,7 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Flux<T> insertBatch(Collection<T> entities) {
-        return reactiveEntityTemplate.insertBatch(entities,getEntityClass());
+        return reactiveEntityTemplate.insertBatch(entities, this.entityClass);
     }
 
     @Override
@@ -75,7 +64,7 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Mono<T> update(T entity, Query query) {
-        return reactiveEntityTemplate.update(getEntityClass())
+        return reactiveEntityTemplate.update(this.idClass)
                 .matching(query)
                 .apply(buildUpdate(entity))
                 .thenReturn(entity);
@@ -88,12 +77,12 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Flux<T> saveBatch(Collection<T> entities) {
-        return reactiveEntityTemplate.saveBatch(entities, getEntityClass());
+        return reactiveEntityTemplate.saveBatch(entities, this.entityClass);
     }
 
     @Override
     public Mono<Boolean> deleteById(ID id) {
-        return reactiveEntityTemplate.delete(getEntityClass())
+        return reactiveEntityTemplate.delete(this.entityClass)
                 .matching(Query.query(Criteria.where(Entity.ID).is(id)))
                 .all()
                 .map(it -> it > 0);
@@ -101,19 +90,19 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Mono<Long> deleteByIds(Collection<ID> ids) {
-        return reactiveEntityTemplate.delete(getEntityClass())
+        return reactiveEntityTemplate.delete(this.entityClass)
                 .matching(Query.query(Criteria.where(Entity.ID).in(ids)))
                 .all();
     }
 
     @Override
     public Mono<Long> delete(Query query) {
-        return reactiveEntityTemplate.delete(query, getEntityClass());
+        return reactiveEntityTemplate.delete(query, this.entityClass);
     }
 
     @Override
     public Mono<Boolean> destroyById(ID id) {
-        return reactiveEntityTemplate.destroy(getEntityClass())
+        return reactiveEntityTemplate.destroy(this.entityClass)
                 .matching(Query.query(Criteria.where(Entity.ID).is(id)))
                 .all()
                 .map(it -> it > 0);
@@ -121,24 +110,24 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 
     @Override
     public Mono<Long> destroyByIds(Collection<ID> ids) {
-        return reactiveEntityTemplate.destroy(getEntityClass())
+        return reactiveEntityTemplate.destroy(this.entityClass)
                 .matching(Query.query(Criteria.where(Entity.ID).in(ids)))
                 .all();
     }
 
     @Override
     public Mono<Long> destroy(Query query) {
-        return reactiveEntityTemplate.destroy(query, getEntityClass());
+        return reactiveEntityTemplate.destroy(query, this.entityClass);
     }
 
     @Override
     public Mono<T> selectById(ID id) {
-        return this.selectOne(Query.query(EnhancedCriteria.where(StandardEntity<ID>::getId).is(id)));
+        return this.getRepository().findById(id);
     }
 
     @Override
     public Mono<T> selectOne(Query query) {
-        return reactiveEntityTemplate.select(getEntityClass()).matching(query).one();
+        return reactiveEntityTemplate.select(this.entityClass).matching(query).one();
     }
 
     @Override
@@ -157,16 +146,19 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
     }
 
     @SuppressWarnings({"unchecked", "unused", "SameParameterValue"})
-    protected <R extends R2dbcRepository<T, ID>> R getRepository(Class<R> clazz) {
+    protected <R extends R2dbcRepository<T, ID>> R getRepository() {
+        if (repository == null) {
+            this.repository = new SimpleR2dbcRepository<>(R2dbcMappingKit.getMappingRelationalEntityInformation(this.entityClass, this.idClass), r2dbcEntityTemplate, reactiveEntityTemplate.getConverter());
+        }
         return (R) repository;
     }
 
     protected String getTableName() {
-        return getMappingContext().getRequiredPersistentEntity(getEntityClass()).getTableName().getReference();
+        return getMappingContext().getRequiredPersistentEntity(this.entityClass).getTableName().getReference();
     }
 
     public void forEachColum(T entity, Consumer<ColumInfo> consumer) {
-        RelationalPersistentEntity<?> requiredPersistentEntity = getMappingContext().getRequiredPersistentEntity(getEntityClass());
+        RelationalPersistentEntity<?> requiredPersistentEntity = getMappingContext().getRequiredPersistentEntity(this.entityClass);
         requiredPersistentEntity.forEach(property -> {
             try {
                 if (property != null && property.getGetter() != null) {
@@ -214,31 +206,16 @@ public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
         return reactiveEntityTemplate.getConverter().getMappingContext();
     }
 
-    protected Class<ID> getIdClass() {
-        if (idClass == null) {
-            idClass = (Class<ID>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 1);
-        }
-        return idClass;
+    private Class<ID> takeIdClass() {
+        return takeGenericType(1);
     }
 
-
-    protected Class<T> getEntityClass() {
-        if (entityClass == null) {
-            entityClass = (Class<T>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, 0);
-        }
-        return entityClass;
+    private Class<T> takeEntityClass() {
+        return takeGenericType(0);
     }
 
-    protected NamingStrategy getNamingStrategy() {
-        return namingStrategy;
+    private <X> Class<X> takeGenericType(int index) {
+        return (Class<X>) ReflectionKit.getSuperClassGenericType(this.getClass(), ServiceImpl.class, index);
     }
-
-    protected IdGenerator<ID> getIdGenerator() {
-        return idGenerator;
-    }
-
-//    protected NullPolicy getNullPolicy(){
-//        return
-//    }
 
 }

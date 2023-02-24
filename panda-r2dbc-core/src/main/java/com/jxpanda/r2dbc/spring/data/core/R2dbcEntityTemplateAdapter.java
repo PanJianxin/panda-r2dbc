@@ -2,6 +2,7 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
+import lombok.Getter;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.BiFunction;
 
+@Getter
 public class R2dbcEntityTemplateAdapter extends R2dbcEntityTemplate {
 
 

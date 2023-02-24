@@ -15,7 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import org.springframework.data.mapping.IdentifierAccessor;
@@ -69,7 +69,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
      * @param entityClass entityClass
      */
     static <T> Update createLogicDeleteUpdate(Class<T> entityClass) {
-        Pair<String, Object> logicDeleteColumn = MappingKit.getLogicDeleteColumn(entityClass, MappingKit.LogicDeleteValue.DELETE_VALUE);
+        Pair<String, Object> logicDeleteColumn = R2dbcMappingKit.getLogicDeleteColumn(entityClass, R2dbcMappingKit.LogicDeleteValue.DELETE_VALUE);
         return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
     }
 
@@ -159,7 +159,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
         @SuppressWarnings("SameParameterValue")
         private <E> Mono<Long> doDelete(E entity, SqlIdentifier tableName, boolean ignoreLogicDelete) {
-            RelationalPersistentEntity<E> persistentEntity = MappingKit.getRequiredEntity(entity);
+            RelationalPersistentEntity<E> persistentEntity = R2dbcMappingKit.getRequiredEntity(entity);
             return doDelete(getByIdQuery(entity, persistentEntity), persistentEntity.getType(), tableName, ignoreLogicDelete);
         }
 
@@ -170,7 +170,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         private <E> Mono<Long> doDelete(Query query, Class<E> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
             // 如果开启了逻辑删除，变为执行更新操作
-            if (MappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+            if (R2dbcMappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
                 return new R2dbcUpdateOperationSupport(this.template)
                         .update(this.domainType)
                         .matching(query)

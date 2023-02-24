@@ -18,7 +18,7 @@ package com.jxpanda.r2dbc.spring.data.core;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
-import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcInsertOperation;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -110,7 +110,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
         private Mono<T> doInsert(T entity, SqlIdentifier tableName) {
 
-            RelationalPersistentEntity<T> persistentEntity = MappingKit.getRequiredEntity(entity);
+            RelationalPersistentEntity<T> persistentEntity = R2dbcMappingKit.getRequiredEntity(entity);
 
             return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
 

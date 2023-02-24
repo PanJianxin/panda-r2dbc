@@ -8,9 +8,6 @@ import reactor.core.publisher.Mono;
 @Service
 public class OrderService extends ServiceImpl<Order, String> {
 
-    public OrderService(ReactiveEntityTemplate reactiveEntityTemplate) {
-        super(reactiveEntityTemplate);
-    }
 
     @Override
     public Mono<Order> selectById(String s) {
@@ -19,13 +16,12 @@ public class OrderService extends ServiceImpl<Order, String> {
 
     @Override
     public Mono<Order> insert(Order entity) {
-        entity.setNumber(getIdGenerator().generate());
         return super.insert(entity);
     }
 
-    public Mono<Order> selectByNumber(String number) {
-        return getRepository(OrderRepository.class).findByNumber(number);
-    }
+//    public Mono<Order> selectByNumber(String number) {
+//        return getRepository().findByNumber(number);
+//    }
 
 //    @Override
 //    protected OrderRepository getRepository() {

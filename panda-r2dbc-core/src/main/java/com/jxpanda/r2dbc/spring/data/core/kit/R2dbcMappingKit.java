@@ -16,6 +16,7 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation;
 import org.springframework.data.util.Pair;
 import org.springframework.data.util.ProxyUtils;
 import org.springframework.lang.Nullable;
@@ -24,7 +25,7 @@ import org.springframework.util.ObjectUtils;
 
 @Component
 @AllArgsConstructor
-public class MappingKit {
+public class R2dbcMappingKit {
 
     private final R2dbcCustomTypeHandlers typeHandlers;
     private final MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> mappingContext;
@@ -44,12 +45,12 @@ public class MappingKit {
     }
 
     public static <T> SqlIdentifier getTableName(Class<T> entityClass) {
-        return MappingKit.getRequiredEntity(entityClass).getTableName();
+        return R2dbcMappingKit.getRequiredEntity(entityClass).getTableName();
     }
 
     public static <T> SqlIdentifier getTableNameOrEmpty(Class<T> entityClass) {
 
-        RelationalPersistentEntity<T> entity = MappingKit.getPersistentEntity(entityClass);
+        RelationalPersistentEntity<T> entity = R2dbcMappingKit.getPersistentEntity(entityClass);
 
         return entity != null ? entity.getTableName() : SqlIdentifier.EMPTY;
     }
@@ -68,6 +69,9 @@ public class MappingKit {
         return (RelationalPersistentEntity<T>) staticMappingContext.getRequiredPersistentEntity(entityClass);
     }
 
+    public static <T, ID> MappingRelationalEntityInformation<T, ID> getMappingRelationalEntityInformation(Class<T> entityClass, Class<ID> idClass) {
+        return new MappingRelationalEntityInformation<>(getRequiredEntity(entityClass), idClass);
+    }
 
     public static <E> boolean isAggregateEntity(Class<E> entityClass) {
         RelationalPersistentEntity<E> persistentEntity = getPersistentEntity(entityClass);

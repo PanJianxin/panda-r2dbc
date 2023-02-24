@@ -99,11 +99,10 @@ public class TestAPI {
 
     @GetMapping("/order/{id}")
     public Mono<Order> getOrder(@PathVariable("id") String id) {
-//        return reactiveEntityTemplate.select(Order.class)
-//                .byId(id);
-        return r2dbcEntityTemplate.select(Order.class)
-                .matching(Query.query(Criteria.where("id").is(id)))
-                .one();
+        return orderService.selectById(id);
+//        return r2dbcEntityTemplate.select(Order.class)
+//                .matching(Query.query(Criteria.where("id").is(id)))
+//                .one();
     }
 
 

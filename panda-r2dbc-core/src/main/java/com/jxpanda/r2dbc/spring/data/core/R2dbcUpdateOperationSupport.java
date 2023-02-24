@@ -15,7 +15,7 @@
  */
 package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.core.kit.MappingKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -131,7 +131,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
         private <E> Mono<E> doUpdate(E entity, SqlIdentifier tableName) {
 
 
-            RelationalPersistentEntity<E> persistentEntity = MappingKit.getRequiredEntity(entity);
+            RelationalPersistentEntity<E> persistentEntity = R2dbcMappingKit.getRequiredEntity(entity);
 
             return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
 
@@ -154,7 +154,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
                     Parameter id = outboundRow.remove(idColumn);
 
                     persistentEntity.forEach(property -> {
-                        if (property.isInsertOnly() || !MappingKit.isPropertyEffective(entityToUse, persistentEntity, property)) {
+                        if (property.isInsertOnly() || !R2dbcMappingKit.isPropertyEffective(entityToUse, persistentEntity, property)) {
                             outboundRow.remove(property.getColumnName());
                         }
                     });
