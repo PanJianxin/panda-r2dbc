@@ -23,6 +23,8 @@ import io.r2dbc.spi.RowMetadata;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
@@ -54,9 +56,8 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 @Getter
-@SuppressWarnings({"unused", "UnusedReturnValue","deprecation"})
+@SuppressWarnings({"unused", "UnusedReturnValue", "deprecation"})
 public class ReactiveEntityTemplate {
-
 
 
     private final DatabaseClient databaseClient;
@@ -127,7 +128,6 @@ public class ReactiveEntityTemplate {
     }
 
 
-
     // -------------------------------------------------------------------------
     // Methods dealing with org.springframework.data.r2dbc.core.FluentR2dbcOperations
     // -------------------------------------------------------------------------
@@ -138,28 +138,38 @@ public class ReactiveEntityTemplate {
     }
 
     public <T> R2dbcInsertOperation.R2dbcInsert<T> insert(Class<T> domainType) {
-        return new R2dbcInsertOperationSupport(this).insert(domainType);
+        return new R2dbcInsertOperationSupport(this)
+                .insert(domainType);
     }
 
     public <T> R2dbcUpdateOperation.R2dbcUpdate<T> update(Class<T> domainType) {
-       return   new R2dbcUpdateOperationSupport(this).update(domainType);
+        return new R2dbcUpdateOperationSupport(this)
+                .update(domainType);
     }
 
     public <T> R2dbcSaveOperation.R2dbcSave<T> save(Class<T> domainType) {
-        return new R2dbcSaveOperationSupport(this).save(domainType);
+        return new R2dbcSaveOperationSupport(this)
+                .save(domainType);
     }
 
     public <T> R2dbcDeleteOperation.R2dbcDelete<T> delete(Class<T> domainType) {
-        return new R2dbcDeleteOperationSupport(this).delete(domainType);
+        return new R2dbcDeleteOperationSupport(this)
+                .delete(domainType);
     }
 
     public <T> R2dbcDestroyOperation.R2dbcDestroy<T> destroy(Class<T> domainType) {
-        return new R2dbcDestroyOperationSupport(this).destroy(domainType);
+        return new R2dbcDestroyOperationSupport(this)
+                .destroy(domainType);
     }
 
     // -------------------------------------------------------------------------
     // Methods dealing with org.springframework.data.r2dbc.query.Query
     // -------------------------------------------------------------------------
+
+    public <T, ID> Mono<T> selectById(ID id, Class<T> entityClass) throws DataAccessException {
+        return select(entityClass)
+                .byId(id);
+    }
 
     public <T> Mono<T> selectOne(Query query, Class<T> entityClass) throws DataAccessException {
         return select(entityClass)
@@ -171,6 +181,17 @@ public class ReactiveEntityTemplate {
         return select(entityClass)
                 .matching(query)
                 .all();
+    }
+
+    public <T, ID> Flux<T> selectByIds(Collection<ID> ids, Class<T> entityClass) throws DataAccessException {
+        return select(entityClass)
+                .byIds(ids);
+    }
+
+    public <T> Mono<Page<T>> page(Query query, Pageable pageable, Class<T> entityClass) throws DataAccessException {
+        return select(entityClass)
+                .matching(query)
+                .page(pageable);
     }
 
     public <T> Mono<T> insert(T entity) throws DataAccessException {
@@ -192,7 +213,6 @@ public class ReactiveEntityTemplate {
     }
 
 
-
     public <T> Mono<T> save(T entity) throws DataAccessException {
         return save(R2dbcMappingKit.getRequiredEntity(entity).getType()).using(entity);
     }
@@ -200,7 +220,6 @@ public class ReactiveEntityTemplate {
     public <T> Flux<T> saveBatch(Collection<T> entityList, Class<T> domainType) {
         return save(domainType).batch(entityList);
     }
-
 
 
     public <T> Mono<T> delete(T entity) throws DataAccessException {
@@ -216,7 +235,15 @@ public class ReactiveEntityTemplate {
                 .all();
     }
 
+    public <ID> Mono<Boolean> deleteById(ID id, Class<?> entityClass){
+        return delete(entityClass)
+                .byId(id);
+    }
 
+    public <ID> Mono<Long> deleteByIds(Collection<ID> ids, Class<?> entityClass){
+        return delete(entityClass)
+                .byIds(ids);
+    }
 
     public <T> Mono<T> destroy(T entity) throws DataAccessException {
         return destroy(R2dbcMappingKit.getRequiredEntity(entity).getType())
@@ -230,6 +257,15 @@ public class ReactiveEntityTemplate {
                 .all();
     }
 
+    public <ID> Mono<Boolean> destroyById(ID id, Class<?> entityClass){
+        return destroy(entityClass)
+                .byId(id);
+    }
+
+    public <ID> Mono<Long> destroyByIds(Collection<ID> ids, Class<?> entityClass){
+        return destroy(entityClass)
+                .byIds(ids);
+    }
 
     // -------------------------------------------------------------------------
     // Methods dealing with org.springframework.r2dbc.core.PreparedOperation
@@ -268,7 +304,7 @@ public class ReactiveEntityTemplate {
     }
 
 
-     <E, RT> RowsFetchSpec<RT> getRowsFetchSpec(DatabaseClient.GenericExecuteSpec executeSpec, Class<E> entityClass, Class<RT> returnType) {
+    <E, RT> RowsFetchSpec<RT> getRowsFetchSpec(DatabaseClient.GenericExecuteSpec executeSpec, Class<E> entityClass, Class<RT> returnType) {
 
         boolean simpleType;
 
@@ -342,7 +378,6 @@ public class ReactiveEntityTemplate {
             return delegate.all().concatMap(it -> maybeCallAfterConvert(it, tableName));
         }
     }
-
 
 
 }

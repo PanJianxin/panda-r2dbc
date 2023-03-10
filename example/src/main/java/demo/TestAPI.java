@@ -7,6 +7,9 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Paging;
 import demo.model.*;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
@@ -36,9 +39,9 @@ public class TestAPI {
 
 
     @GetMapping("/page")
-    public Mono<Pagination<Order>> paginationMono(Long current, Integer size, Boolean needCount) {
+    public Mono<Page<Order>> paginationMono(Integer current, Integer size, Boolean needCount) {
         return reactiveEntityTemplate.select(Order.class)
-                .paging(new Paging(current, size, needCount));
+                .page(PageRequest.of(current, size).withSort(Sort.by(Sort.Direction.DESC, "id")));
     }
 
     @GetMapping("{userId}")

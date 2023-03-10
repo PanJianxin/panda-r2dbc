@@ -18,12 +18,13 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Page;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
-import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
-import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
+import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.projection.ProjectionInformation;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
@@ -127,7 +128,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
          */
         @NonNull
         @Override
-        public TerminatingSelect<R> matching(@NonNull Query query) {
+        public R2dbcSelectOperation.TerminatingSelect<R> matching(@NonNull Query query) {
 
             Assert.notNull(query, "Query must not be null");
 
@@ -197,36 +198,37 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         }
 
         @Override
-        public Mono<Pagination<R>> paging() {
-            return paging(this.query.getOffset(), this.query.getLimit(), true);
-        }
+        public Mono<Page<R>> page(Pageable pageable) {
 
-        @Override
-        public Mono<Pagination<R>> paging(Page page) {
-            return paging(page.getOffset(), page.getLimit(), page.isNeedCount());
-        }
+            Query pageQuery = query.with(pageable);
 
-        private Mono<Pagination<R>> paging(long offset, int limit, boolean needCount) {
-            // 创建一个新的Query对象，limit在原来的基础上+1，以探测是否还有下一页数据
-            Query pageQuery = Query.query(query.getCriteria().orElse(CriteriaDefinition.empty()))
-                    .offset(offset)
-                    .limit(limit + 1);
-
-            Mono<Long> countMono = Mono.defer(() -> {
-                if (needCount) {
+            Mono<Long> totalSupplier = Mono.defer(() -> {
+                if (pageable.isPaged()) {
                     return doCount(pageQuery, this.domainType, this.tableName);
                 }
                 return Mono.just(-1L);
             });
 
-            Mono<List<R>> recordsMono = selectFlux(pageQuery, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all)
-                    .collectList();
+            return selectFlux(pageQuery, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all)
+                    .collectList()
+                    .flatMap(content -> {
+                        // 有两种情况不需要count查询
+                        // 1、不支持分页 [或] （查询的是第一页数据 [且] 第一页数据的长度小于页长）
+                        // 2、支持分页，但是查询的是最后一页数据，可以通过最后一页数据的长度+偏移量offset计算得到总数据量
 
-            return Mono.zip(countMono, recordsMono, (count, records) -> Pagination.<R>offsetBuilder(offset, limit)
-                    .total(count)
-                    .hasNext(records.size() > limit)
-                    .records(records.subList(0, Math.min(limit, records.size())))
-                    .build());
+                        // 不支持分页，或者查询的是第一页数据，且第一页数据的长度小于页长
+                        if (pageable.isUnpaged() || (pageable.getOffset() == 0 && pageable.getPageSize() > content.size())) {
+                            return Mono.just(new PageImpl<>(content, pageable, content.size()));
+                        }
+
+                        // 这里的意思是：如果是最后一页数据了，就不用count查询了，可以直接使用数据计算出共有多少条数据
+                        if (content.size() != 0 && pageable.getPageSize() > content.size()) {
+                            return Mono.just(new PageImpl<>(content, pageable, pageable.getOffset() + content.size()));
+                        }
+
+                        // count以下共有多少条数据之后再返回分页对象
+                        return totalSupplier.map(total -> new PageImpl<>(content, pageable, total));
+                    });
         }
 
 
