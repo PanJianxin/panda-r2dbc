@@ -34,7 +34,7 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
         @Override
         public Mono<T> using(T object) {
             return isUpdate(object)
-                    .flatMap(isUpdate -> isUpdate ? this.template.update(object) : this.template.insert(object));
+                    .flatMap(isUpdate -> isUpdate ? this.reactiveEntityTemplate.update(object) : this.reactiveEntityTemplate.insert(object));
         }
 
         @Override

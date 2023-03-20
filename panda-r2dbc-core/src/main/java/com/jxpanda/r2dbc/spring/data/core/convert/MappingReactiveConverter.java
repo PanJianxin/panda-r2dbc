@@ -102,7 +102,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
         if (getConversions().hasCustomReadTarget(Row.class, rawType)
                 && getConversionService().canConvert(Row.class, rawType)) {
-            return getConversionService().convert(row, rawType);
+            return Objects.requireNonNull(getConversionService().convert(row, rawType));
         }
 
         return read(getRequiredPersistentEntity(type), row, metadata);
@@ -336,7 +336,6 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     }
 
 
-
     private void writeNullInternal(OutboundRow sink, RelationalPersistentProperty property) {
         sink.put(property.getColumnName(), Parameter.empty(getPotentiallyConvertedSimpleNullType(property.getType())));
     }
@@ -430,7 +429,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
         /**
          * INSTANCE
-         * */
+         */
         INSTANCE;
 
         @Override

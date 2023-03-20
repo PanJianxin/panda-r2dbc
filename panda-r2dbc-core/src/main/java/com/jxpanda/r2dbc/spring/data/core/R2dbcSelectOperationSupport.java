@@ -106,7 +106,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcSelectSupport<>(this.template, this.domainType, this.returnType, this.query, tableName);
+            return new R2dbcSelectSupport<>(this.reactiveEntityTemplate, this.domainType, this.returnType, this.query, tableName);
         }
 
         /*
@@ -119,7 +119,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(returnType, "ReturnType must not be null");
 
-            return new R2dbcSelectSupport<>(this.template, this.returnType, returnType, this.query, this.tableName);
+            return new R2dbcSelectSupport<>(this.reactiveEntityTemplate, this.returnType, returnType, this.query, this.tableName);
         }
 
         /*
@@ -132,7 +132,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(query, "Query must not be null");
 
-            return new R2dbcSelectSupport<>(this.template, this.domainType, this.returnType, query, this.tableName);
+            return new R2dbcSelectSupport<>(this.reactiveEntityTemplate, this.domainType, this.returnType, query, this.tableName);
         }
 
         /*
@@ -279,13 +279,14 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         private RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType, boolean ignoreLogicDelete) {
 
-            boolean isQueryEntity = false;
+            // 是否是聚合对象
+            boolean isAggregate = false;
 
             if (entityClass.isAnnotationPresent(TableEntity.class)) {
-                isQueryEntity = entityClass.getAnnotation(TableEntity.class).isAggregate();
+                isAggregate = entityClass.getAnnotation(TableEntity.class).aggregate();
             }
 
-            StatementMapper statementMapper = isQueryEntity ? this.statementMapper() : this.statementMapper().forType(entityClass);
+            StatementMapper statementMapper = isAggregate ? this.statementMapper() : this.statementMapper().forType(entityClass);
 
             StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName)
                     .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
@@ -306,20 +307,20 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
-            return template.getRowsFetchSpec(this.databaseClient().sql(operation), entityClass, returnType);
+            return reactiveEntityTemplate.getRowsFetchSpec(this.databaseClient().sql(operation), entityClass, returnType);
         }
 
 
         private Mono<R> selectMono(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Mono<R>> resultHandler) {
             return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
-                    .flatMap(it -> this.template.maybeCallAfterConvert(it, tableName));
+                    .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
         }
 
         private Flux<R> selectFlux(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Flux<R>> resultHandler) {
             return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
-                    .flatMap(it -> this.template.maybeCallAfterConvert(it, tableName));
+                    .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
         }
 
         /**
@@ -381,7 +382,8 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                                 expression = Expressions.just(sql);
                             } else {
                                 // 如果是函数，则采用函数的方式创建函数
-                                expression = SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name()))).as(tableColumn.alias());
+                                expression = SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name())))
+                                        .as(tableColumn.alias());;
                             }
                         }
                         columns.add(expression);

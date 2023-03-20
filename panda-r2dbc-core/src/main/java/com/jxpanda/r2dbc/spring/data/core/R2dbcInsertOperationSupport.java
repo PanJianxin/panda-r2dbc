@@ -86,7 +86,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcInsertSupport<>(this.template, this.domainType, tableName);
+            return new R2dbcInsertSupport<>(this.reactiveEntityTemplate, this.domainType, tableName);
         }
 
         /*
@@ -112,18 +112,18 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             RelationalPersistentEntity<T> persistentEntity = R2dbcMappingKit.getRequiredEntity(entity);
 
-            return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
+            return reactiveEntityTemplate.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
 
                 T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
 
                 // id生成处理
                 potentiallyGeneratorId(persistentEntity.getPropertyAccessor(entity), persistentEntity.getIdProperty());
 
-                OutboundRow outboundRow = template.getDataAccessStrategy().getOutboundRow(initializedEntity);
+                OutboundRow outboundRow = reactiveEntityTemplate.getDataAccessStrategy().getOutboundRow(initializedEntity);
 
                 potentiallyRemoveId(persistentEntity, outboundRow);
 
-                return template.maybeCallBeforeSave(initializedEntity, outboundRow, tableName)
+                return reactiveEntityTemplate.maybeCallBeforeSave(initializedEntity, outboundRow, tableName)
                         .flatMap(entityToSave -> doInsert(entityToSave, tableName, outboundRow));
             });
         }
@@ -152,10 +152,10 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
                             return statement.returnGeneratedValues();
                         }
 
-                        return statement.returnGeneratedValues(this.template.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
+                        return statement.returnGeneratedValues(this.reactiveEntityTemplate.getDataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
                     })
                     .map(this.converter().populateIdIfNecessary(entity)).all().last(entity)
-                    .flatMap(saved -> this.template.maybeCallAfterSave(saved, outboundRow, tableName));
+                    .flatMap(saved -> this.reactiveEntityTemplate.maybeCallAfterSave(saved, outboundRow, tableName));
         }
 
         /**
@@ -175,7 +175,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
         }
 
         private List<SqlIdentifier> getIdentifierColumns(Class<?> clazz) {
-            return template.getDataAccessStrategy().getIdentifierColumns(clazz);
+            return reactiveEntityTemplate.getDataAccessStrategy().getIdentifierColumns(clazz);
         }
 
         private void potentiallyGeneratorId(PersistentPropertyAccessor<?> propertyAccessor, @Nullable RelationalPersistentProperty idProperty) {
@@ -186,7 +186,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
 
             if (shouldGeneratorIdValue(idProperty)) {
                 Object generatedIdValue = idGenerator().generate();
-                ConversionService conversionService = this.template.getConverter().getConversionService();
+                ConversionService conversionService = this.reactiveEntityTemplate.getConverter().getConversionService();
                 propertyAccessor.setProperty(idProperty, conversionService.convert(generatedIdValue, idProperty.getType()));
             }
         }

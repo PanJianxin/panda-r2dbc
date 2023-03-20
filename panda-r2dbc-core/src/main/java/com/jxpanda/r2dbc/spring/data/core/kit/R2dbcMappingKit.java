@@ -80,7 +80,7 @@ public class R2dbcMappingKit {
 
     public static <E> boolean isAggregateEntity(RelationalPersistentEntity<E> relationalPersistentEntity) {
         TableEntity tableEntity = relationalPersistentEntity.findAnnotation(TableEntity.class);
-        return tableEntity != null && tableEntity.isAggregate();
+        return tableEntity != null && tableEntity.aggregate();
     }
 
     /**

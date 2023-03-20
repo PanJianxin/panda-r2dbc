@@ -63,7 +63,7 @@ public @interface TableEntity {
      * 只能「利用」第一段逻辑绕过去（不做额外解析，直接返回原表达式）
      * 因此需要一个判断来主动使entity传递为null，就可以绕过这段逻辑
      */
-    boolean isAggregate() default false;
+    boolean aggregate() default false;
 
     /**
      * 字段验证策略

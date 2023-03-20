@@ -30,6 +30,7 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
 import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
@@ -57,7 +58,7 @@ import java.util.function.BiFunction;
 
 @Getter
 @SuppressWarnings({"unused", "UnusedReturnValue", "deprecation"})
-public class ReactiveEntityTemplate {
+public class ReactiveEntityTemplate implements R2dbcEntityOperations {
 
 
     private final DatabaseClient databaseClient;
@@ -142,7 +143,8 @@ public class ReactiveEntityTemplate {
                 .insert(domainType);
     }
 
-    public <T> R2dbcUpdateOperation.R2dbcUpdate<T> update(Class<T> domainType) {
+    @Override
+    public R2dbcUpdateOperation.R2dbcUpdate<?> update(Class<?> domainType) {
         return new R2dbcUpdateOperationSupport(this)
                 .update(domainType);
     }
@@ -152,7 +154,8 @@ public class ReactiveEntityTemplate {
                 .save(domainType);
     }
 
-    public <T> R2dbcDeleteOperation.R2dbcDelete<T> delete(Class<T> domainType) {
+    @Override
+    public R2dbcDeleteOperation.R2dbcDelete<?> delete(Class<?> domainType) {
         return new R2dbcDeleteOperationSupport(this)
                 .delete(domainType);
     }
@@ -161,6 +164,7 @@ public class ReactiveEntityTemplate {
         return new R2dbcDestroyOperationSupport(this)
                 .destroy(domainType);
     }
+
 
     // -------------------------------------------------------------------------
     // Methods dealing with org.springframework.data.r2dbc.query.Query
@@ -175,6 +179,20 @@ public class ReactiveEntityTemplate {
         return select(entityClass)
                 .matching(query)
                 .one();
+    }
+
+    @Override
+    public Mono<Long> count(Query query, Class<?> entityClass) throws DataAccessException {
+        return select(entityClass)
+                .matching(query)
+                .count();
+    }
+
+    @Override
+    public Mono<Boolean> exists(Query query, Class<?> entityClass) throws DataAccessException {
+        return select(entityClass)
+                .matching(query)
+                .exists();
     }
 
     public <T> Flux<T> select(Query query, Class<T> entityClass) throws DataAccessException {
@@ -209,7 +227,9 @@ public class ReactiveEntityTemplate {
     }
 
     public Mono<Long> update(Query query, Update update, Class<?> entityClass) throws DataAccessException {
-        return update(entityClass).matching(query).apply(update);
+        return update(entityClass)
+                .matching(query)
+                .apply(update);
     }
 
 
@@ -235,12 +255,12 @@ public class ReactiveEntityTemplate {
                 .all();
     }
 
-    public <ID> Mono<Boolean> deleteById(ID id, Class<?> entityClass){
+    public <ID> Mono<Boolean> deleteById(ID id, Class<?> entityClass) {
         return delete(entityClass)
                 .byId(id);
     }
 
-    public <ID> Mono<Long> deleteByIds(Collection<ID> ids, Class<?> entityClass){
+    public <ID> Mono<Long> deleteByIds(Collection<ID> ids, Class<?> entityClass) {
         return delete(entityClass)
                 .byIds(ids);
     }
@@ -257,12 +277,12 @@ public class ReactiveEntityTemplate {
                 .all();
     }
 
-    public <ID> Mono<Boolean> destroyById(ID id, Class<?> entityClass){
+    public <ID> Mono<Boolean> destroyById(ID id, Class<?> entityClass) {
         return destroy(entityClass)
                 .byId(id);
     }
 
-    public <ID> Mono<Long> destroyByIds(Collection<ID> ids, Class<?> entityClass){
+    public <ID> Mono<Long> destroyByIds(Collection<ID> ids, Class<?> entityClass) {
         return destroy(entityClass)
                 .byIds(ids);
     }
@@ -271,7 +291,7 @@ public class ReactiveEntityTemplate {
     // Methods dealing with org.springframework.r2dbc.core.PreparedOperation
     // -------------------------------------------------------------------------
 
-    <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, Class<E> entityClass) {
+    public <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, Class<E> entityClass) {
 
         Assert.notNull(operation, "PreparedOperation must not be null");
         Assert.notNull(entityClass, "Entity class must not be null");
@@ -280,7 +300,7 @@ public class ReactiveEntityTemplate {
                 R2dbcMappingKit.getTableNameOrEmpty(entityClass));
     }
 
-    <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, BiFunction<Row, RowMetadata, E> rowMapper) {
+    public <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, BiFunction<Row, RowMetadata, E> rowMapper) {
 
         Assert.notNull(operation, "PreparedOperation must not be null");
         Assert.notNull(rowMapper, "Row mapper must not be null");
@@ -288,8 +308,8 @@ public class ReactiveEntityTemplate {
         return new EntityCallbackAdapter<>(getDatabaseClient().sql(operation).map(rowMapper), SqlIdentifier.EMPTY);
     }
 
-    <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, Class<?> entityClass,
-                               BiFunction<Row, RowMetadata, E> rowMapper) {
+    public <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, Class<?> entityClass,
+                                      BiFunction<Row, RowMetadata, E> rowMapper) {
 
         Assert.notNull(operation, "PreparedOperation must not be null");
         Assert.notNull(entityClass, "Entity class must not be null");

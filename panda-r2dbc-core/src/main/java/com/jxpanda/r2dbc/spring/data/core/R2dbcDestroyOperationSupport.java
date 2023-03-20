@@ -69,7 +69,7 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcDestroySupport<>(this.template, this.domainType, this.query, tableName);
+            return new R2dbcDestroySupport<>(this.reactiveEntityTemplate, this.domainType, this.query, tableName);
         }
 
         /*
@@ -81,7 +81,7 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
 
             Assert.notNull(query, "Query must not be null");
 
-            return new R2dbcDestroySupport<>(this.template, this.domainType, query, this.tableName);
+            return new R2dbcDestroySupport<>(this.reactiveEntityTemplate, this.domainType, query, this.tableName);
         }
 
         /*

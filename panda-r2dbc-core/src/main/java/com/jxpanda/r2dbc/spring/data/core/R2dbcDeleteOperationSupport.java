@@ -95,7 +95,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcDeleteSupport<>(this.template, this.domainType, this.query, tableName);
+            return new R2dbcDeleteSupport<>(this.reactiveEntityTemplate, this.domainType, this.query, tableName);
         }
 
         /*
@@ -108,7 +108,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(query, "Query must not be null");
 
-            return new R2dbcDeleteSupport<>(this.template, this.domainType, query, this.tableName);
+            return new R2dbcDeleteSupport<>(this.reactiveEntityTemplate, this.domainType, query, this.tableName);
         }
 
         /*
@@ -171,7 +171,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
             // 如果开启了逻辑删除，变为执行更新操作
             if (R2dbcMappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
-                return new R2dbcUpdateOperationSupport(this.template)
+                return new R2dbcUpdateOperationSupport(this.reactiveEntityTemplate)
                         .update(this.domainType)
                         .matching(query)
                         .apply(createLogicDeleteUpdate(entityClass));

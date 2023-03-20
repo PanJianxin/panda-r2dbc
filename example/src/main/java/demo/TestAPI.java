@@ -3,10 +3,9 @@ package demo;
 import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Paging;
 import demo.model.*;
 import lombok.AllArgsConstructor;
+import org.springframework.cglib.core.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -37,6 +36,20 @@ public class TestAPI {
 
     private final OrderService orderService;
 
+    private final OrderRepository orderRepository;
+
+    @GetMapping("group")
+
+    public Mono<?> groupBy() {
+
+        return orderService.getReactiveEntityTemplate().getDatabaseClient().sql("""
+                                    SELECT phone,COUNT(phone) as c FROM %s GROUP BY phone
+                        """.formatted(orderService.getTableName()))
+                .fetch()
+                .all()
+                .collectList();
+//        return orderRepository.groupBy("`order`","phone,count(phone)","phone");
+    }
 
     @GetMapping("/page")
     public Mono<Page<Order>> paginationMono(Integer current, Integer size, Boolean needCount) {

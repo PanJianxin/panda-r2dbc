@@ -45,7 +45,7 @@ public class R2dbcOperationSupport {
         /**
          * entityTemplate
          */
-        protected final ReactiveEntityTemplate template;
+        protected final ReactiveEntityTemplate reactiveEntityTemplate;
 
         /**
          * 领域对象类型，通常是实体对象的类型
@@ -64,13 +64,13 @@ public class R2dbcOperationSupport {
         protected final SqlIdentifier tableName;
 
 
-        protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType) {
-            this(template, domainType, null, null);
+        protected R2dbcSupport(ReactiveEntityTemplate reactiveEntityTemplate, Class<T> domainType) {
+            this(reactiveEntityTemplate, domainType, null, null);
         }
 
 
-        protected R2dbcSupport(ReactiveEntityTemplate template, Class<T> domainType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
-            this.template = template;
+        protected R2dbcSupport(ReactiveEntityTemplate reactiveEntityTemplate, Class<T> domainType, @Nullable Query query, @Nullable SqlIdentifier tableName) {
+            this.reactiveEntityTemplate = reactiveEntityTemplate;
             this.domainType = domainType;
             this.query = query == null ? Query.empty() : query;
             this.tableName = tableName == null ? R2dbcMappingKit.getTableName(domainType) : tableName;
@@ -81,35 +81,35 @@ public class R2dbcOperationSupport {
 //        }
 
         protected SpelAwareProxyProjectionFactory projectionFactory() {
-            return this.template.getProjectionFactory();
+            return this.reactiveEntityTemplate.getProjectionFactory();
         }
 
         protected StatementMapper statementMapper() {
-            return this.template.getDataAccessStrategy().getStatementMapper();
+            return this.reactiveEntityTemplate.getDataAccessStrategy().getStatementMapper();
         }
 
         protected R2dbcConverter converter() {
-            return this.template.getConverter();
+            return this.reactiveEntityTemplate.getConverter();
         }
 
         protected DatabaseClient databaseClient() {
-            return this.template.getDatabaseClient();
+            return this.reactiveEntityTemplate.getDatabaseClient();
         }
 
         protected IdGenerator<?> idGenerator() {
-            return this.template.getIdGenerator();
+            return this.reactiveEntityTemplate.getIdGenerator();
         }
 
         protected Dialect dialect() {
-            return this.template.getDialect();
+            return this.reactiveEntityTemplate.getDialect();
         }
 
         protected TransactionalOperator transactionalOperator() {
-            return this.template.getTransactionalOperator();
+            return this.reactiveEntityTemplate.getTransactionalOperator();
         }
 
         protected TransactionalOperator transactionalOperator(int propagationBehavior, int isolationLevel, int timeout, boolean readOnly) {
-            return TransactionalOperator.create(this.template.getR2dbcTransactionManager(), new TransactionDefinition() {
+            return TransactionalOperator.create(this.reactiveEntityTemplate.getR2dbcTransactionManager(), new TransactionDefinition() {
                 @Override
                 public int getPropagationBehavior() {
                     return propagationBehavior;

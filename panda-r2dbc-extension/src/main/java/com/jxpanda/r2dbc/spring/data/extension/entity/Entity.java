@@ -7,13 +7,11 @@ import java.io.Serializable;
 /**
  * entity接口
  */
-public interface Entity<I> extends Serializable {
+public interface Entity<ID> extends Serializable {
 
     String ID = "id";
 
-    I getId();
-
-    void setId(I id);
+    ID getId();
 
     /**
      * 返回当前entity是否有效

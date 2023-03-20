@@ -1,5 +1,5 @@
 object SpringVersion {
-    const val SPRING = "3.0.2"
+    const val SPRING = "3.0.4"
     const val SPRING_DATA_RELATIONAL = "3.0.2"
     const val SPRING_R2DBC = "6.0.5"
     const val SPRING_DATA_R2DBC = "3.0.2"

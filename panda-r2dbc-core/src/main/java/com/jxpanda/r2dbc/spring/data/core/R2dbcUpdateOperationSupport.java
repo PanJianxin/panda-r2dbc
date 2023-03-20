@@ -93,7 +93,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcUpdateSupport<>(this.template, this.domainType, this.query, tableName);
+            return new R2dbcUpdateSupport<>(this.reactiveEntityTemplate, this.domainType, this.query, tableName);
         }
 
         /*
@@ -106,7 +106,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(query, "Query must not be null");
 
-            return new R2dbcUpdateSupport<>(this.template, this.domainType, query, this.tableName);
+            return new R2dbcUpdateSupport<>(this.reactiveEntityTemplate, this.domainType, query, this.tableName);
         }
 
         @NonNull
@@ -133,7 +133,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
             RelationalPersistentEntity<E> persistentEntity = R2dbcMappingKit.getRequiredEntity(entity);
 
-            return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
+            return reactiveEntityTemplate.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
 
                 E entityToUse;
                 Criteria matchingVersionCriteria;
@@ -148,7 +148,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
                 OutboundRow outboundRow = getOutboundRow(entityToUse);
 
-                return template.maybeCallBeforeSave(entityToUse, outboundRow, tableName).flatMap(onBeforeSave -> {
+                return reactiveEntityTemplate.maybeCallBeforeSave(entityToUse, outboundRow, tableName).flatMap(onBeforeSave -> {
 
                     SqlIdentifier idColumn = persistentEntity.getRequiredIdProperty().getColumnName();
                     Parameter id = outboundRow.remove(idColumn);
@@ -159,7 +159,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
                         }
                     });
 
-                    Criteria criteria = Criteria.where(template.getDataAccessStrategy().toSql(idColumn)).is(id);
+                    Criteria criteria = Criteria.where(reactiveEntityTemplate.getDataAccessStrategy().toSql(idColumn)).is(id);
 
                     if (matchingVersionCriteria != null) {
                         criteria = criteria.and(matchingVersionCriteria);
@@ -207,7 +207,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
                 } else {
                     sink.error(new TransientDataAccessResourceException(formatTransientEntityExceptionMessage(entity, persistentEntity)));
                 }
-            }).then(template.maybeCallAfterSave(entity, outboundRow, tableName));
+            }).then(reactiveEntityTemplate.maybeCallAfterSave(entity, outboundRow, tableName));
         }
 
         /**
@@ -234,7 +234,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
             return versionPropertyOptional.map(versionProperty -> {
                 Object version = propertyAccessor.getProperty(versionProperty);
-                Criteria.CriteriaStep versionColumn = Criteria.where(template.getDataAccessStrategy().toSql(versionProperty.getColumnName()));
+                Criteria.CriteriaStep versionColumn = Criteria.where(reactiveEntityTemplate.getDataAccessStrategy().toSql(versionProperty.getColumnName()));
                 if (version == null) {
                     return versionColumn.isNull();
                 } else {
