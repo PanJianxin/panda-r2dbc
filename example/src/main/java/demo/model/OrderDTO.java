@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@TableJoin(leftTable = "order", rightTable = "order_item", on = "`order`.id = `order_item`.order_id")
+@TableJoin(leftTable = "order", rightTable = "order_item", on = "`order`.id = order_item.order_id")
 public class OrderDTO {
 
     @TableId

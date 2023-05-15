@@ -49,7 +49,7 @@ public @interface TableColumn {
     String prefix() default "";
 
     /**
-     * 表名，字段上的表名是为了做join的时候使用
+     * 表名，字段上的表名是为了做join的时候给一个标识
      */
     String table() default "";
 

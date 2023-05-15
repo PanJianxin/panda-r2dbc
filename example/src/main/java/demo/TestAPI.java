@@ -38,9 +38,9 @@ public class TestAPI {
     private final OrderRepository orderRepository;
 
     @GetMapping("join")
-    public Mono<OrderDTO> join(){
+    public Flux<OrderDTO> join(){
         return reactiveEntityTemplate.select(OrderDTO.class)
-                .byId("3005542746782957569");
+                .all();
     }
 
     @GetMapping("/page")

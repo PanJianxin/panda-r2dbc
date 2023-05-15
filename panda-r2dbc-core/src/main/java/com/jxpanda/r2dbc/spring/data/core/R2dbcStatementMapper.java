@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableJoin;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.StatementMapper;
@@ -25,6 +26,7 @@ import org.springframework.util.Assert;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class R2dbcStatementMapper implements StatementMapper {
 
     private final R2dbcDialect dialect;
@@ -99,13 +101,13 @@ public class R2dbcStatementMapper implements StatementMapper {
 
         Select select;
         boolean isJoin = entity != null && entity.isAnnotationPresent(TableJoin.class);
-        if (isJoin) {
+        if (!isJoin) {
+            select = selectBuilder.build();
+        } else {
             TableJoin tableJoin = entity.getRequiredAnnotation(TableJoin.class);
-            select = selectBuilder.join(Table.create(tableJoin.rightTable()))
+            select = tableJoin.joinType().getFunction().apply(selectBuilder, Table.create(tableJoin.rightTable()))
                     .on(Conditions.just(tableJoin.on()))
                     .build();
-        } else {
-            select = selectBuilder.build();
         }
 
         return new DefaultPreparedOperation<>(select, this.renderContext, bindings);

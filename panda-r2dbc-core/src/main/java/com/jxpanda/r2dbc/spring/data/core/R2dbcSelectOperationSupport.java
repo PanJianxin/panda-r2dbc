@@ -371,25 +371,26 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
             RelationalPersistentEntity<E> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
             boolean isAggregateEntity = R2dbcMappingKit.isAggregateEntity(entityClass);
-            boolean isJoin = R2dbcMappingKit.isJoin(entityClass);
             return StreamUtils.createStreamFromIterator(entity.iterator())
                     .filter(R2dbcMappingKit::isPropertyExists)
                     .map(property -> {
                         Expression expression;
                         if (!isAggregateEntity) {
-                            if (!isJoin) {
+                            if (property.isIdProperty()) {
                                 expression = table.column(property.getColumnName());
                             } else {
                                 TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
                                 Table columnTable = tableColumn.table().isEmpty() ? table : Table.create(tableColumn.table());
                                 String alias = tableColumn.alias();
                                 if (alias.isEmpty()) {
-                                    expression = Column.create(property.getColumnName(), columnTable);
+                                    expression = columnTable.column(property.getColumnName());
                                 } else {
                                     expression = Column.aliased(property.getColumnName().getReference(), columnTable, alias);
                                 }
                             }
                         } else {
+                            // 聚合函数必须要使用Expressions.just()直接创建表达式
+                            // 实测使用Column创建的话，会被添加表名作为前缀，导致SQL的语法是错的
                             TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
                             if (!R2dbcMappingKit.isFunctionProperty(property)) {
                                 String sql = tableColumn.name();
