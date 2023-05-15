@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("org.springframework.boot") version "3.0.1"
+    id("org.springframework.boot") version "3.0.6"
     id("io.spring.dependency-management") version "1.1.0"
 }
 
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-
+    
     implementation(project(ProjectDependency.PANDA_R2DBC_SPRING_BOOT_STARTER))
 //    implementation(project(ProjectDependency.PANDA_R2DBC_SPRING_DATA))
 //    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
@@ -22,7 +22,7 @@ dependencies {
 //    implementation("com.github.jasync-sql:jasync-r2dbc-mysql:2.1.7")
 
     // https://mvnrepository.com/artifact/org.mariadb/r2dbc-mariadb
-    implementation("org.mariadb:r2dbc-mariadb:1.1.3")
+    implementation("org.mariadb:r2dbc-mariadb:1.1.4")
 
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
@@ -32,8 +32,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/io.r2dbc/r2dbc-spi
 //    implementation("io.r2dbc:r2dbc-spi:1.0.0.RELEASE")
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

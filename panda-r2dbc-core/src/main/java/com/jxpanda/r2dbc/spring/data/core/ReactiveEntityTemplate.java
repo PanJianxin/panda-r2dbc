@@ -20,8 +20,8 @@ import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
+import jakarta.annotation.Resource;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +32,7 @@ import org.springframework.data.r2dbc.convert.R2dbcConverter;
 import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
 import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
 import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.r2dbc.mapping.event.AfterConvertCallback;
@@ -71,14 +72,17 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
 
     private final R2dbcDialect dialect;
 
-    @Autowired
+    private final StatementMapper statementMapper;
+
+    @Resource
     private IdGenerator<?> idGenerator;
 
-    @Autowired
+    @Resource
     private R2dbcTransactionManager r2dbcTransactionManager;
 
-    @Autowired
+    @Resource
     private TransactionalOperator transactionalOperator;
+
 
     private @Nullable ReactiveEntityCallbacks entityCallbacks;
 
@@ -89,6 +93,7 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         this.projectionFactory = new SpelAwareProxyProjectionFactory();
         this.dialect = dialect;
         this.converter = converter;
+        this.statementMapper = new R2dbcStatementMapper(dialect, this.converter);
     }
 
 

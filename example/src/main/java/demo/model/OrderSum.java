@@ -8,13 +8,10 @@ import lombok.Data;
 @TableEntity(name = "order", aggregate = true)
 public class OrderSum {
 
-    @TableColumn(name = "*", alias = "count", function = "count")
+    @TableColumn(name = "count(*)", alias = "count")
     private Integer count;
 
     @TableColumn(name = "amount", alias = "total_amount", function = "sum")
     private Integer totalAmount;
-
-//    @TableColumn(name = "amount", alias = "total_amount", function = "case when then")
-//    private String test;
 
 }

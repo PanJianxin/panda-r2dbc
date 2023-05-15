@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.function.BiFunction;
 
+
 @Getter
 public class R2dbcEntityTemplateAdapter extends R2dbcEntityTemplate {
 

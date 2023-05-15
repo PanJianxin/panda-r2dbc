@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
  * @author Panda
  * @since 2020-10-24
  */
-@SuppressWarnings("all")
 public final class ReflectionKit {
 
     private static final String GET_PREFIX = "get";
@@ -134,6 +133,7 @@ public final class ReflectionKit {
      * @param field  字段
      */
     @SneakyThrows
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static void initField(Object entity, Field field) {
         field.setAccessible(true);
         Class<?> fieldType = field.getType();
@@ -278,7 +278,7 @@ public final class ReflectionKit {
         }
 
         // 从序列化方法取出序列化的lambda信息
-        boolean isAccessible = writeReplaceMethod.isAccessible();
+        boolean isAccessible = writeReplaceMethod.canAccess(accessorFunction);
         writeReplaceMethod.setAccessible(true);
         SerializedLambda serializedLambda;
         try {

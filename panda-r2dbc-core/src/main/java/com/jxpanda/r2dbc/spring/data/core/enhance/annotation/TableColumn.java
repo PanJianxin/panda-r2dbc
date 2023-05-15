@@ -49,6 +49,11 @@ public @interface TableColumn {
     String prefix() default "";
 
     /**
+     * 表名，字段上的表名是为了做join的时候使用
+     */
+    String table() default "";
+
+    /**
      * 属性是否真实存在于表中
      * 针对扩展了Entity的时候，处理不存在与表中的属性使用
      */
@@ -72,6 +77,6 @@ public @interface TableColumn {
     /**
      * 类型处理器，默认是不处理
      */
-    Class<? extends R2dbcTypeHandler<?, ?>> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
+    Class<? extends R2dbcTypeHandler<Object, Object>> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
 
 }

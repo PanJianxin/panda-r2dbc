@@ -76,16 +76,12 @@ public class R2dbcOperationSupport {
             this.tableName = tableName == null ? R2dbcMappingKit.getTableName(domainType) : tableName;
         }
 
-//        protected R2dbcConfigProperties r2dbcConfigProperties() {
-//            return this.template.getR2dbcConfigProperties();
-//        }
-
         protected SpelAwareProxyProjectionFactory projectionFactory() {
             return this.reactiveEntityTemplate.getProjectionFactory();
         }
 
         protected StatementMapper statementMapper() {
-            return this.reactiveEntityTemplate.getDataAccessStrategy().getStatementMapper();
+            return this.reactiveEntityTemplate.getStatementMapper();
         }
 
         protected R2dbcConverter converter() {

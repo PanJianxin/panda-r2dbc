@@ -5,7 +5,6 @@ import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import demo.model.*;
 import lombok.AllArgsConstructor;
-import org.springframework.cglib.core.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -38,17 +37,10 @@ public class TestAPI {
 
     private final OrderRepository orderRepository;
 
-    @GetMapping("group")
-
-    public Mono<?> groupBy() {
-
-        return orderService.getReactiveEntityTemplate().getDatabaseClient().sql("""
-                                    SELECT phone,COUNT(phone) as c FROM %s GROUP BY phone
-                        """.formatted(orderService.getTableName()))
-                .fetch()
-                .all()
-                .collectList();
-//        return orderRepository.groupBy("`order`","phone,count(phone)","phone");
+    @GetMapping("join")
+    public Mono<OrderDTO> join(){
+        return reactiveEntityTemplate.select(OrderDTO.class)
+                .byId("3005542746782957569");
     }
 
     @GetMapping("/page")
@@ -72,8 +64,7 @@ public class TestAPI {
 
     @PostMapping("/order/insert")
     public Mono<Order> insert(@RequestBody Order order) {
-        return orderService.insert(order)
-                .log();
+        return orderService.insert(order);
     }
 
     @PostMapping("/order/save")

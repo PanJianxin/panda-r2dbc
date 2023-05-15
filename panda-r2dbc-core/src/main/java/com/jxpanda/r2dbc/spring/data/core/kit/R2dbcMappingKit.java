@@ -3,10 +3,7 @@ package com.jxpanda.r2dbc.spring.data.core.kit;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
 import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.*;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
@@ -81,6 +78,15 @@ public class R2dbcMappingKit {
     public static <E> boolean isAggregateEntity(RelationalPersistentEntity<E> relationalPersistentEntity) {
         TableEntity tableEntity = relationalPersistentEntity.findAnnotation(TableEntity.class);
         return tableEntity != null && tableEntity.aggregate();
+    }
+
+    public static <E> boolean isJoin(Class<E> entityClass) {
+        RelationalPersistentEntity<E> persistentEntity = getPersistentEntity(entityClass);
+        return persistentEntity != null && isJoin(persistentEntity);
+    }
+
+    public static <E> boolean isJoin(RelationalPersistentEntity<E> relationalPersistentEntity) {
+        return relationalPersistentEntity.isAnnotationPresent(TableJoin.class);
     }
 
     /**

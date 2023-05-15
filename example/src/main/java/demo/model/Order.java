@@ -2,10 +2,12 @@ package demo.model;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.*;
-import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
-import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.StandardEnum;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.EnumValue;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

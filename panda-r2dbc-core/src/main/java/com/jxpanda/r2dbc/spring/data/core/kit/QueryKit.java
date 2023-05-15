@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core.kit;
 
+import lombok.experimental.UtilityClass;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
@@ -7,6 +8,7 @@ import org.springframework.util.Assert;
 
 import java.util.Collection;
 
+@UtilityClass
 public class QueryKit {
 
     public static <T> CriteriaAdapter<T> with(Class<T> clazz) {

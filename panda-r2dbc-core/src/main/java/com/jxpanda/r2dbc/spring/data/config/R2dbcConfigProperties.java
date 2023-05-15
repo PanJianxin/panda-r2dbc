@@ -4,7 +4,6 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.NamingStrategy;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
-import lombok.EqualsAndHashCode;
 import org.springframework.lang.NonNull;
 
 import java.util.HashMap;

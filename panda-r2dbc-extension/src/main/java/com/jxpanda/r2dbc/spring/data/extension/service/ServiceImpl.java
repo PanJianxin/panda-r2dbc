@@ -7,8 +7,6 @@ import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository;
-import org.springframework.data.relational.core.query.Criteria;
-import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation;
 
 @Getter

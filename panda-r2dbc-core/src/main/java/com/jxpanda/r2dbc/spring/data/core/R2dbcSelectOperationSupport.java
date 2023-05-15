@@ -34,6 +34,7 @@ import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.*;
 import org.springframework.data.util.Pair;
+import org.springframework.data.util.StreamUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.PreparedOperation;
@@ -44,9 +45,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.beans.FeatureDescriptor;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of {@link ReactiveSelectOperation}.
@@ -78,7 +81,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
 
     @SuppressWarnings("SameParameterValue")
-    private final static class R2dbcSelectSupport<T, R> extends R2dbcSupport<T> implements R2dbcSelectOperation.R2dbcSelect<R> {
+    private static final class R2dbcSelectSupport<T, R> extends R2dbcSupport<T> implements R2dbcSelectOperation.R2dbcSelect<R> {
 
         /**
          * 返回值类型
@@ -222,7 +225,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                         }
 
                         // 这里的意思是：如果是最后一页数据了，就不用count查询了，可以直接使用数据计算出共有多少条数据
-                        if (content.size() != 0 && pageable.getPageSize() > content.size()) {
+                        if (!content.isEmpty() && pageable.getPageSize() > content.size()) {
                             return Mono.just(new PageImpl<>(content, pageable, pageable.getOffset() + content.size()));
                         }
 
@@ -348,28 +351,44 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         private <E, RT> List<Expression> getSelectProjection(Table table, Query query, Class<E> entityClass, Class<RT> returnType) {
 
-            if (query.getColumns().isEmpty()) {
+            if (!query.getColumns().isEmpty()) {
+                return query.getColumns().stream()
+                        .map(table::column)
+                        .map(Expression.class::cast)
+                        .toList();
+            }
 
-                if (returnType.isInterface()) {
-
-                    ProjectionInformation projectionInformation = this.projectionFactory().getProjectionInformation(returnType);
-
-                    if (projectionInformation.isClosed()) {
-                        return projectionInformation.getInputProperties().stream().map(FeatureDescriptor::getName).map(table::column).collect(Collectors.toList());
-                    }
+            if (returnType.isInterface()) {
+                ProjectionInformation projectionInformation = this.projectionFactory().getProjectionInformation(returnType);
+                if (projectionInformation.isClosed()) {
+                    return projectionInformation.getInputProperties().stream()
+                            .map(FeatureDescriptor::getName)
+                            .map(table::column)
+                            .map(Expression.class::cast)
+                            .toList();
                 }
+            }
 
-                RelationalPersistentEntity<E> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
-
-                List<Expression> columns = new ArrayList<>();
-
-                boolean isQueryEntity = R2dbcMappingKit.isAggregateEntity(entityClass);
-
-                entity.forEach(property -> {
-                    if (R2dbcMappingKit.isPropertyExists(property)) {
+            RelationalPersistentEntity<E> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
+            boolean isAggregateEntity = R2dbcMappingKit.isAggregateEntity(entityClass);
+            boolean isJoin = R2dbcMappingKit.isJoin(entityClass);
+            return StreamUtils.createStreamFromIterator(entity.iterator())
+                    .filter(R2dbcMappingKit::isPropertyExists)
+                    .map(property -> {
                         Expression expression;
-                        if (!isQueryEntity) {
-                            expression = table.column(property.getColumnName());
+                        if (!isAggregateEntity) {
+                            if (!isJoin) {
+                                expression = table.column(property.getColumnName());
+                            } else {
+                                TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
+                                Table columnTable = tableColumn.table().isEmpty() ? table : Table.create(tableColumn.table());
+                                String alias = tableColumn.alias();
+                                if (alias.isEmpty()) {
+                                    expression = Column.create(property.getColumnName(), columnTable);
+                                } else {
+                                    expression = Column.aliased(property.getColumnName().getReference(), columnTable, alias);
+                                }
+                            }
                         } else {
                             TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
                             if (!R2dbcMappingKit.isFunctionProperty(property)) {
@@ -383,17 +402,12 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                             } else {
                                 // 如果是函数，则采用函数的方式创建函数
                                 expression = SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name())))
-                                        .as(tableColumn.alias());;
+                                        .as(tableColumn.alias());
                             }
                         }
-                        columns.add(expression);
-                    }
-                });
-                return columns;
-            }
-            return query.getColumns().stream().map(table::column).collect(Collectors.toList());
+                        return expression;
+                    }).toList();
+
         }
-
-
     }
 }
