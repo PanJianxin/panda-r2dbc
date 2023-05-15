@@ -1,0 +1,9 @@
+spring:
+  r2dbc:
+#    url: r2dbc:pool:mysql://mysql.jxpanda.com:2333/hydrogen
+    url: r2dbc:pool:mariadb://mysql.jxpanda.com:2333/hydrogen
+    username: root
+    password: m0@l`bzabr,Fy^u6
+    properties:
+      sslMode: TRUST
+#      allowPublicKeyRetrieval: true
