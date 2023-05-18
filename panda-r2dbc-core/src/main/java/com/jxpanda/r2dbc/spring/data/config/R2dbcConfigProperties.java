@@ -69,7 +69,7 @@ public record R2dbcConfigProperties(Database database, Mapping mapping, LogicDel
             }
 
             public Object get() {
-                ValueHandler valueHandler = HANDLER_CACHE.computeIfAbsent(this, (key) -> {
+                ValueHandler valueHandler = HANDLER_CACHE.computeIfAbsent(this, key -> {
                     try {
                         return this.handlerClass().getConstructor().newInstance();
                     } catch (Exception ignored) {

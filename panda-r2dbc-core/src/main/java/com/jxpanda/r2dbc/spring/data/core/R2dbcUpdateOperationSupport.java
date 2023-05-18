@@ -72,7 +72,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
 
     @SuppressWarnings("unchecked")
-    private final static class R2dbcUpdateSupport<T> extends R2dbcSupport<T> implements R2dbcUpdate<T>, ReactiveUpdateOperation.TerminatingUpdate {
+    private static final class R2dbcUpdateSupport<T> extends R2dbcSupport<T> implements R2dbcUpdate<T>, ReactiveUpdateOperation.TerminatingUpdate {
 
         R2dbcUpdateSupport(ReactiveEntityTemplate template, Class<T> domainType) {
             super(template, domainType);

@@ -18,10 +18,12 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableReference;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,7 @@ import org.springframework.data.projection.ProjectionInformation;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
+import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
@@ -317,13 +320,68 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         private Mono<R> selectMono(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Mono<R>> resultHandler) {
             return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
+                    .flatMap(result -> selectReference(entityClass, result))
                     .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
         }
 
         private Flux<R> selectFlux(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Flux<R>> resultHandler) {
             return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
+                    .flatMap(result -> selectReference(entityClass, result))
                     .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
+        }
+
+        private Mono<R> selectReference(Class<T> entityClass, R result) {
+            RelationalPersistentEntity<T> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
+            List<RelationalPersistentProperty> referenceProperties = R2dbcMappingKit.getReferenceProperties(entity);
+            if (referenceProperties.isEmpty()) {
+                return Mono.just(result);
+            }
+            return Flux.fromIterable(referenceProperties)
+                    .map(property -> {
+                        TableReference tableReference = property.getRequiredAnnotation(TableReference.class);
+                        RelationalPersistentProperty referenceProperty = tableReference.keyType()
+                                .getReferenceProperty()
+                                .apply(entity, tableReference.keyColumn());
+                        Assert.notNull(referenceProperty.getField(), "Field must not be null.");
+                        ReflectionKit.getFieldValue(result, referenceProperty.getField());
+                        return new Reference(tableReference, property, referenceProperty);
+                    })
+                    .filter(reference -> !ObjectUtils.isEmpty(reference.referenceValue()))
+                    .flatMap(reference -> reference.doSelect(this.reactiveEntityTemplate, result))
+                    .last();
+        }
+
+        private record Reference(
+                TableReference annotation,
+                RelationalPersistentProperty property,
+                Object referenceValue
+        ) {
+
+            private Mono<?> buildMono(ReactiveEntityTemplate reactiveEntityTemplate) {
+                Criteria.CriteriaStep where = Criteria.where(annotation().referenceColumn());
+                Criteria criteria = annotation().referenceCondition().getCondition().apply(where, referenceValue());
+                R2dbcSelectOperation.TerminatingSelect<?> matching = reactiveEntityTemplate
+                        .select(property().getActualType())
+                        .matching(Query.query(criteria));
+                Mono<?> mono;
+                if (property().isCollectionLike()) {
+                    mono = matching.all().collectList();
+                } else {
+                    mono = matching.one();
+                }
+                return mono;
+            }
+
+            private <R> Mono<R> doSelect(ReactiveEntityTemplate reactiveEntityTemplate, R result) {
+                return buildMono(reactiveEntityTemplate)
+                        .map(object -> {
+                            Assert.notNull(property().getField(), "");
+                            ReflectionKit.setFieldValue(result, property().getField(), object);
+                            return result;
+                        });
+            }
+
         }
 
         /**
@@ -349,15 +407,14 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             return criteriaOptional.map(selectSpec::withCriteria).orElse(selectSpec);
         }
 
-        private <E, RT> List<Expression> getSelectProjection(Table table, Query query, Class<E> entityClass, Class<RT> returnType) {
 
+        private <E, RT> List<Expression> getSelectProjection(Table table, Query query, Class<E> entityClass, Class<RT> returnType) {
             if (!query.getColumns().isEmpty()) {
                 return query.getColumns().stream()
                         .map(table::column)
                         .map(Expression.class::cast)
                         .toList();
             }
-
             if (returnType.isInterface()) {
                 ProjectionInformation projectionInformation = this.projectionFactory().getProjectionInformation(returnType);
                 if (projectionInformation.isClosed()) {
@@ -368,47 +425,50 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                             .toList();
                 }
             }
-
             RelationalPersistentEntity<E> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
             boolean isAggregateEntity = R2dbcMappingKit.isAggregateEntity(entityClass);
             return StreamUtils.createStreamFromIterator(entity.iterator())
                     .filter(R2dbcMappingKit::isPropertyExists)
-                    .map(property -> {
-                        Expression expression;
-                        if (!isAggregateEntity) {
-                            if (property.isIdProperty()) {
-                                expression = table.column(property.getColumnName());
-                            } else {
-                                TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
-                                Table columnTable = tableColumn.table().isEmpty() ? table : Table.create(tableColumn.table());
-                                String alias = tableColumn.alias();
-                                if (alias.isEmpty()) {
-                                    expression = columnTable.column(property.getColumnName());
-                                } else {
-                                    expression = Column.aliased(property.getColumnName().getReference(), columnTable, alias);
-                                }
-                            }
-                        } else {
-                            // 聚合函数必须要使用Expressions.just()直接创建表达式
-                            // 实测使用Column创建的话，会被添加表名作为前缀，导致SQL的语法是错的
-                            TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
-                            if (!R2dbcMappingKit.isFunctionProperty(property)) {
-                                String sql = tableColumn.name();
-                                // 如果设置了别名，添加别名的语法
-                                if (!ObjectUtils.isEmpty(tableColumn.alias())) {
-                                    sql += SQL_AS + tableColumn.alias();
-                                }
-                                // 如果不是函数，直接创建标准表达式
-                                expression = Expressions.just(sql);
-                            } else {
-                                // 如果是函数，则采用函数的方式创建函数
-                                expression = SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name())))
-                                        .as(tableColumn.alias());
-                            }
-                        }
-                        return expression;
-                    }).toList();
-
+                    .map(property -> isAggregateEntity ? createFunction(property) : createColumn(property, table))
+                    .toList();
         }
+
+        private Expression createColumn(RelationalPersistentProperty property, Table table) {
+            Expression expression;
+            if (property.isIdProperty()) {
+                expression = table.column(property.getColumnName());
+            } else {
+                TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
+                Table columnTable = tableColumn.table().isEmpty() ? table : Table.create(tableColumn.table());
+                String alias = tableColumn.alias();
+                if (alias.isEmpty()) {
+                    expression = columnTable.column(property.getColumnName());
+                } else {
+                    expression = Column.aliased(property.getColumnName().getReference(), columnTable, alias);
+                }
+            }
+            return expression;
+        }
+
+        private Expression createFunction(RelationalPersistentProperty property) {
+            // 聚合函数必须要使用Expressions.just()直接创建表达式
+            // 实测使用Column创建的话，会被添加表名作为前缀，导致SQL的语法是错的
+            TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
+            if (!R2dbcMappingKit.isFunctionProperty(property)) {
+                String sql = tableColumn.name();
+                // 如果设置了别名，添加别名的语法
+                if (!ObjectUtils.isEmpty(tableColumn.alias())) {
+                    sql += SQL_AS + tableColumn.alias();
+                }
+                // 如果不是函数，直接创建标准表达式
+                return Expressions.just(sql);
+            } else {
+                // 如果是函数，则采用函数的方式创建函数
+                return SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name())))
+                        .as(tableColumn.alias());
+            }
+        }
+
     }
+
 }

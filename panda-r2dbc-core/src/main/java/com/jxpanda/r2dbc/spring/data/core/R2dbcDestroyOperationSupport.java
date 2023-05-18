@@ -46,7 +46,7 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
     }
 
 
-    private final static class R2dbcDestroySupport<T> extends R2dbcSupport<T> implements R2dbcDestroyOperation.R2dbcDestroy<T> {
+    private static final class R2dbcDestroySupport<T> extends R2dbcSupport<T> implements R2dbcDestroyOperation.R2dbcDestroy<T> {
 
         private final R2dbcDeleteOperationSupport.R2dbcDestroyAdapter r2DbcDestroyAdapter;
 

@@ -105,7 +105,6 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         if (entityCallbacks != null) {
             return entityCallbacks.callback(BeforeConvertCallback.class, object, table);
         }
-
         return Mono.just(object);
     }
 
@@ -113,7 +112,6 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         if (entityCallbacks != null) {
             return entityCallbacks.callback(AfterConvertCallback.class, object, table);
         }
-
         return Mono.just(object);
     }
 
@@ -121,7 +119,6 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         if (entityCallbacks != null) {
             return entityCallbacks.callback(BeforeSaveCallback.class, object, row, table);
         }
-
         return Mono.just(object);
     }
 
@@ -129,7 +126,6 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         if (entityCallbacks != null) {
             return entityCallbacks.callback(AfterSaveCallback.class, object, table);
         }
-
         return Mono.just(object);
     }
 

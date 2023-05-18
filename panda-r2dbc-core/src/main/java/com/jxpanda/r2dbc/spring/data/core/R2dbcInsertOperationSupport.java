@@ -39,6 +39,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -66,7 +67,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
         return new R2dbcInsertSupport<>(this.template, domainType);
     }
 
-    private final static class R2dbcInsertSupport<T> extends R2dbcSupport<T> implements R2dbcInsert<T> {
+    private static final class R2dbcInsertSupport<T> extends R2dbcSupport<T> implements R2dbcInsert<T> {
 
         R2dbcInsertSupport(ReactiveEntityTemplate template, Class<T> domainType) {
             super(template, domainType);
@@ -133,11 +134,9 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
             StatementMapper mapper = this.statementMapper();
             StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
 
-            for (SqlIdentifier column : outboundRow.keySet()) {
-                @SuppressWarnings("deprecation")
-                Parameter settableValue = outboundRow.get(column);
-                if (settableValue.hasValue()) {
-                    insert = insert.withColumn(column, settableValue);
+            for (@SuppressWarnings("deprecation") Map.Entry<SqlIdentifier, Parameter> entry : outboundRow.entrySet()) {
+                if (entry.getValue().hasValue()) {
+                    insert = insert.withColumn(entry.getKey(), entry.getValue());
                 }
             }
 

@@ -14,7 +14,7 @@ import static java.lang.annotation.ElementType.*;
 @Id
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = {FIELD, METHOD, ANNOTATION_TYPE})
+@Target(value = {FIELD})
 public @interface TableId {
 
     /**

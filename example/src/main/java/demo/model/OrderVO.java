@@ -1,19 +1,18 @@
 package demo.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.jxpanda.r2dbc.spring.data.core.enhance.TableJoin;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.*;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import lombok.Data;
+import org.springframework.data.annotation.Reference;
+import org.springframework.data.relational.core.mapping.Column;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@TableJoin
+@TableEntity(name = "order")
 public class OrderVO implements Entity<String> {
 
     @TableId
@@ -38,9 +37,6 @@ public class OrderVO implements Entity<String> {
 
     @TableColumn(name = "seller_id")
     private String sellerId;
-
-    @TableColumn(name = "user_id")
-    private String userId;
 
     @TableColumn(name = "phone")
     private String phone;
@@ -78,7 +74,13 @@ public class OrderVO implements Entity<String> {
     @TableColumn(name = "amount_changes", isJson = true)
     private List<Order.AmountChange> amountChange;
 
-    @TableColumn(name = "items", isJson = true)
+    @TableReference(referenceColumn = OrderItem.ORDER_ID)
     private List<OrderItem> items;
+
+    @TableColumn(name = "user_id")
+    private String userId;
+
+    @TableReference(referenceColumn = Entity.ID, keyType = TableReference.KeyType.COLUMN, keyColumn = "userId")
+    private User user;
 
 }

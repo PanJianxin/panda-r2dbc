@@ -16,9 +16,13 @@ import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation;
 import org.springframework.data.util.Pair;
 import org.springframework.data.util.ProxyUtils;
+import org.springframework.data.util.StreamUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
+
+import java.util.Collections;
+import java.util.List;
 
 @Component
 @AllArgsConstructor
@@ -88,6 +92,18 @@ public class R2dbcMappingKit {
     public static <E> boolean isJoin(RelationalPersistentEntity<E> relationalPersistentEntity) {
         return relationalPersistentEntity.isAnnotationPresent(TableJoin.class);
     }
+
+    public static <E> List<RelationalPersistentProperty> getReferenceProperties(Class<E> entityClass) {
+        RelationalPersistentEntity<E> persistentEntity = getPersistentEntity(entityClass);
+        return persistentEntity == null ? Collections.emptyList() : getReferenceProperties(persistentEntity);
+    }
+
+    public static <E> List<RelationalPersistentProperty> getReferenceProperties(RelationalPersistentEntity<E> relationalPersistentEntity) {
+        return StreamUtils.createStreamFromIterator(relationalPersistentEntity.iterator())
+                .filter(property -> property.isAnnotationPresent(TableReference.class))
+                .toList();
+    }
+
 
     /**
      * 返回字段是否是存在的

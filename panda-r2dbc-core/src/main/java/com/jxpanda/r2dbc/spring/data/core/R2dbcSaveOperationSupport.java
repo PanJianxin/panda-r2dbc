@@ -25,7 +25,7 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
     }
 
 
-    private final static class R2dbcSaveSupport<T> extends R2dbcSupport<T> implements R2dbcSaveOperation.R2dbcSave<T> {
+    private static final class R2dbcSaveSupport<T> extends R2dbcSupport<T> implements R2dbcSaveOperation.R2dbcSave<T> {
 
         R2dbcSaveSupport(ReactiveEntityTemplate template, Class<T> domainType) {
             super(template, domainType);
@@ -34,7 +34,7 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
         @Override
         public Mono<T> using(T object) {
             return isUpdate(object)
-                    .flatMap(isUpdate -> isUpdate ? this.reactiveEntityTemplate.update(object) : this.reactiveEntityTemplate.insert(object));
+                    .flatMap(isUpdate -> Boolean.TRUE.equals(isUpdate) ? this.reactiveEntityTemplate.update(object) : this.reactiveEntityTemplate.insert(object));
         }
 
         @Override

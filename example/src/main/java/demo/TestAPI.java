@@ -15,11 +15,13 @@ import org.springframework.data.relational.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import reactor.cache.CacheMono;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.List;
 
 @RestController
@@ -37,8 +39,26 @@ public class TestAPI {
 
     private final OrderRepository orderRepository;
 
+    @GetMapping("user/{id:\\d+}")
+    public Mono<User> user(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.select(User.class)
+                .byId(id);
+    }
+
+    @GetMapping("vos")
+    public Flux<OrderVO> vos() {
+        return reactiveEntityTemplate.select(OrderVO.class)
+                .all();
+    }
+
+    @GetMapping("vo/{id:\\d+}")
+    public Mono<OrderVO> vo(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.select(OrderVO.class)
+                .byId(id);
+    }
+
     @GetMapping("join")
-    public Flux<OrderDTO> join(){
+    public Flux<OrderDTO> join() {
         return reactiveEntityTemplate.select(OrderDTO.class)
                 .all();
     }

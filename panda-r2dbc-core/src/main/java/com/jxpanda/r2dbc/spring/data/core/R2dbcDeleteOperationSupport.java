@@ -75,7 +75,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
     }
 
 
-    private final static class R2dbcDeleteSupport<T> extends R2dbcSupport<T> implements R2dbcDeleteOperation.R2dbcDelete<T> {
+    private static final class R2dbcDeleteSupport<T> extends R2dbcSupport<T> implements R2dbcDeleteOperation.R2dbcDelete<T> {
 
         R2dbcDeleteSupport(ReactiveEntityTemplate template, Class<T> domainType) {
             super(template, domainType);

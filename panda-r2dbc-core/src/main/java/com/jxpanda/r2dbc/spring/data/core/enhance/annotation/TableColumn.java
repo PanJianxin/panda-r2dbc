@@ -20,7 +20,7 @@ import static java.lang.annotation.ElementType.*;
 @Column
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = {FIELD, METHOD, ANNOTATION_TYPE})
+@Target(value = {FIELD, ANNOTATION_TYPE})
 public @interface TableColumn {
 
     /**

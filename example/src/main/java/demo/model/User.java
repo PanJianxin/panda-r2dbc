@@ -1,5 +1,8 @@
 package demo.model;
 
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
+import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableReference;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,7 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.relational.core.mapping.Table;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,12 +19,17 @@ import org.springframework.data.relational.core.mapping.Table;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@Table(value = "`user`")
+@TableEntity(name = "user")
 public class User extends StandardEntity<String> {
 
-    private String name;
+    @TableColumn(name = "nickname")
+    private String nickname;
 
+    @TableColumn(name = "phone")
     private String phone;
+
+    @TableReference(referenceColumn = Order.USER_ID)
+    private List<Order> orders;
 
 
 }
