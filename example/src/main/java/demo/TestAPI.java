@@ -1,6 +1,5 @@
 package demo;
 
-import com.jxpanda.commons.toolkit.IdentifierKit;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import demo.model.*;
@@ -15,14 +14,13 @@ import org.springframework.data.relational.core.query.Update;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import reactor.cache.CacheMono;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.List;
+import java.util.Random;
 
 @RestController
 @RequestMapping("test")
@@ -89,7 +87,7 @@ public class TestAPI {
 
     @PostMapping("/order/save")
     public Mono<Order> save(@RequestBody Order order) {
-        order.setNumber(IdentifierKit.nextIdString());
+        order.setNumber(Integer.toString(new Random().nextInt()));
         return reactiveEntityTemplate.save(Order.class)
                 .using(order)
                 .log();
@@ -165,12 +163,11 @@ public class TestAPI {
     public Mono<?> transaction(String userId) {
         User user = User.builder()
                 .id(userId)
-                .phone(IdentifierKit.nextIdString().substring(0, 11))
+                .phone(Integer.toString(new Random().nextInt()))
                 .build();
 //        Mono<User> userMono = Mono.just();
         Order order = Order.builder()
-                .id(IdentifierKit.nextIdString())
-                .number(IdentifierKit.nextIdString())
+                .number(Integer.toString(new Random().nextInt()))
                 .userId(userId)
 //                .extend(Collections.emptyList())
 //                .amountChanges(new ArrayList<>())

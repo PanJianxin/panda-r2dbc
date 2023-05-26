@@ -41,6 +41,9 @@ public @interface TableJoin {
 
     /**
      * 支持的join类型枚举
+     * 现在暂时只支持Join和Left outer join两种
+     * 因为Spring data中只开放了这两个类型的创建，其他类型虽然在枚举中有
+     * 但是，在{@link SelectBuilder.SelectJoin}接口中，并没有支持传递JoinType
      */
     @Getter
     @AllArgsConstructor

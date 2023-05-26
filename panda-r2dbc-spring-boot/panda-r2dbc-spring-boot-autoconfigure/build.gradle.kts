@@ -1,5 +1,5 @@
 dependencies {
-    annotationProcessor(SpringLibrary.CONFIGURATION_PROCESSOR)
-    implementation(SpringLibrary.SPRING_BOOT)
-    implementation(project(ProjectDependency.PANDA_R2DBC_EXTENSION))
+    annotationProcessor(libs.spring.configuration.processor)
+    implementation(libs.spring.boot)
+    implementation(project(":panda-r2dbc-extension"))
 }

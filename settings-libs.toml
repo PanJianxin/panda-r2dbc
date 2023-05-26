@@ -1,0 +1,38 @@
+[versions]
+r2dbc = "1.0.0.RELEASE"
+spring = "3.1.0"
+jackson = "2.15.1"
+jakarta = "2.1.1"
+
+
+[libraries]
+# ------------------------------------------------------------------------------------------
+# r2dbc
+# ------------------------------------------------------------------------------------------
+r2dbc-spi = { module = "io.r2dbc:r2dbc-spi", version.ref = "r2dbc" }
+r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version.ref = "r2dbc" }
+r2dbc-mariadb = { module = "org.mariadb:r2dbc-mariadb", version = "1.1.4" }
+# ------------------------------------------------------------------------------------------
+# Spring
+# ------------------------------------------------------------------------------------------
+spring-boot = { module = "org.springframework.boot:spring-boot-starter", version.ref = "spring" }
+spring-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring" }
+spring-data-r2dbc = { module = "org.springframework.data:spring-data-r2dbc", version.ref = "spring" }
+spring-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring" }
+# ------------------------------------------------------------------------------------------
+# jackson
+# ------------------------------------------------------------------------------------------
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+# ------------------------------------------------------------------------------------------
+# others
+# ------------------------------------------------------------------------------------------
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta" }
+spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version = "4.7.3" }
+
+[bundles]
+jackson = ["jackson-databind", "jackson-datatype-jsr310"]
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.0" }

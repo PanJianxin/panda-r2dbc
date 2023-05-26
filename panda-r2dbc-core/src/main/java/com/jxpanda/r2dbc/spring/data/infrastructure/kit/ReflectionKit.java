@@ -19,6 +19,7 @@ package com.jxpanda.r2dbc.spring.data.infrastructure.kit;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.AccessorFunction;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.SneakyThrows;
+import lombok.experimental.UtilityClass;
 import org.springframework.core.GenericTypeResolver;
 
 import java.lang.invoke.SerializedLambda;
@@ -36,6 +37,8 @@ import java.util.stream.Collectors;
  * @author Panda
  * @since 2020-10-24
  */
+@SuppressWarnings("UnusedReturnValue")
+@UtilityClass
 public final class ReflectionKit {
 
     private static final String GET_PREFIX = "get";
@@ -44,22 +47,25 @@ public final class ReflectionKit {
     private static final String IS_PREFIX = "is";
     private static final String WRITE_REPLACE = "writeReplace";
 
-    private static final Map<Class<?>, Object> DEFAULT_VALUE_MAP = new HashMap<>() {{
-        put(Collection.class, Collections.emptyList());
-        put(List.class, Collections.emptyList());
-        put(Set.class, Collections.emptyList());
-        put(Map.class, Collections.emptyMap());
-        put(Object.class, new Object());
-        put(Byte.class, 0);
-        put(Short.class, 0);
-        put(Integer.class, 0);
-        put(Long.class, 0L);
-        put(Float.class, 0.0F);
-        put(Double.class, 0.0);
-        put(BigDecimal.class, BigDecimal.ZERO);
-        put(Boolean.class, false);
-        put(String.class, StringConstant.BLANK);
-    }};
+    private static final Map<Class<?>, Object> DEFAULT_VALUE_MAP;
+
+    static {
+        DEFAULT_VALUE_MAP = new HashMap<>();
+        DEFAULT_VALUE_MAP.put(Collection.class, Collections.emptyList());
+        DEFAULT_VALUE_MAP.put(List.class, Collections.emptyList());
+        DEFAULT_VALUE_MAP.put(Set.class, Collections.emptyList());
+        DEFAULT_VALUE_MAP.put(Map.class, Collections.emptyMap());
+        DEFAULT_VALUE_MAP.put(Object.class, new Object());
+        DEFAULT_VALUE_MAP.put(Byte.class, 0);
+        DEFAULT_VALUE_MAP.put(Short.class, 0);
+        DEFAULT_VALUE_MAP.put(Integer.class, 0);
+        DEFAULT_VALUE_MAP.put(Long.class, 0L);
+        DEFAULT_VALUE_MAP.put(Float.class, 0.0F);
+        DEFAULT_VALUE_MAP.put(Double.class, 0.0);
+        DEFAULT_VALUE_MAP.put(BigDecimal.class, BigDecimal.ZERO);
+        DEFAULT_VALUE_MAP.put(Boolean.class, false);
+        DEFAULT_VALUE_MAP.put(String.class, StringConstant.BLANK);
+    }
 
     /**
      * 获取字段类型
@@ -68,7 +74,6 @@ public final class ReflectionKit {
      * @param fieldName 字段名称
      * @return 字段的类型
      */
-    @SneakyThrows
     public static Class<?> getFieldType(Class<?> clazz, String fieldName) {
         Field field = getFieldMap(clazz).get(fieldName);
         return field == null ? null : field.getType();
@@ -83,10 +88,7 @@ public final class ReflectionKit {
      */
     @SneakyThrows
     public static Object getFieldValue(Object entity, String fieldName) {
-        Map<String, Field> fieldMaps = getFieldMap(entity.getClass());
-        Field field = fieldMaps.get(fieldName);
-        field.setAccessible(true);
-        return field.get(entity);
+        return getGetterMap(entity.getClass()).get(fieldName).invoke(entity);
     }
 
     /**
@@ -96,10 +98,20 @@ public final class ReflectionKit {
      * @param field  字段
      * @return 属性值
      */
-    @SneakyThrows
     public static Object getFieldValue(Object entity, Field field) {
-        field.setAccessible(true);
-        return field.get(entity);
+        return getFieldValue(entity, field.getName());
+    }
+
+
+    /**
+     * 设置字段的值
+     *
+     * @param entity    实体
+     * @param fieldName 字段（字符串结构）
+     */
+    @SneakyThrows
+    public static void setFieldValue(Object entity, String fieldName, Object value) {
+        getSetterMap(entity.getClass()).get(fieldName).invoke(entity, value);
     }
 
     /**
@@ -108,23 +120,10 @@ public final class ReflectionKit {
      * @param entity 实体
      * @param field  字段
      */
-    @SneakyThrows
     public static void setFieldValue(Object entity, Field field, Object value) {
-        field.setAccessible(true);
-        field.set(entity, value);
+        setFieldValue(entity, field.getName(), value);
     }
 
-    /**
-     * 设置字段的值
-     *
-     * @param entity 实体
-     * @param field  字段（字符串结构）
-     */
-    @SneakyThrows
-    public static void setFieldValue(Object entity, String field, Object value) {
-        Field entityFiled = getFieldMap(entity.getClass()).get(field);
-        setFieldValue(entity, entityFiled, value);
-    }
 
     /**
      * 初始化字段
@@ -135,7 +134,6 @@ public final class ReflectionKit {
     @SneakyThrows
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void initField(Object entity, Field field) {
-        field.setAccessible(true);
         Class<?> fieldType = field.getType();
         Object defaultValue = DEFAULT_VALUE_MAP.get(fieldType);
         if (defaultValue == null) {
@@ -148,7 +146,7 @@ public final class ReflectionKit {
                 }
             }
         }
-        field.set(entity, defaultValue);
+        setFieldValue(entity, field, defaultValue);
     }
 
     /**
@@ -184,7 +182,7 @@ public final class ReflectionKit {
                 .filter(f -> !Modifier.isStatic(f.getModifiers()))
                 /* 过滤 transient关键字修饰的属性 */
                 .filter(f -> !Modifier.isTransient(f.getModifiers()))
-                .collect(Collectors.toList());
+                .toList();
 
     }
 

@@ -11,6 +11,9 @@ import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.*;
 
+/**
+ * @author Panda
+ */
 @Id
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

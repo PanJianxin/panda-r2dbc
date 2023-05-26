@@ -51,7 +51,12 @@ public @interface TableColumn {
     /**
      * 表名，字段上的表名是为了做join的时候给一个标识
      */
-    String table() default "";
+    String fromTable() default "";
+
+    /**
+     * entity类型，字段上的表名是为了做join的时候给一个标识
+     */
+    Class<?> fromEntity() default Object.class;
 
     /**
      * 属性是否真实存在于表中
@@ -75,7 +80,7 @@ public @interface TableColumn {
 
 
     /**
-     * 类型处理器，默认是不处理
+     * 类型处理器，默认是不处理，一般用于json字段的处理
      */
     Class<? extends R2dbcTypeHandler<Object, Object>> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
 

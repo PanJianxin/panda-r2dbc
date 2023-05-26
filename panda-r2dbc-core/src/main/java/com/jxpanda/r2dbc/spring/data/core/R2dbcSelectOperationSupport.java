@@ -19,6 +19,8 @@ package com.jxpanda.r2dbc.spring.data.core;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableReference;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcOperationArgs;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcOperationExecutor;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
@@ -237,7 +239,6 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                     });
         }
 
-
         private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
             return doExists(query, entityClass, tableName, false);
         }
@@ -316,12 +317,23 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             return reactiveEntityTemplate.getRowsFetchSpec(this.databaseClient().sql(operation), entityClass, returnType);
         }
 
-
         private Mono<R> selectMono(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Mono<R>> resultHandler) {
-            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
-                    .flatMap(result -> selectReference(entityClass, result))
-                    .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
+
+            R2dbcOperationArgs<T, R> args = R2dbcOperationArgs.<T, R>builder()
+                    .query(query)
+                    .entityClass(entityClass)
+                    .returnType(returnType)
+                    .tableName(tableName)
+                    .build();
+            return new R2dbcOperationExecutor().execute(args, arg ->
+                    resultHandler.apply(doSelect(arg.getQuery(), arg.getEntityClass(), arg.getTableName(), arg.getReturnType()))
+                            .flatMap(result -> selectReference(entityClass, result))
+                            .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName)));
+
+//            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
+//                    .flatMap(result -> selectReference(entityClass, result))
+//                    .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
         }
 
         private Flux<R> selectFlux(Query query, Class<T> entityClass, SqlIdentifier tableName,
@@ -347,41 +359,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                         ReflectionKit.getFieldValue(result, referenceProperty.getField());
                         return new Reference(tableReference, property, referenceProperty);
                     })
-                    .filter(reference -> !ObjectUtils.isEmpty(reference.referenceValue()))
+                    .filter(Reference::canReference)
                     .flatMap(reference -> reference.doSelect(this.reactiveEntityTemplate, result))
                     .last();
-        }
-
-        private record Reference(
-                TableReference annotation,
-                RelationalPersistentProperty property,
-                Object referenceValue
-        ) {
-
-            private Mono<?> buildMono(ReactiveEntityTemplate reactiveEntityTemplate) {
-                Criteria.CriteriaStep where = Criteria.where(annotation().referenceColumn());
-                Criteria criteria = annotation().referenceCondition().getCondition().apply(where, referenceValue());
-                R2dbcSelectOperation.TerminatingSelect<?> matching = reactiveEntityTemplate
-                        .select(property().getActualType())
-                        .matching(Query.query(criteria));
-                Mono<?> mono;
-                if (property().isCollectionLike()) {
-                    mono = matching.all().collectList();
-                } else {
-                    mono = matching.one();
-                }
-                return mono;
-            }
-
-            private <R> Mono<R> doSelect(ReactiveEntityTemplate reactiveEntityTemplate, R result) {
-                return buildMono(reactiveEntityTemplate)
-                        .map(object -> {
-                            Assert.notNull(property().getField(), "");
-                            ReflectionKit.setFieldValue(result, property().getField(), object);
-                            return result;
-                        });
-            }
-
         }
 
         /**
@@ -439,7 +419,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 expression = table.column(property.getColumnName());
             } else {
                 TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
-                Table columnTable = tableColumn.table().isEmpty() ? table : Table.create(tableColumn.table());
+                Table columnTable = tableColumn.fromTable().isEmpty() ? table : Table.create(tableColumn.fromTable());
                 String alias = tableColumn.alias();
                 if (alias.isEmpty()) {
                     expression = columnTable.column(property.getColumnName());
@@ -467,6 +447,42 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 return SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name())))
                         .as(tableColumn.alias());
             }
+        }
+
+        private record Reference(
+                TableReference annotation,
+                RelationalPersistentProperty property,
+                Object referenceValue
+        ) {
+
+            private boolean canReference() {
+                return !ObjectUtils.isEmpty(referenceValue());
+            }
+
+            private Mono<?> buildMono(ReactiveEntityTemplate reactiveEntityTemplate) {
+                Criteria.CriteriaStep where = Criteria.where(annotation().referenceColumn());
+                Criteria criteria = annotation().referenceCondition().getCondition().apply(where, referenceValue());
+                R2dbcSelectOperation.TerminatingSelect<?> matching = reactiveEntityTemplate
+                        .select(property().getActualType())
+                        .matching(Query.query(criteria));
+                Mono<?> mono;
+                if (property().isCollectionLike()) {
+                    mono = matching.all().collectList();
+                } else {
+                    mono = matching.one();
+                }
+                return mono;
+            }
+
+            private <R> Mono<R> doSelect(ReactiveEntityTemplate reactiveEntityTemplate, R result) {
+                return buildMono(reactiveEntityTemplate)
+                        .map(object -> {
+                            Assert.notNull(property().getField(), "");
+                            ReflectionKit.setFieldValue(result, property().getField(), object);
+                            return result;
+                        });
+            }
+
         }
 
     }

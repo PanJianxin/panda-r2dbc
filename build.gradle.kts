@@ -1,32 +1,21 @@
 plugins {
-    id("java")
-    id("maven-publish")
-    id("java-library")
+    java
+    `maven-publish`
+    `java-library`
     id("io.freefair.lombok") version "8.0.1"
 }
 
-allprojects {
-
-    group = Project.GROUP
-    version = Project.VERSION
-
-    repositories {
-        Repositories.setRepositories(this)
-    }
-
-    configurations {
-        all {
-            resolutionStrategy {
-                force(Library.SLF4J)
-            }
-        }
-    }
-
+object Project{
+    const val GROUP = "com.jxpanda.r2dbc"
+    const val VERSION = "0.1.0"
 }
 
+allprojects {
+    group = Project.GROUP
+    version = Project.VERSION
+}
 
-subprojects {
-
+configure(subprojects.filter { !it.name.endsWith("bom") }){
     apply(plugin = "idea")
     apply(plugin = "java")
     apply(plugin = "java-library")
@@ -39,26 +28,10 @@ subprojects {
     }
 
     dependencies {
-
-//        implementation(platform(Bom.R2DBC))
-        implementation(Library.R2DBC_SPI)
-        implementation(Library.R2DBC_POOL)
-
-        implementation(platform(Bom.REACTOR))
-        implementation(BomLibrary.REACTOR)
-        implementation(BomLibrary.REACTOR_NETTY)
-
-        implementation(platform(Bom.NETTY))
-        implementation(BomLibrary.NETTY_HANDLER)
-
+        implementation(rootProject.libs.spotbugs.annotations)
     }
 
     publishing {
-
-        repositories {
-            Repositories.publishRepository(this, version.toString())
-        }
-
         publications {
             create<MavenPublication>("mavenJava") {
                 from(components["java"])
@@ -72,5 +45,4 @@ subprojects {
     tasks.getByName<Test>("test") {
         useJUnitPlatform()
     }
-
 }
