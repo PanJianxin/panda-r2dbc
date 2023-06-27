@@ -48,6 +48,7 @@ import java.util.Map;
  * @author Mark Paluch
  * @since 1.1
  */
+@SuppressWarnings("deprecation")
 public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport implements R2dbcInsertOperation {
 
     public R2dbcInsertOperationSupport(ReactiveEntityTemplate template) {
@@ -120,7 +121,7 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
                 // id生成处理
                 potentiallyGeneratorId(persistentEntity.getPropertyAccessor(entity), persistentEntity.getIdProperty());
 
-                OutboundRow outboundRow = reactiveEntityTemplate.getDataAccessStrategy().getOutboundRow(initializedEntity);
+                OutboundRow outboundRow = getOutboundRow(initializedEntity);
 
                 potentiallyRemoveId(persistentEntity, outboundRow);
 
@@ -129,12 +130,13 @@ public final class R2dbcInsertOperationSupport extends R2dbcOperationSupport imp
             });
         }
 
+
         private Mono<T> doInsert(T entity, SqlIdentifier tableName, OutboundRow outboundRow) {
 
             StatementMapper mapper = this.statementMapper();
             StatementMapper.InsertSpec insert = mapper.createInsert(tableName);
 
-            for (@SuppressWarnings("deprecation") Map.Entry<SqlIdentifier, Parameter> entry : outboundRow.entrySet()) {
+            for (Map.Entry<SqlIdentifier, Parameter> entry : outboundRow.entrySet()) {
                 if (entry.getValue().hasValue()) {
                     insert = insert.withColumn(entry.getKey(), entry.getValue());
                 }

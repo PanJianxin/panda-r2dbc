@@ -7,6 +7,7 @@ import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.AbstractSnowflakeGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
+import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -17,7 +18,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import org.springframework.data.r2dbc.dialect.DialectResolver;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import org.springframework.data.relational.core.mapping.DefaultNamingStrategy;
@@ -29,6 +29,9 @@ import java.util.Collections;
 import java.util.List;
 
 
+/**
+ * @author Panda
+ */
 @AutoConfiguration(after = org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
 @EnableConfigurationProperties(R2dbcProperties.class)
 @ComponentScan(basePackages = {"com.jxpanda.r2dbc.spring.data.config", "com.jxpanda.r2dbc.spring.data.core.kit"})
@@ -36,15 +39,20 @@ public class R2dbcAutoConfiguration {
 
     private final DatabaseClient databaseClient;
 
-    private final R2dbcDialect dialect;
+    private final R2dbcDialect r2dbcDialect;
 
     private final R2dbcProperties r2dbcProperties;
 
 
     public R2dbcAutoConfiguration(DatabaseClient databaseClient, R2dbcProperties r2dbcProperties) {
         this.databaseClient = databaseClient;
-        this.dialect = DialectResolver.getDialect(this.databaseClient.getConnectionFactory());
+        this.r2dbcDialect = r2dbcDialect(databaseClient);
         this.r2dbcProperties = r2dbcProperties;
+    }
+
+    @Bean
+    public R2dbcDialect r2dbcDialect(DatabaseClient databaseClient){
+        return DialectResolver.getDialect(databaseClient.getConnectionFactory());
     }
 
     @Bean
@@ -55,7 +63,7 @@ public class R2dbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ReactiveEntityTemplate reactiveEntityTemplate(MappingReactiveConverter r2dbcConverter) {
-        return new ReactiveEntityTemplate(this.databaseClient, this.dialect, r2dbcConverter);
+        return new ReactiveEntityTemplate(this.databaseClient, this.r2dbcDialect, r2dbcConverter);
     }
 
     @Bean
@@ -94,10 +102,10 @@ public class R2dbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public R2dbcCustomConversions r2dbcCustomConversions() {
-        List<Object> converters = new ArrayList<>(this.dialect.getConverters());
+        List<Object> converters = new ArrayList<>(this.r2dbcDialect.getConverters());
         converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS);
         return new R2dbcCustomConversions(
-                CustomConversions.StoreConversions.of(this.dialect.getSimpleTypeHolder(), converters),
+                CustomConversions.StoreConversions.of(this.r2dbcDialect.getSimpleTypeHolder(), converters),
                 Collections.emptyList());
     }
 

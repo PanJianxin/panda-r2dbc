@@ -41,7 +41,9 @@ public class DialectResolver {
 	private static final List<R2dbcDialectProvider> DETECTORS = SpringFactoriesLoader
 			.loadFactories(R2dbcDialectProvider.class, DialectResolver.class.getClassLoader());
 
-	// utility constructor.
+	/**
+	 *  utility constructor.
+	 * */
 	private DialectResolver() {}
 
 	/**

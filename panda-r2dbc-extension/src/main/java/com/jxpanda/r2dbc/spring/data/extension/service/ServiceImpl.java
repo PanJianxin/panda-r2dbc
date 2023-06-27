@@ -9,6 +9,9 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository;
 import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation;
 
+/**
+ * @author Panda
+ */
 @Getter
 public class ServiceImpl<T extends Entity<ID>, ID> implements Service<T, ID> {
 

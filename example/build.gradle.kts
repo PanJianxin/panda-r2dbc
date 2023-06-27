@@ -15,7 +15,7 @@ dependencies {
     implementation(project(":panda-r2dbc-spring-boot:panda-r2dbc-spring-boot-starter"))
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-    runtimeOnly(libs.r2dbc.mariadb)
+    runtimeOnly(libs.r2dbc.mysql)
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

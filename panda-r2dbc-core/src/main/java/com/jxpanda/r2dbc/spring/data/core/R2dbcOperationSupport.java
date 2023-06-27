@@ -24,9 +24,13 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 
 import java.util.Collection;
 
+/**
+ * @author Panda
+ */
 public class R2dbcOperationSupport {
 
 
@@ -144,7 +148,6 @@ public class R2dbcOperationSupport {
 
                 Parameter value = row.get(property.getColumnName());
                 if (shouldConvertArrayValue(property, value)) {
-
                     Parameter writeValue = getArrayValue(value, property);
                     row.put(property.getColumnName(), writeValue);
                 }
@@ -159,6 +162,7 @@ public class R2dbcOperationSupport {
                 return false;
             }
 
+            // noinspection AlibabaAvoidComplexCondition
             if (value.getValue() != null && (value.getValue() instanceof Collection || value.getValue().getClass().isArray())) {
                 return true;
             }

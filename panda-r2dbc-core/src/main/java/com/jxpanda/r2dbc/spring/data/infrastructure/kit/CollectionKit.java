@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.infrastructure.kit;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -87,6 +88,15 @@ public class CollectionKit {
 
     public static <T> boolean isNotEmpty(Collection<T> collection) {
         return !isEmpty(collection);
+    }
+
+    public static Object castCollectionToArray(Collection<?> collection, Class<?> clazz) {
+        Object newArray = Array.newInstance(clazz, collection.size());
+        List<?> list = collection.stream().toList();
+        for (int i = 0; i < list.size(); i++) {
+            Array.set(newArray, i, list.get(i));
+        }
+        return newArray;
     }
 
     /**

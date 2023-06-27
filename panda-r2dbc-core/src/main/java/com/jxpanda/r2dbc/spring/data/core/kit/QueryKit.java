@@ -7,7 +7,11 @@ import org.springframework.data.relational.core.query.Query;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
+/**
+ * @author Panda
+ */
 @UtilityClass
 public class QueryKit {
 
@@ -19,8 +23,8 @@ public class QueryKit {
         return Query.query(with(clazz).whereId().is(id));
     }
 
-    public static <T, ID> Query queryById(Class<T> clazz, Collection<ID> ids) {
-        return Query.query(with(clazz).whereId().is(ids));
+    public static <T, ID> Query queryByIds(Class<T> clazz, Collection<ID> ids) {
+        return Query.query(with(clazz).whereId().in(ids));
     }
 
     public static class CriteriaAdapter<T> {

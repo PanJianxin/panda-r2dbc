@@ -12,6 +12,9 @@ import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+/**
+ * @author Panda
+ */
 public class ServiceHelper {
 
     static <T> Update buildUpdate(T entity) {

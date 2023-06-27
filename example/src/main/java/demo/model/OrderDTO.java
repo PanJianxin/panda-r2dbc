@@ -71,10 +71,10 @@ public class OrderDTO {
     @TableColumn(name = "amount_changes", isJson = true)
     private List<Order.AmountChange> amountChange;
 
-    @TableColumn(name = "id", fromTable = "order_item", alias = "itemId")
+    @TableColumn(name = "order_item.id", alias = "itemId")
     private String itemId;
 
-    @TableColumn(name = "order_id", fromTable = "order_item")
+    @TableColumn(name = "order_item.order_id")
     private String orderId;
 
     @TableColumn(name = "sku_id", fromTable = "order_item")

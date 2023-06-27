@@ -9,6 +9,7 @@ import org.springframework.data.relational.core.sql.Expression;
 import java.lang.annotation.*;
 
 /**
+ * @author Panda
  * @see Table
  * 原spring的Table注解只提供了一个name、schema，这里需要做一些扩展，更全面的描述字段
  * 例如：虚拟字段，数据库中可能不存在，Json类型，期望ORM框架能自动把序列化/反序列化的工作做掉

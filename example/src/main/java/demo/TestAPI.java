@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 @RestController
 @RequestMapping("test")
@@ -36,6 +37,51 @@ public class TestAPI {
     private final OrderService orderService;
 
     private final OrderRepository orderRepository;
+
+    @GetMapping("table-vo/{id:\\d+}")
+    public Mono<TableVO> tableVO(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.select(TableVO.class)
+                .matching(Query.query(Criteria.where("id").is(id)))
+                .one();
+    }
+
+    @GetMapping("/main-table/init")
+    public Flux<MainTable> mainTableInit() {
+        return Flux.<MainTable>create(sink -> {
+            for (int i = 0; i < 1; i++) {
+                sink.next(MainTable.builder()
+                        .content("content " + i)
+                        .subTableIds(List.of("3108098341683068929",
+                                "3108098341909561346",
+                                "3108098341913755649",
+                                "3108098341917949953"
+                        ))
+                        .jsonObject(new Order.Extend())
+                        .build());
+            }
+            sink.complete();
+        }).collectList().flatMapMany(list -> reactiveEntityTemplate.insertBatch(list, MainTable.class));
+    }
+
+    @GetMapping(path = "/sub-table/init")
+    public Flux<SubTable> subTableInit() {
+        return Flux.<SubTable>create(sink -> {
+                    for (int i = 0; i < 10; i++) {
+                        SubTable subTable = new SubTable();
+                        subTable.setContent("content " + i);
+                        sink.next(subTable);
+                    }
+                    sink.complete();
+                }).collectList()
+                .flatMapMany(list -> reactiveEntityTemplate.insertBatch(list, SubTable.class));
+    }
+
+    @GetMapping(path = "/sub-table/list")
+    public Flux<SubTable> subTableList() {
+        return reactiveEntityTemplate.select(SubTable.class)
+                .byIds(Set.of("3108098341683068929", "3108098341909561346", "3108098341913755649", "3108098341917949953"));
+    }
+
 
     @GetMapping("user/{id:\\d+}")
     public Mono<User> user(@PathVariable("id") String id) {

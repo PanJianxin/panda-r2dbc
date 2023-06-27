@@ -149,7 +149,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
         private <ID> Mono<Long> byIds(Collection<ID> ids, boolean ignoreLogicDelete) {
             Assert.notEmpty(ids, "ID must not be empty");
-            Query query = QueryKit.queryById(this.domainType, ids);
+            Query query = QueryKit.queryByIds(this.domainType, ids);
             return doDelete(query, this.domainType, this.tableName, ignoreLogicDelete);
         }
 

@@ -25,6 +25,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteri
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.CollectionKit;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -201,7 +202,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         @Override
         public <ID> Flux<R> byIds(Collection<ID> ids) {
-            Query query = QueryKit.queryById(this.domainType, ids);
+            Query query = QueryKit.queryByIds(this.domainType, ids);
             return selectFlux(query, this.domainType, this.tableName, this.returnType, RowsFetchSpec::all);
         }
 
@@ -330,10 +331,6 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                     resultHandler.apply(doSelect(arg.getQuery(), arg.getEntityClass(), arg.getTableName(), arg.getReturnType()))
                             .flatMap(result -> selectReference(entityClass, result))
                             .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName)));
-
-//            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
-//                    .flatMap(result -> selectReference(entityClass, result))
-//                    .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
         }
 
         private Flux<R> selectFlux(Query query, Class<T> entityClass, SqlIdentifier tableName,
@@ -350,17 +347,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 return Mono.just(result);
             }
             return Flux.fromIterable(referenceProperties)
-                    .map(property -> {
-                        TableReference tableReference = property.getRequiredAnnotation(TableReference.class);
-                        RelationalPersistentProperty referenceProperty = tableReference.keyType()
-                                .getReferenceProperty()
-                                .apply(entity, tableReference.keyColumn());
-                        Assert.notNull(referenceProperty.getField(), "Field must not be null.");
-                        ReflectionKit.getFieldValue(result, referenceProperty.getField());
-                        return new Reference(tableReference, property, referenceProperty);
-                    })
+                    .map(property -> Reference.build(entity, property, result))
                     .filter(Reference::canReference)
-                    .flatMap(reference -> reference.doSelect(this.reactiveEntityTemplate, result))
+                    .flatMap(reference -> reference.doSelect(reactiveEntityTemplate, result))
                     .last();
         }
 
@@ -420,11 +409,22 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             } else {
                 TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
                 Table columnTable = tableColumn.fromTable().isEmpty() ? table : Table.create(tableColumn.fromTable());
+
+                String columnName = property.getColumnName().getReference();
+                boolean isColumnWithTable = columnName.contains(".");
                 String alias = tableColumn.alias();
                 if (alias.isEmpty()) {
-                    expression = columnTable.column(property.getColumnName());
+                    if (isColumnWithTable) {
+                        expression = Expressions.just(columnName);
+                    } else {
+                        expression = columnTable.column(property.getColumnName());
+                    }
                 } else {
-                    expression = Column.aliased(property.getColumnName().getReference(), columnTable, alias);
+                    if (isColumnWithTable) {
+                        expression = Expressions.just(columnName + SQL_AS + alias);
+                    } else {
+                        expression = Column.aliased(columnName, columnTable, alias);
+                    }
                 }
             }
             return expression;
@@ -455,13 +455,35 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 Object referenceValue
         ) {
 
+            private static <T, R> Reference build(RelationalPersistentEntity<T> entity, RelationalPersistentProperty property, R result) {
+                TableReference tableReference = property.getRequiredAnnotation(TableReference.class);
+                RelationalPersistentProperty referenceProperty;
+                String keyColumn = tableReference.keyColumn();
+                if (keyColumn.isEmpty()) {
+                    referenceProperty = entity.getIdProperty();
+                } else {
+                    referenceProperty = entity.getPersistentProperty(keyColumn);
+                }
+                Assert.notNull(referenceProperty, "Property must not be null.");
+                Assert.notNull(referenceProperty.getField(), "Field must not be null.");
+                Object referenceValue = ReflectionKit.invokeGetter(referenceProperty.getRequiredGetter(), result);
+                if (referenceValue instanceof String stringValue && !ObjectUtils.isEmpty(tableReference.delimiter())) {
+                    referenceValue = stringValue.split(tableReference.delimiter());
+                }
+                return new Reference(tableReference, property, referenceValue);
+            }
+
             private boolean canReference() {
                 return !ObjectUtils.isEmpty(referenceValue());
             }
 
             private Mono<?> buildMono(ReactiveEntityTemplate reactiveEntityTemplate) {
                 Criteria.CriteriaStep where = Criteria.where(annotation().referenceColumn());
-                Criteria criteria = annotation().referenceCondition().getCondition().apply(where, referenceValue());
+                TableReference.ReferenceCondition referenceCondition = annotation().referenceCondition();
+                if (referenceValue() instanceof Collection<?> || referenceValue() instanceof Object[]) {
+                    referenceCondition = TableReference.ReferenceCondition.IN;
+                }
+                Criteria criteria = referenceCondition.getCondition().apply(where, referenceValue());
                 R2dbcSelectOperation.TerminatingSelect<?> matching = reactiveEntityTemplate
                         .select(property().getActualType())
                         .matching(Query.query(criteria));
@@ -477,8 +499,12 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             private <R> Mono<R> doSelect(ReactiveEntityTemplate reactiveEntityTemplate, R result) {
                 return buildMono(reactiveEntityTemplate)
                         .map(object -> {
-                            Assert.notNull(property().getField(), "");
-                            ReflectionKit.setFieldValue(result, property().getField(), object);
+                            Assert.notNull(property().getField(), "Field must not bet null");
+                            Object value = object;
+                            if (property().isArray() && object instanceof Collection<?> collection) {
+                                value = CollectionKit.castCollectionToArray(collection, property().getActualType());
+                            }
+                            ReflectionKit.invokeSetter(property().getRequiredSetter(), result, value);
                             return result;
                         });
             }

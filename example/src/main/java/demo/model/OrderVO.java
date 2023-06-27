@@ -80,7 +80,7 @@ public class OrderVO implements Entity<String> {
     @TableColumn(name = "user_id")
     private String userId;
 
-    @TableReference(referenceColumn = Entity.ID, keyType = TableReference.KeyType.COLUMN, keyColumn = "userId")
+    @TableReference(keyColumn = "userId", referenceColumn = Entity.ID)
     private User user;
 
 }
