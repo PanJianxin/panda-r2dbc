@@ -1,12 +1,18 @@
 # panda-r2dbc
 
-#### 介绍
+### 开发背景
+因为在开发过程中用了一段时间的spring-webflux之后，就很上头
+
+### 介绍
 R2DBC的库
 
-包含一个MySQL的驱动，从mirromutth/r2dbc-mysql仓库复制过来，原作者说由于新冠的原因，所以迭代太慢了。这边拉取过来主要是做学习使用。
+一个基于[Spring Data R2DBC](https://spring.io/projects/spring-data-r2dbc#overview)的ORM，依赖了spring-data-r2dbc然后做了一些增强功能，只做了增强，没做改变，因此原spring-data-r2dbc的功能都有[文档链接](https://docs.spring.io/spring-data/r2dbc/docs/current/reference/html/)。
 
-一个基于Spring data r2dbc的ORM，代码从Spring官方复制过来，然后进一步迭代。Spring官方的项目是Spring data r2dbc。一方面主要是学一下Spring的代码，另一方面官方的功能有些地方没有满足使用中的需求，想要迭代一下。
 
-一个测试用的demo子项目。
+整个项目主要分为以下几个包
 
-还在开发中，详细文档等开发完成之后再编写
+panda-r2dbc-core，这个包实现了核心的增强功能，具体功能会补一个详细文档来描述
+panda-r2dbc-extension，这个包是我日常工作中开发常用的一些扩展功能，这部分的开发还没有完成
+panda-r2dbc-spring-boot，这是一个spring-boot-starter，快速集成到spring项目中使用
+example，这是开发过程中测试用的子项目
+

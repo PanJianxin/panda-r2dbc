@@ -1,6 +1,6 @@
 [versions]
 r2dbc = "1.0.0.RELEASE"
-spring = "3.1.0"
+spring = "3.1.1"
 jackson = "2.15.1"
 jakarta = "2.1.1"
 
