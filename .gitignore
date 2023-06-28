@@ -5,3 +5,6 @@
 /.fleet/settings.json
 .DS_Store
 /example/src/main/resources/application-database.yaml
+/panda-r2dbc-core/out/
+/panda-r2dbc-spring-boot/panda-r2dbc-spring-boot-autoconfigure/out/
+/example/out/

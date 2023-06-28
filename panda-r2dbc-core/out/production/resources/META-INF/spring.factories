@@ -1,2 +1,0 @@
-com.jxpanda.r2dbc.spring.data.dialect.DialectResolver$R2dbcDialectProvider=com.jxpanda.r2dbc.spring.data.dialect.DialectResolver.BuiltInDialectProvider
-#org.springframework.data.repository.core.support.RepositoryFactorySupport=com.jxpanda.r2dbc.spring.data.repository.support.R2dbcRepositoryFactory
