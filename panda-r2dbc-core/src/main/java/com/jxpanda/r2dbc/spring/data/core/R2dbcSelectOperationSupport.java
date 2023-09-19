@@ -240,20 +240,19 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                     });
         }
 
-        private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
-            return doExists(query, entityClass, tableName, false);
-        }
 
-        private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
+        private Mono<Boolean> doExists(Query query, Class<T> entityClass, SqlIdentifier tableName) {
 
             RelationalPersistentEntity<T> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
             StatementMapper statementMapper = this.statementMapper().forType(entityClass);
 
             SqlIdentifier columnName = entity.hasIdProperty() ? entity.getRequiredIdProperty().getColumnName() : SqlIdentifier.unquoted("*");
 
-            StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName).withProjection(columnName).limit(1);
+            StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName)
+                    .doWithTable((table, spec) -> spec.withProjection(columnName))
+                    .limit(1);
 
-            selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = selectWithCriteria(selectSpec, query, entityClass);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -261,10 +260,6 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         }
 
         private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName) {
-            return doCount(query, entityClass, tableName, false);
-        }
-
-        private Mono<Long> doCount(Query query, Class<T> entityClass, SqlIdentifier tableName, boolean ignoreLogicDelete) {
 
             RelationalPersistentEntity<T> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
             StatementMapper statementMapper = this.statementMapper().forType(entityClass);
@@ -274,7 +269,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 return spec.withProjection(Functions.count(countExpression));
             });
 
-            selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = selectWithCriteria(selectSpec, query, entityClass);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -282,10 +277,6 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         }
 
         private RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType) {
-            return doSelect(query, entityClass, tableName, returnType, false);
-        }
-
-        private RowsFetchSpec<R> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<R> returnType, boolean ignoreLogicDelete) {
 
             // 是否是聚合对象
             boolean isAggregate = false;
@@ -311,7 +302,7 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                 selectSpec = selectSpec.withSort(query.getSort());
             }
 
-            selectSpec = selectWithCriteria(selectSpec, query, entityClass, ignoreLogicDelete);
+            selectSpec = selectWithCriteria(selectSpec, query, entityClass);
 
             PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
 
@@ -320,17 +311,9 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
         private Mono<R> selectMono(Query query, Class<T> entityClass, SqlIdentifier tableName,
                                    Class<R> returnType, Function<RowsFetchSpec<R>, Mono<R>> resultHandler) {
-
-            R2dbcOperationArgs<T, R> args = R2dbcOperationArgs.<T, R>builder()
-                    .query(query)
-                    .entityClass(entityClass)
-                    .returnType(returnType)
-                    .tableName(tableName)
-                    .build();
-            return new R2dbcOperationExecutor().execute(args, arg ->
-                    resultHandler.apply(doSelect(arg.getQuery(), arg.getEntityClass(), arg.getTableName(), arg.getReturnType()))
-                            .flatMap(result -> selectReference(entityClass, result))
-                            .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName)));
+            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
+                    .flatMap(result -> selectReference(entityClass, result))
+                    .flatMap(it -> this.reactiveEntityTemplate.maybeCallAfterConvert(it, tableName));
         }
 
         private Flux<R> selectFlux(Query query, Class<T> entityClass, SqlIdentifier tableName,
@@ -356,9 +339,10 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         /**
          * 创建查询单元，加入了逻辑删除的判断
          */
-        private static <T> StatementMapper.SelectSpec selectWithCriteria(StatementMapper.SelectSpec selectSpec, Query query, Class<T> entityClass, boolean ignoreLogicDelete) {
+        private static <T> StatementMapper.SelectSpec selectWithCriteria(StatementMapper.SelectSpec selectSpec, Query query, Class<T> entityClass) {
             Optional<CriteriaDefinition> criteriaOptional = query.getCriteria();
-            if (R2dbcMappingKit.isLogicDeleteEnable(entityClass, ignoreLogicDelete)) {
+            // TODO: 记得来改这里
+            if (R2dbcMappingKit.isLogicDeleteEnable(entityClass, false)) {
                 criteriaOptional = query.getCriteria()
                         .or(() -> Optional.of(Criteria.empty()))
                         .map(criteriaDefinition -> {

@@ -57,8 +57,9 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
         super(template);
     }
 
-    /*
+    /**
      * (non-Javadoc)
+     *
      * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation#update(java.lang.Class)
      */
     @NonNull
@@ -83,8 +84,9 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
             super(template, domainType, query, tableName);
         }
 
-        /*
+        /**
          * (non-Javadoc)
+         *
          * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation.UpdateWithTable#inTable(SqlIdentifier)
          */
         @NonNull
@@ -96,9 +98,10 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
             return new R2dbcUpdateSupport<>(this.reactiveEntityTemplate, this.domainType, this.query, tableName);
         }
 
-        /*
+        /**
          * (non-Javadoc)
-         * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation.UpdateWithQuery#matching(org.springframework.data.r2dbc.query.Query)
+         *
+         * @see org.springframework.data.r2dbc.core.ReactiveUpdateOperation.UpdateWithQuery#matching(Query)
          */
         @NonNull
         @Override

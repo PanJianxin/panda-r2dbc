@@ -6,6 +6,9 @@ import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 
+/**
+ * @author Panda
+ */
 @Getter
 @Builder
 public class R2dbcOperationArgs<T, R> {
