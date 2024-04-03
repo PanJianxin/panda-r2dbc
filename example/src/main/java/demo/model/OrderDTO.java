@@ -18,10 +18,10 @@ import java.util.List;
 @TableJoin(leftTable = "order", rightTable = "order_item", on = "`order`.id = order_item.order_id")
 public class OrderDTO extends Order {
 
-    @TableColumn(name = "order_item.id", alias = "itemId")
+    @TableColumn(name = "id", alias = "itemId", fromTable = "order_item")
     private String itemId;
 
-    @TableColumn(name = "order_item.order_id", alias = "order_id")
+    @TableColumn(name = "order_id", alias = "order_id", fromTable = "order_item")
     private String orderId;
 
     @TableColumn(name = "sku_id", fromTable = "order_item")

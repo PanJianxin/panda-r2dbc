@@ -3,16 +3,32 @@ package com.jxpanda.r2dbc.spring.data.core.enhance.handler;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
+/**
+ * @author Panda
+ */
 public interface R2dbcTypeHandler<O, V> {
 
+    /**
+     * 获取一个用于将实体属性写入关系数据库的Writer。
+     *
+     * @param property 表示实体属性的RelationalPersistentProperty对象，用于确定要写入的属性。
+     * @return 返回一个Writer对象，该对象能够将指定的实体属性写入关系数据库。
+     */
     Writer<V, O> getWriter(RelationalPersistentProperty property);
 
+    /**
+     * 获取一个用于从关系数据库读取实体属性的Reader。
+     *
+     * @param property 表示实体属性的RelationalPersistentProperty对象，用于确定要读取的属性。
+     * @return 返回一个Reader对象，该对象能够从关系数据库中读取指定的实体属性。
+     */
     Reader<O, V> getReader(RelationalPersistentProperty property);
+
 
     /**
      * 把对象序列化为值
      * 即：
-     * value -> object
+     * object -> value
      *
      * @param property 对象的类型
      * @param object   对象

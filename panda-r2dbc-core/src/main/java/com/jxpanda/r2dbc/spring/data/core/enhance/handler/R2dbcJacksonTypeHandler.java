@@ -14,6 +14,9 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentProp
 import java.io.IOException;
 import java.lang.reflect.Type;
 
+/**
+ * @author Panda
+ */
 @Slf4j
 @AllArgsConstructor
 public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> {

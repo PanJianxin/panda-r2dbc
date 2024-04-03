@@ -4,7 +4,7 @@ import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplateAdapter;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
-import com.jxpanda.r2dbc.spring.data.core.convert.R2dbcCustomTypeHandlers;
+import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.AbstractSnowflakeGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
@@ -75,8 +75,8 @@ public class R2dbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
-                                                   R2dbcCustomConversions r2dbcCustomConversions,
-                                                   R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
+                                                    R2dbcCustomConversions r2dbcCustomConversions,
+                                                    R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
         return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
     }
 

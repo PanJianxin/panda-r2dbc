@@ -3,7 +3,7 @@ plugins {
     java
     `maven-publish`
     `java-library`
-    id("io.freefair.lombok") version "8.0.1"
+    id("io.freefair.lombok") version "8.6"
 }
 
 object Project{
@@ -24,7 +24,7 @@ configure(subprojects.filter { !it.name.endsWith("bom") }){
     apply(plugin = "io.freefair.lombok")
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
         withSourcesJar()
     }
 

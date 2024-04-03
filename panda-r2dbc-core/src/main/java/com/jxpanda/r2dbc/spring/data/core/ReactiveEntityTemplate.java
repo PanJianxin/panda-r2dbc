@@ -22,26 +22,27 @@ import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import jakarta.annotation.Resource;
 import lombok.Getter;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
+import org.springframework.data.projection.EntityProjection;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
-import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
-import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
-import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy;
-import org.springframework.data.r2dbc.core.StatementMapper;
+import org.springframework.data.r2dbc.core.*;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.r2dbc.mapping.event.AfterConvertCallback;
 import org.springframework.data.r2dbc.mapping.event.AfterSaveCallback;
 import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback;
 import org.springframework.data.r2dbc.mapping.event.BeforeSaveCallback;
+import org.springframework.data.relational.core.conversion.AbstractRelationalConverter;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
+import org.springframework.data.relational.domain.RowDocument;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
@@ -56,9 +57,10 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 @Getter
-@SuppressWarnings({"unused", "UnusedReturnValue", "deprecation"})
+@SuppressWarnings({"unused", "UnusedReturnValue", "deprecation", "unchecked"})
 public class ReactiveEntityTemplate implements R2dbcEntityOperations {
 
 
@@ -83,8 +85,8 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
     @Resource
     private TransactionalOperator transactionalOperator;
 
-
-    private @Nullable ReactiveEntityCallbacks entityCallbacks;
+    @Nullable
+    private ReactiveEntityCallbacks entityCallbacks;
 
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {
@@ -301,12 +303,31 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
                 R2dbcMappingKit.getTableNameOrEmpty(entityClass));
     }
 
+    @Override
+    public <T> RowsFetchSpec<T> query(PreparedOperation<?> operation, Class<?> entityClass, Class<T> resultType) throws DataAccessException {
+        Assert.notNull(operation, "PreparedOperation must not be null");
+        Assert.notNull(entityClass, "Entity class must not be null");
+
+        return new EntityCallbackAdapter<>(getRowsFetchSpec(databaseClient.sql(operation), entityClass, resultType),
+                R2dbcMappingKit.getTableNameOrEmpty(entityClass));
+    }
+
+    @Override
+    public <T> RowsFetchSpec<T> query(PreparedOperation<?> operation, Function<Row, T> rowMapper) throws DataAccessException {
+        return R2dbcEntityOperations.super.query(operation, rowMapper);
+    }
+
     public <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, BiFunction<Row, RowMetadata, E> rowMapper) {
 
         Assert.notNull(operation, "PreparedOperation must not be null");
         Assert.notNull(rowMapper, "Row mapper must not be null");
 
         return new EntityCallbackAdapter<>(getDatabaseClient().sql(operation).map(rowMapper), SqlIdentifier.EMPTY);
+    }
+
+    @Override
+    public <T> RowsFetchSpec<T> query(PreparedOperation<?> operation, Class<?> entityClass, Function<Row, T> rowMapper) throws DataAccessException {
+        return R2dbcEntityOperations.super.query(operation, entityClass, rowMapper);
     }
 
     public <E> RowsFetchSpec<E> query(PreparedOperation<?> operation, Class<?> entityClass,
@@ -324,26 +345,42 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         return new EntityRowMapper<>(typeToRead, this.getConverter());
     }
 
+    @Override
+    public <T> RowsFetchSpec<T> getRowsFetchSpec(DatabaseClient.GenericExecuteSpec executeSpec, Class<?> entityType, Class<T> resultType) {
 
-    <E, RT> RowsFetchSpec<RT> getRowsFetchSpec(DatabaseClient.GenericExecuteSpec executeSpec, Class<E> entityClass, Class<RT> returnType) {
+        boolean simpleType = getConverter().isSimpleType(resultType);
 
-        boolean simpleType;
+        BiFunction<Row, RowMetadata, T> rowMapper;
 
-        BiFunction<Row, RowMetadata, RT> rowMapper;
-        if (returnType.isInterface()) {
-            simpleType = this.getConverter().isSimpleType(entityClass);
-            rowMapper = getRowMapper(entityClass).andThen(source -> this.getProjectionFactory().createProjection(returnType, source));
+        // Bridge-code: Consider Converter<Row, T> until we have fully migrated to RowDocument
+        if (converter instanceof AbstractRelationalConverter relationalConverter
+            && relationalConverter.getConversions().hasCustomReadTarget(Row.class, resultType)) {
+
+            ConversionService conversionService = relationalConverter.getConversionService();
+            rowMapper = (row, rowMetadata) -> (T) conversionService.convert(row, resultType);
+        } else if (simpleType) {
+            rowMapper = getRowMapper(resultType);
         } else {
-            simpleType = this.getConverter().isSimpleType(returnType);
-            rowMapper = getRowMapper(returnType);
+
+            EntityProjection<T, ?> projection = getConverter().introspectProjection(resultType, entityType);
+            Class<T> typeToRead = projection.isProjection() ? resultType
+                    : resultType.isInterface() ? (Class<T>) entityType : resultType;
+
+            rowMapper = (row, rowMetadata) -> {
+
+                RowDocument document = getDataAccessStrategy().toRowDocument(typeToRead, row, rowMetadata.getColumnMetadatas());
+                return getConverter().project(projection, document);
+            };
         }
 
         // avoid top-level null values if the read type is a simple one (e.g. SELECT MAX(age) via Integer.class)
         if (simpleType) {
-            return new UnwrapOptionalFetchSpecAdapter<>(executeSpec.map((row, metadata) -> Optional.ofNullable(rowMapper.apply(row, metadata))));
+            return new UnwrapOptionalFetchSpecAdapter<>(
+                    executeSpec.map((row, metadata) -> Optional.ofNullable(rowMapper.apply(row, metadata))));
         }
 
         return executeSpec.map(rowMapper);
+
     }
 
     private record UnwrapOptionalFetchSpecAdapter<T>(

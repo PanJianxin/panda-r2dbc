@@ -97,13 +97,20 @@ public class TestAPI {
 
     @GetMapping("vo/{id:\\d+}")
     public Mono<OrderVO> vo(@PathVariable("id") String id) {
-        return reactiveEntityTemplate.select(OrderVO.class)
-                .byId(id);
+        return r2dbcEntityTemplate.select(OrderVO.class)
+                .matching(Query.query(Criteria.where("id").is(id)))
+                .one();
     }
 
     @GetMapping("join")
     public Flux<OrderDTO> join() {
         return reactiveEntityTemplate.select(OrderDTO.class)
+                .all();
+    }
+
+    @GetMapping("r2dbc-join")
+    public Flux<OrderDTO> r2dbcJoin() {
+        return r2dbcEntityTemplate.select(OrderDTO.class)
                 .all();
     }
 
