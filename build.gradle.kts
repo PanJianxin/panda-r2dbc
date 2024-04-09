@@ -6,9 +6,9 @@ plugins {
     id("io.freefair.lombok") version "8.6"
 }
 
-object Project{
+object Project {
     const val GROUP = "com.jxpanda.r2dbc"
-    const val VERSION = "0.1.0"
+    const val VERSION = "3.0.0-beta"
 }
 
 allprojects {
@@ -16,7 +16,7 @@ allprojects {
     version = Project.VERSION
 }
 
-configure(subprojects.filter { !it.name.endsWith("bom") }){
+configure(subprojects.filter { !it.name.endsWith("bom") }) {
     apply(plugin = "idea")
     apply(plugin = "java")
     apply(plugin = "java-library")
@@ -31,7 +31,9 @@ configure(subprojects.filter { !it.name.endsWith("bom") }){
     dependencies {
         implementation(rootProject.libs.spotbugs.annotations)
     }
+}
 
+configure(subprojects.filter { it.name.startsWith("panda-r2dbc") }) {
     publishing {
         publications {
             create<MavenPublication>("mavenJava") {
@@ -40,10 +42,5 @@ configure(subprojects.filter { !it.name.endsWith("bom") }){
                 artifactId = tasks.jar.get().archiveBaseName.get()
             }
         }
-
-    }
-
-    tasks.getByName<Test>("test") {
-        useJUnitPlatform()
     }
 }
