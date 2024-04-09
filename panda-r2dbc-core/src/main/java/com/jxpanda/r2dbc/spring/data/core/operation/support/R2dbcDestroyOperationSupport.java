@@ -107,8 +107,9 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
             Assert.notNull(entity, "Entity must not be null");
 
             return executorBuilder(R2dbcDestroyExecutor::<T, Long>builder)
+                    .returnType(Long.class)
                     .build()
-                    .execute()
+                    .execute(entity)
                     .map(count -> count > 0);
         }
 

@@ -128,6 +128,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
             Assert.notNull(entity, "Entity must not be null");
 
             return executorBuilder(R2dbcDeleteExecutor::<T, Long>builder)
+                    .returnType(Long.class)
                     .build()
                     .execute(entity)
                     .map(it -> it > 0);

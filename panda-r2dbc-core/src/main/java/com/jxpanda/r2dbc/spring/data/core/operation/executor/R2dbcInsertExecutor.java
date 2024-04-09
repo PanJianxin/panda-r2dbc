@@ -30,7 +30,7 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
     private final BiFunction<R2dbcOperationParameter<T, T>, StatementMapper.InsertSpec, PreparedOperation<?>> preparedOperationBuilder;
 
     private R2dbcInsertExecutor(R2dbcOperationParameter<T, T> operationParameter,
-                               Function<R2dbcOperationParameter<T, T>, Query> queryHandler
+                                Function<R2dbcOperationParameter<T, T>, Query> queryHandler
     ) {
         super(operationParameter, queryHandler);
         this.specBuilder = defaultSpecBuilder();
@@ -110,7 +110,11 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
             return;
         }
 
-        if (shouldGeneratorIdValue(idProperty)) {
+        // 检查一下是否主动传递了id字段，没有传递的时候才生成
+        Object idValue = propertyAccessor.getProperty(idProperty);
+
+        // 如果id没有主动且策略是生成策略才生成id
+        if (idValue == null && shouldGeneratorIdValue(idProperty)) {
             Object generatedIdValue = idGenerator().generate();
             ConversionService conversionService = converter().getConversionService();
             propertyAccessor.setProperty(idProperty, conversionService.convert(generatedIdValue, idProperty.getType()));
@@ -186,7 +190,7 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
 
     public static final class R2dbcInsertExecutorBuilder<T> extends R2dbcOperationExecutor.R2dbcExecutorBuilder<T, T, R2dbcInsertExecutor<T>, R2dbcInsertExecutorBuilder<T>> {
 
-        public R2dbcInsertExecutor<T> build() {
+        public R2dbcInsertExecutor<T> buildExecutor() {
             return new R2dbcInsertExecutor<>(operationParameter, queryHandler);
         }
 

@@ -17,6 +17,8 @@ package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.PageParameter;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
@@ -227,10 +229,10 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
                 .byIds(ids);
     }
 
-    public <T> Mono<Page<T>> page(Query query, Pageable pageable, Class<T> entityClass) throws DataAccessException {
+    public <T> Mono<Pagination<T>> page(Query query, PageParameter pageParameter, Class<T> entityClass) throws DataAccessException {
         return select(entityClass)
                 .matching(query)
-                .page(pageable);
+                .page(pageParameter);
     }
 
     public <T> Mono<T> insert(T entity) throws DataAccessException {

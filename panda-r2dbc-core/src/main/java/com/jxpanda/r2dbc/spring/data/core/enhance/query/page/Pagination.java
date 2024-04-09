@@ -7,21 +7,23 @@ import java.util.function.Function;
 /**
  * 分页返回值包装
  *
- * @param current 当前页页码
- * @param next    下一页页码
- * @param hasNext 是否有下一页
- * @param size    每页长度
- * @param pages   共有多少页
- * @param total   总数据条数
- * @param records 数据列表
+ * @param pageNumber    当前页页码
+ * @param nextNumber    下一页页码
+ * @param hasNext       是否有下一页
+ * @param pageSize      每页长度
+ * @param totalPages    共有多少页
+ * @param totalElements 总数据条数
+ * @param records       数据列表
  */
-public record Pagination<T>(long current,
-                            long next,
+public record Pagination<T>(int pageNumber,
+                            int nextNumber,
                             boolean hasNext,
-                            int size,
-                            long pages,
-                            long total,
+                            int pageSize,
+                            long totalPages,
+                            long totalElements,
                             List<T> records) {
+
+
 
 
     /**
@@ -53,25 +55,25 @@ public record Pagination<T>(long current,
     /**
      * 对列表进行分页
      *
-     * @param current 当前页码
-     * @param size    每页长度
+     * @param pageNumber 当前页码
+     * @param pageSize    每页长度
      * @param data    数据列表
      * @return 计算结束后的分页对象
      */
-    public static <E> Pagination<E> paging(int current, int size, List<E> data) {
+    public static <E> Pagination<E> paging(int pageNumber, int pageSize, List<E> data) {
 
         // 总数据长度
         var total = data == null ? 0 : data.size();
         // 计算起始偏移值
-        var startIndex = Math.max((current - 1) * size, 0);
+        var startIndex = Math.max((pageNumber - 1) * pageSize, 0);
         // 计算结束偏移值
-        var endIndex = Math.min(startIndex + size, total);
+        var endIndex = Math.min(startIndex + pageSize, total);
         // 使用计算好的偏移值，内存分页
         var records = (data == null || startIndex > endIndex) ? new ArrayList<E>() : data.subList(startIndex, endIndex);
 
         // 创建对象，设置各值
-        return Pagination.<E>builder(current, size)
-                .total((long) total)
+        return Pagination.<E>builder(pageNumber, pageSize)
+                .totalElements((long) total)
                 .records(records)
                 .build();
     }
@@ -79,34 +81,44 @@ public record Pagination<T>(long current,
     /**
      * 计算一共有多少页
      */
-    private static long calculatePages(int size, long total) {
-        return total / size + (total % size > 0 ? 1 : 0);
+    private static long calculatePages(int pageSize, long totalElements) {
+        return totalElements / pageSize + (totalElements % pageSize > 0 ? 1 : 0);
     }
 
     private <R> Builder<R> newBuilder() {
-        return Pagination.<R>builder(this.current(), this.size())
+        return Pagination.<R>builder(this.pageNumber(), this.pageSize())
                 .hasNext(this.hasNext())
-                .total(this.total());
+                .totalElements(this.totalElements());
     }
 
-    public static <R> Builder<R> builder(long current, int size) {
-        return new Builder<>(current, size);
+    public static <R> Builder<R> builder(int pageNumber, int pageSize) {
+        return new Builder<>(pageNumber, pageSize);
     }
 
-    public static <R> Builder<R> offsetBuilder(long offset, int limit) {
+    public static <R> Builder<R> offsetBuilder(int offset, int limit) {
         return builder(Page.calculateCurrent(offset, limit), limit);
     }
 
     public static final class Builder<T> {
-        private final long current;
-        private final int size;
+        private int pageNumber;
+        private int pageSize;
         private Boolean hasNext;
-        private Long total;
+        private Long totalElements;
         private List<T> records;
 
-        public Builder(long current, int size) {
-            this.current = current;
-            this.size = size;
+        public Builder(int pageNumber, int pageSize) {
+            this.pageNumber = pageNumber;
+            this.pageSize = pageSize;
+        }
+
+        public Builder<T> pageNumber(int pageNumber) {
+            this.pageNumber = pageNumber;
+            return this;
+        }
+
+        public Builder<T> pageSize(int pageSize) {
+            this.pageSize = pageSize;
+            return this;
         }
 
         public Builder<T> hasNext(boolean hasNext) {
@@ -114,8 +126,8 @@ public record Pagination<T>(long current,
             return this;
         }
 
-        public Builder<T> total(Long total) {
-            this.total = total;
+        public Builder<T> totalElements(Long total) {
+            this.totalElements = total;
             return this;
         }
 
@@ -128,15 +140,15 @@ public record Pagination<T>(long current,
             if (this.records == null) {
                 this.records = new ArrayList<>();
             }
-            if (this.total == null) {
-                this.total = (long) this.records.size();
+            if (this.totalElements == null) {
+                this.totalElements = (long) this.records.size();
             }
             if (this.hasNext == null) {
-                this.hasNext = this.total > this.current * this.size;
+                this.hasNext = this.totalElements > (long) this.pageNumber * this.pageSize;
             }
-            long next = hasNext ? current + 1 : -1;
-            long pages = calculatePages(this.size, this.total);
-            return new Pagination<>(this.current, next, this.hasNext, this.size, pages, this.total, this.records);
+            int next = hasNext ? pageNumber + 1 : -1;
+            long pages = calculatePages(this.pageSize, this.totalElements);
+            return new Pagination<>(this.pageNumber, next, this.hasNext, this.pageSize, pages, this.totalElements, this.records);
         }
 
 

@@ -41,7 +41,7 @@ public class R2dbcDestroyExecutor<T, R> extends R2dbcOperationExecutor.WriteExec
         }
 
         @Override
-        public R2dbcDestroyExecutor<T, R> build() {
+        public R2dbcDestroyExecutor<T, R> buildExecutor() {
             return new R2dbcDestroyExecutor<>(operationParameter, queryHandler);
         }
     }

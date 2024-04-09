@@ -197,7 +197,7 @@ public class R2dbcUpdateExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
             return this;
         }
 
-        public R2dbcUpdateExecutor<T, R> build() {
+        public R2dbcUpdateExecutor<T, R> buildExecutor() {
             return new R2dbcUpdateExecutor<>(operationParameter, queryHandler, updateSupplier);
         }
 

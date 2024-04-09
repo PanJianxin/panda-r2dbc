@@ -147,7 +147,7 @@ public class R2dbcOperationExecutor<T, R> {
         for (RelationalPersistentProperty property : entity) {
 
             Parameter value = row.get(property.getColumnName());
-            if (shouldConvertArrayValue(property, value)) {
+            if (value != null && shouldConvertArrayValue(property, value)) {
                 Parameter writeValue = getArrayValue(value, property);
                 row.put(property.getColumnName(), writeValue);
             }
@@ -224,7 +224,6 @@ public class R2dbcOperationExecutor<T, R> {
 
     }
 
-    @SuppressWarnings("unchecked")
     protected static abstract class WriteExecutor<T, R> extends R2dbcOperationExecutor<T, R> {
 
 
@@ -244,10 +243,6 @@ public class R2dbcOperationExecutor<T, R> {
         public Mono<R> execute(T domainEntity) {
             return fetch(domainEntity, handleQuery());
         }
-
-//        public Mono<R> execute(T domainEntity, Function<T, R> resultHandler) {
-//            return fetch(domainEntity, handleQuery(), resultHandler);
-//        }
 
         /**
          * 批量执行
@@ -274,6 +269,20 @@ public class R2dbcOperationExecutor<T, R> {
 
         protected Function<R2dbcOperationParameter<T, R>, Query> queryHandler;
 
+        private Class<T> domainType;
+
+        private Class<R> returnType;
+
+        public final E build() {
+            if (domainType != null || returnType != null) {
+               operationParameter = operationParameter.rebuild()
+                        .domainType(domainType == null ? operationParameter.getDomainType() : domainType)
+                        .returnType(returnType == null ? operationParameter.getReturnType() : returnType)
+                        .build();
+            }
+            return buildExecutor();
+        }
+
         /**
          * 返回builder对象自身
          *
@@ -281,7 +290,7 @@ public class R2dbcOperationExecutor<T, R> {
          */
         protected abstract B self();
 
-        public abstract E build();
+        protected abstract E buildExecutor();
 
         public B operationParameter(R2dbcOperationParameter<T, R> operationParameter) {
             this.operationParameter = operationParameter;
@@ -290,6 +299,16 @@ public class R2dbcOperationExecutor<T, R> {
 
         public B queryHandler(Function<R2dbcOperationParameter<T, R>, Query> queryHandler) {
             this.queryHandler = queryHandler;
+            return self();
+        }
+
+        public B domainType(Class<T> domainType) {
+            this.domainType = domainType;
+            return self();
+        }
+
+        public B returnType(Class<R> returnType) {
+            this.returnType = returnType;
             return self();
         }
 

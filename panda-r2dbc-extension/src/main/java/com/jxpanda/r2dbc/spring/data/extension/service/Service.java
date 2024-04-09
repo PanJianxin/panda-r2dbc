@@ -1,6 +1,8 @@
 package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.*;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.PageParameter;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
@@ -274,9 +276,9 @@ public interface Service<T extends Entity<ID>, ID> {
      * @param query 查询条件
      * @return 分页后的数据
      */
-    default Mono<Page<T>> page(Query query, Pageable pageable) {
+    default Mono<Pagination<T>> page(Query query, PageParameter pageParameter) {
         return select().matching(query)
-                .page(pageable);
+                .page(pageParameter);
     }
 
 

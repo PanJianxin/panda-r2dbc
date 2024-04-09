@@ -2,6 +2,8 @@ package demo.api;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.PageParameter;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import demo.model.*;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,9 +21,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("test")
@@ -113,9 +113,9 @@ public class TestAPI {
     }
 
     @GetMapping("/page")
-    public Mono<Page<Order>> paginationMono(Integer current, Integer size, Boolean needCount) {
+    public Mono<Pagination<Order>> paginationMono(Integer current, Integer size, Boolean needCount) {
         return reactiveEntityTemplate.select(Order.class)
-                .page(PageRequest.of(current, size).withSort(Sort.by(Sort.Direction.DESC, "id")));
+                .page(PageParameter.of(current, size).withSort(Sort.by(Sort.Direction.DESC, "id")));
     }
 
     @GetMapping("{userId}")
@@ -158,9 +158,9 @@ public class TestAPI {
     }
 
     @PostMapping("/order/save-batch")
-    public Flux<Order> saveBatch(@RequestBody List<Order> orderList) {
-        return reactiveEntityTemplate.save(Order.class)
-                .batch(orderList);
+    public Flux<Order> saveBatch(@RequestBody Flux<Order> orderList) {
+        return orderList.collectList()
+                .flatMapMany(orders -> reactiveEntityTemplate.save(Order.class).batch(orders));
     }
 
     @PostMapping("/order/update")
@@ -176,7 +176,7 @@ public class TestAPI {
     @GetMapping("/order/{id}")
     public Mono<Order> getOrder(@PathVariable("id") String id) {
         String tableName = orderService.getTableName();
-         return orderService.selectById(id);
+        return orderService.selectById(id);
 //        return r2dbcEntityTemplate.select(Order.class)
 //                .matching(Query.query(Criteria.where("id").is(id)))
 //                .one();
@@ -210,24 +210,25 @@ public class TestAPI {
                 .all();
     }
 
-    @Transactional
+//    @Transactional
     @GetMapping("/transaction")
-    public Mono<?> transaction(String userId) {
+    public Mono<?> transaction(String userId, String orderId) {
         User user = User.builder()
-                .id(userId)
+//                .id(userId)
                 .phone(Integer.toString(new Random().nextInt()))
                 .build();
 //        Mono<User> userMono = Mono.just();
         Order order = Order.builder()
+//                .id(orderId)
                 .number(Integer.toString(new Random().nextInt()))
                 .userId(userId)
-//                .extend(Collections.emptyList())
-//                .amountChanges(new ArrayList<>())
+                .extend(Collections.emptyList())
+                .amountChange(new ArrayList<>())
                 .build();
 
-        reactiveEntityTemplate.update(user).map(user1 -> {
-            return user1;
-        });
+//        reactiveEntityTemplate.update(user).map(user1 -> {
+//            return user1;
+//        });
 
         return Flux.merge(reactiveEntityTemplate.insert(user),
                         reactiveEntityTemplate.insert(order))

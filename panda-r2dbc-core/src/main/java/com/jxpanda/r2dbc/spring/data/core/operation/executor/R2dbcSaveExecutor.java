@@ -59,7 +59,7 @@ public class R2dbcSaveExecutor<T> extends R2dbcOperationExecutor.WriteExecutor<T
         }
 
         @Override
-        public R2dbcSaveExecutor<T> build() {
+        public R2dbcSaveExecutor<T> buildExecutor() {
             return new R2dbcSaveExecutor<>(operationParameter, queryHandler);
         }
     }

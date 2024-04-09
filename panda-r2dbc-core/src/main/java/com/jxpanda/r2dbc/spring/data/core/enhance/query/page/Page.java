@@ -6,22 +6,22 @@ public interface Page {
     /**
      * 当前页
      */
-    long getCurrent();
+    int getPageNumber();
 
     /**
      * 设置页码
      */
-    void setCurrent(long current);
+    void setPageNumber(int pageNum);
 
     /**
      * 每页长度
      */
-    int getSize();
+    int getPageSize();
 
     /**
      * 设置页长
      */
-    void setSize(int size);
+    void setPageSize(int size);
 
 
     /**
@@ -42,25 +42,25 @@ public interface Page {
      * 返回分页的偏移值，对应Query中的offset
      */
     default long getOffset() {
-        return calculateOffset(getCurrent(), getSize());
+        return calculateOffset(getPageNumber(), getPageSize());
     }
 
     /**
      * 对应Query类的limit值，默认取值是size
      */
     default int getLimit() {
-        return getSize();
+        return getPageSize();
     }
 
-    static long calculateCurrent(long offset, int limit) {
+    static int calculateCurrent(int offset, int limit) {
         return offset / limit + 1;
     }
 
-    static long calculateOffset(long current, int size) {
-        if (current < 1L) {
-            throw new RuntimeException("current must granter than 1");
+    static long calculateOffset(int pageNumber, int size) {
+        if (pageNumber < 1L) {
+            throw new RuntimeException("pageNumber must granter than 1");
         }
-        return Math.max((current - 1) * size, 0L);
+        return Math.max((pageNumber - 1) * size, 0);
     }
 
 }

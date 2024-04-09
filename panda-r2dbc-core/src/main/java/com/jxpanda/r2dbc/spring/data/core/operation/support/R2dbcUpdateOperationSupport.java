@@ -75,6 +75,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
         return new R2dbcUpdateSupport<>(R2dbcOperationParameter.<T, T>builder()
                 .template(template)
                 .domainType(domainType)
+                .returnType(domainType)
                 .build());
     }
 
@@ -124,6 +125,7 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
         public Mono<Long> apply(@NonNull Update update) {
             Assert.notNull(update, "Update must not be null");
             return executorBuilder(R2dbcUpdateExecutor::<T, Long>builder)
+                    .returnType(Long.class)
                     .updateSupplier(() -> update)
                     .build()
                     .execute();

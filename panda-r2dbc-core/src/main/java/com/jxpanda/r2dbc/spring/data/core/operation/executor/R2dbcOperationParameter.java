@@ -5,6 +5,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginContext;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.r2dbc.core.StatementMapper;
@@ -83,6 +84,7 @@ public final class R2dbcOperationParameter<T, R> {
     public <NT, NR> R2dbcOperationParameterBuilder<NT, NR> rebuild(Class<NT> domainType, Class<NR> returnType) {
         return R2dbcOperationParameter.<NT, NR>builder()
                 .template(template)
+                .option(option)
                 .query(query)
                 .domainType(domainType)
                 .tableName(tableName)

@@ -79,6 +79,7 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
         return new R2dbcSelectExecutorBuilder<>();
     }
 
+    // TODO: 这个函数的结构希望能重新组织一下，现在有点乱
     @Override
     protected <P extends Publisher<R>> P fetch(R2dbcOperationParameter<T, R> parameter, Function<RowsFetchSpec<R>, P> resultHandler) {
 
@@ -102,7 +103,22 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
         } else {
             rowsFetchSpec = executeSpec.map(rowMapperBuilder.apply(parameter));
         }
-        return resultHandler.apply(rowsFetchSpec);
+
+        // 处理回调
+        return callback(resultHandler.apply(rowsFetchSpec), parameter);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <P extends Publisher<R>> P callback(P publisher, R2dbcOperationParameter<T, R> parameter) {
+        if (publisher instanceof Mono<?> mono) {
+            return (P) mono.flatMap(result -> selectReference(parameter, (R) result))
+                    .flatMap(it -> template().maybeCallAfterConvert(it, parameter.getTableName()));
+
+        } else if (publisher instanceof Flux<?> flux) {
+            return (P) flux.flatMap(result -> selectReference(parameter, (R) result))
+                    .flatMap(it -> template().maybeCallAfterConvert(it, parameter.getTableName()));
+        }
+        return publisher;
     }
 
     private Function<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec> defaultSpecBuilder() {
@@ -362,7 +378,7 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
             return this;
         }
 
-        public R2dbcSelectExecutor<T, R> build() {
+        public R2dbcSelectExecutor<T, R> buildExecutor() {
             return new R2dbcSelectExecutor<>(operationParameter, queryHandler, specBuilder, criteriaHandler, preparedOperationBuilder, rowMapperBuilder);
         }
 

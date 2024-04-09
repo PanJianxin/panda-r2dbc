@@ -86,7 +86,7 @@ public class R2dbcDeleteExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
 
     public static final class R2dbcDeleteExecutorBuilder<T, R> extends R2dbcOperationExecutor.R2dbcExecutorBuilder<T, R, R2dbcDeleteExecutor<T, R>, R2dbcDeleteExecutorBuilder<T, R>> {
 
-        public R2dbcDeleteExecutor<T, R> build() {
+        public R2dbcDeleteExecutor<T, R> buildExecutor() {
             return new R2dbcDeleteExecutor<>(operationParameter, queryHandler);
         }
 
