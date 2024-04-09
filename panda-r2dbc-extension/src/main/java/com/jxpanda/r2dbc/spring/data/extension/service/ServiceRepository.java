@@ -8,9 +8,6 @@ import reactor.core.publisher.Mono;
 
 @NoRepositoryBean
 public interface ServiceRepository<T extends Entity<ID>, ID> extends R2dbcRepository<T, ID> {
-//    public ServiceRepository(RelationalEntityInformation<T, ID> entity, R2dbcEntityOperations entityOperations, R2dbcConverter converter) {
-//        super(entity, entityOperations, converter);
-//    }
 
 
     @Query("SELECT :sql FROM :tableName GROUP BY :key")

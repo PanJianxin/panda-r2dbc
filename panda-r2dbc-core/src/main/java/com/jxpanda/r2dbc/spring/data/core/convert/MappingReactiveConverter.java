@@ -13,13 +13,17 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
+ * 该类继承 {@link MappingR2dbcConverter}
+ * 目的是对某些类型进行自定义的转换
+ * 运作原理是通过重写 {@link MappingR2dbcConverter#newValueProvider}函数来达到某些类型（Enum、Json）的转换
+ * 该函数负责对值进行处理和转换
+ *
  * @author Panda
  */
 @Getter
 public class MappingReactiveConverter extends MappingR2dbcConverter {
 
     private final R2dbcCustomTypeHandlers typeHandlers;
-
 
     /**
      * Creates a new {@link MappingReactiveConverter} given {@link MappingContext} and {@link CustomConversions} and {@link R2dbcCustomTypeHandlers}.
@@ -36,8 +40,18 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         this.typeHandlers = typeHandlers;
     }
 
+    /**
+     * 创建一个新的RelationalPropertyValueProvider实例。
+     * 该方法通过使用父类的newValueProvider方法来创建一个基础的DocumentValueProvider实例，然后将其包装在一个RelationalPropertyValueProviderDecorator中，以提供额外的功能或处理。
+     *
+     * @param documentAccessor 用于访问行文档数据的接口，用于获取和设置文档中的属性值。
+     * @param evaluator        SPEL表达式评估器，用于评估表达式并获取值。
+     * @param context          转换上下文，提供转换过程中的上下文信息和帮助。
+     * @return 返回一个RelationalPropertyValueProviderDecorator实例，该实例装饰了基础的DocumentValueProvider，并提供了类型处理器。
+     */
     @Override
     protected RelationalPropertyValueProvider newValueProvider(RowDocumentAccessor documentAccessor, SpELExpressionEvaluator evaluator, ConversionContext context) {
+        // 创建并返回一个RelationalPropertyValueProviderDecorator实例，注入类型处理器
         return new RelationalPropertyValueProviderDecorator((DocumentValueProvider) super.newValueProvider(documentAccessor, evaluator, context), getTypeHandlers());
     }
 

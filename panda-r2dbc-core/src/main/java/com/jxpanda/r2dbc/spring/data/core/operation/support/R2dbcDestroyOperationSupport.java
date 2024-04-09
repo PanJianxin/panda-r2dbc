@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jxpanda.r2dbc.spring.data.core;
+package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
+import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDestroyOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcDestroyExecutor;
+import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcOperationParameter;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
@@ -42,46 +45,48 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
 
     @Override
     public <T> R2dbcDestroy<T> destroy(Class<T> domainType) {
-        return new R2dbcDestroySupport<>(this.template, domainType);
+        return new R2dbcDestroySupport<>(R2dbcOperationParameter.<T, T>builder()
+                .template(template)
+                .domainType(domainType)
+                .build());
     }
 
 
     private static final class R2dbcDestroySupport<T> extends R2dbcSupport<T> implements R2dbcDestroyOperation.R2dbcDestroy<T> {
 
-        private final R2dbcDeleteOperationSupport.R2dbcDestroyAdapter r2DbcDestroyAdapter;
 
-        R2dbcDestroySupport(ReactiveEntityTemplate template, Class<T> domainType) {
-            super(template, domainType);
-            this.r2DbcDestroyAdapter = new R2dbcDeleteOperationSupport.R2dbcDestroyAdapter(template);
+        private R2dbcDestroySupport(R2dbcOperationParameter<T, T> operationParameter) {
+            super(operationParameter);
         }
 
-        R2dbcDestroySupport(ReactiveEntityTemplate template, Class<T> domainType, Query query,
-                            @Nullable SqlIdentifier tableName) {
-            super(template, domainType, query, tableName);
-            this.r2DbcDestroyAdapter = new R2dbcDeleteOperationSupport.R2dbcDestroyAdapter(template);
+        private R2dbcDestroySupport(R2dbcOperationParameter.R2dbcOperationParameterBuilder<T, T> parameterBuilder) {
+            super(parameterBuilder);
         }
 
-        /*
+        /**
          * (non-Javadoc)
+         *
          * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation.DeleteWithTable#from(SqlIdentifier)
          */
+        @NonNull
         public ReactiveDeleteOperation.DeleteWithQuery from(@NonNull SqlIdentifier tableName) {
 
             Assert.notNull(tableName, "Table name must not be null");
 
-            return new R2dbcDestroySupport<>(this.reactiveEntityTemplate, this.domainType, this.query, tableName);
+            return newSupport(rebuild().tableName(tableName), R2dbcDestroySupport::new);
         }
 
-        /*
+        /**
          * (non-Javadoc)
-         * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation.DeleteWithQuery#matching(org.springframework.data.r2dbc.query.Query)
+         *
+         * @see org.springframework.data.r2dbc.core.ReactiveDeleteOperation.DeleteWithQuery#matching(Query)
          */
         @NonNull
         public ReactiveDeleteOperation.TerminatingDelete matching(@NonNull Query query) {
 
             Assert.notNull(query, "Query must not be null");
 
-            return new R2dbcDestroySupport<>(this.reactiveEntityTemplate, this.domainType, query, this.tableName);
+            return newSupport(rebuild().query(query), R2dbcDestroySupport::new);
         }
 
         /*
@@ -91,7 +96,9 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
         @NonNull
         @Override
         public Mono<Long> all() {
-            return r2DbcDestroyAdapter.doDestroy(this.query, this.domainType, this.tableName);
+            return executorBuilder(R2dbcDestroyExecutor::<T, Long>builder)
+                    .build()
+                    .execute();
         }
 
         @NonNull
@@ -99,17 +106,27 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
         public Mono<Boolean> using(T entity) {
             Assert.notNull(entity, "Entity must not be null");
 
-            return r2DbcDestroyAdapter.doDestroy(entity, this.tableName).map(it -> it > 0);
+            return executorBuilder(R2dbcDestroyExecutor::<T, Long>builder)
+                    .build()
+                    .execute()
+                    .map(count -> count > 0);
         }
 
         @Override
         public <ID> Mono<Boolean> byId(ID id) {
-            return r2DbcDestroyAdapter.doDestroyById(id, this.domainType);
+            return executorBuilder(R2dbcDestroyExecutor::<T, Long>builder)
+                    .queryHandler(parameter -> QueryKit.queryById(parameter.getDomainType(), id))
+                    .build()
+                    .execute()
+                    .map(it -> it > 0);
         }
 
         @Override
         public <ID> Mono<Long> byIds(Collection<ID> ids) {
-            return r2DbcDestroyAdapter.doDestroyByIds(ids, this.domainType);
+            return executorBuilder(R2dbcDestroyExecutor::<T, Long>builder)
+                    .queryHandler(parameter -> QueryKit.queryById(parameter.getDomainType(), ids))
+                    .build()
+                    .execute();
         }
 
 

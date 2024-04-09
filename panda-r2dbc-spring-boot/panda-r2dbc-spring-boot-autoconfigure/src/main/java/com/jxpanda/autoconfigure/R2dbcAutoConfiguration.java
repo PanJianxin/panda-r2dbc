@@ -7,6 +7,9 @@ import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcCustomTypeHandlers;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.AbstractSnowflakeGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2DbcLogicDeletePlugin;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import org.springframework.beans.factory.ObjectProvider;
@@ -51,7 +54,7 @@ public class R2dbcAutoConfiguration {
     }
 
     @Bean
-    public R2dbcDialect r2dbcDialect(DatabaseClient databaseClient){
+    public R2dbcDialect r2dbcDialect(DatabaseClient databaseClient) {
         return DialectResolver.getDialect(databaseClient.getConnectionFactory());
     }
 
@@ -75,8 +78,8 @@ public class R2dbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
-                                                    R2dbcCustomConversions r2dbcCustomConversions,
-                                                    R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
+                                                   R2dbcCustomConversions r2dbcCustomConversions,
+                                                   R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
         return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
     }
 
@@ -113,6 +116,13 @@ public class R2dbcAutoConfiguration {
     @ConditionalOnMissingBean
     public R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers() {
         return new R2dbcCustomTypeHandlers();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public R2dbcPluginExecutor r2dbcPluginExecutor() {
+        return new R2dbcPluginExecutor()
+                .addPlugin(new R2DbcLogicDeletePlugin());
     }
 
 

@@ -16,11 +16,14 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
+import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import jakarta.annotation.Resource;
+import lombok.AccessLevel;
 import lombok.Getter;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.DataAccessException;
@@ -59,34 +62,49 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-@Getter
 @SuppressWarnings({"unused", "UnusedReturnValue", "deprecation", "unchecked"})
 public class ReactiveEntityTemplate implements R2dbcEntityOperations {
 
 
+    @Getter
     private final DatabaseClient databaseClient;
 
+    @Getter
     private final ReactiveDataAccessStrategy dataAccessStrategy;
 
-    private final SpelAwareProxyProjectionFactory projectionFactory;
-
+    @Getter
     private final R2dbcConverter converter;
 
+    @Getter
     private final R2dbcDialect dialect;
 
+    @Getter(value = AccessLevel.PUBLIC)
+    private final SpelAwareProxyProjectionFactory projectionFactory;
+
+    @Getter(value = AccessLevel.PUBLIC)
     private final StatementMapper statementMapper;
 
     @Resource
+    @Getter(value = AccessLevel.PUBLIC)
     private IdGenerator<?> idGenerator;
 
     @Resource
+    @Getter(value = AccessLevel.PUBLIC)
     private R2dbcTransactionManager r2dbcTransactionManager;
 
     @Resource
+    @Getter(value = AccessLevel.PUBLIC)
     private TransactionalOperator transactionalOperator;
 
+    @Getter
+    @Resource
+    private R2dbcPluginExecutor pluginExecutor;
+
     @Nullable
+    @Getter(value = AccessLevel.PACKAGE)
     private ReactiveEntityCallbacks entityCallbacks;
+
+
 
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {
@@ -298,9 +316,7 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
 
         Assert.notNull(operation, "PreparedOperation must not be null");
         Assert.notNull(entityClass, "Entity class must not be null");
-
-        return new EntityCallbackAdapter<>(getRowsFetchSpec(getDatabaseClient().sql(operation), entityClass, entityClass),
-                R2dbcMappingKit.getTableNameOrEmpty(entityClass));
+        return query(operation, entityClass, entityClass);
     }
 
     @Override
@@ -308,7 +324,7 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         Assert.notNull(operation, "PreparedOperation must not be null");
         Assert.notNull(entityClass, "Entity class must not be null");
 
-        return new EntityCallbackAdapter<>(getRowsFetchSpec(databaseClient.sql(operation), entityClass, resultType),
+        return new EntityCallbackAdapter<>(getRowsFetchSpec(getDatabaseClient().sql(operation), entityClass, resultType),
                 R2dbcMappingKit.getTableNameOrEmpty(entityClass));
     }
 

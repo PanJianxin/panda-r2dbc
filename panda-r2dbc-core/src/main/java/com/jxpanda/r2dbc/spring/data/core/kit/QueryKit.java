@@ -31,12 +31,14 @@ public class QueryKit {
 
         private final Class<T> clazz;
 
+        private final RelationalPersistentEntity<T> requiredEntity;
+
         public CriteriaAdapter(Class<T> clazz) {
             this.clazz = clazz;
+            this.requiredEntity = R2dbcMappingKit.getRequiredEntity(this.clazz);
         }
 
         public Criteria.CriteriaStep whereId() {
-            RelationalPersistentEntity<T> requiredEntity = R2dbcMappingKit.getRequiredEntity(this.clazz);
             Assert.isTrue(requiredEntity.hasIdProperty(), "Domain type must has id property");
             return Criteria.where(requiredEntity.getIdColumn().getReference());
         }

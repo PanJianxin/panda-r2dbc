@@ -97,9 +97,7 @@ public class TestAPI {
 
     @GetMapping("vo/{id:\\d+}")
     public Mono<OrderVO> vo(@PathVariable("id") String id) {
-        return r2dbcEntityTemplate.select(OrderVO.class)
-                .matching(Query.query(Criteria.where("id").is(id)))
-                .one();
+        return reactiveEntityTemplate.selectById(id, OrderVO.class);
     }
 
     @GetMapping("join")
@@ -177,7 +175,8 @@ public class TestAPI {
 
     @GetMapping("/order/{id}")
     public Mono<Order> getOrder(@PathVariable("id") String id) {
-        return orderService.selectById(id);
+        String tableName = orderService.getTableName();
+         return orderService.selectById(id);
 //        return r2dbcEntityTemplate.select(Order.class)
 //                .matching(Query.query(Criteria.where("id").is(id)))
 //                .one();

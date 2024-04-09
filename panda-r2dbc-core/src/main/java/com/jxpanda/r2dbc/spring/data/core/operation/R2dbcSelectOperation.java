@@ -1,5 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core.operation;
 
+import com.jxpanda.r2dbc.spring.data.core.operation.support.R2dbcSelectOperationSupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -11,9 +12,12 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+/**
+ * @author Panda
+ */
 public interface R2dbcSelectOperation {
 
-    interface R2dbcSelect<T> extends ReactiveSelectOperation.ReactiveSelect<T>, TerminatingSelect<T> {
+    interface R2dbcSelect<T> extends ReactiveSelectOperation.ReactiveSelect<T>, TerminatingSelect<T>, R2dbcOperation<T, R2dbcSelect<T>> {
 
         <ID> Mono<T> byId(ID id);
 

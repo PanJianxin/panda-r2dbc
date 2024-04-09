@@ -5,6 +5,9 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Date;
 
+/**
+ * @author Panda
+ */
 public class DateTimeConstant {
 
     public static final String STRING_1970_01_01_00_00_00 = "1970-01-01 00:00:00";

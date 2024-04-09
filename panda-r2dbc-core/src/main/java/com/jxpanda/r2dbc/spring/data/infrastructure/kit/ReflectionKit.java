@@ -172,13 +172,28 @@ public final class ReflectionKit {
         setFieldValue(entity, field, defaultValue);
     }
 
+//    /**
+//     * 使用空构造器新建对象
+//     *
+//     * @param clazz 目标类
+//     * @return 对象实例
+//     */
+//    public static Object newInstance(Class<?> clazz) {
+//        try {
+//            return clazz.getConstructor().newInstance();
+//        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+//                 NoSuchMethodException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
+
     /**
      * 使用空构造器新建对象
      *
      * @param clazz 目标类
      * @return 对象实例
      */
-    public static Object newInstance(Class<?> clazz) {
+    public static <T> T newInstance(Class<T> clazz) {
         try {
             return clazz.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
@@ -247,10 +262,10 @@ public final class ReflectionKit {
             // 判断是否是getter函数，满足以下条件则判定为是一个getter函数
             // 非静态函数
             boolean isGetter = !Modifier.isStatic(method.getModifiers())
-                    // 排除getClass这个函数
-                    && !methodName.equals(GET_CLASS)
-                    // 以get或者is做前缀的函数
-                    && (methodName.startsWith(GET_PREFIX) || methodName.startsWith(IS_PREFIX));
+                               // 排除getClass这个函数
+                               && !methodName.equals(GET_CLASS)
+                               // 以get或者is做前缀的函数
+                               && (methodName.startsWith(GET_PREFIX) || methodName.startsWith(IS_PREFIX));
             if (isGetter) {
                 String fieldName = StringKit.uncapitalize(method.getName()
                         .replaceFirst("^" + GET_PREFIX, "")
