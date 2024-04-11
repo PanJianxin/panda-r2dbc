@@ -7,6 +7,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.EnumValue;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcEnumTypeHandler;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import lombok.*;
 import lombok.experimental.Accessors;

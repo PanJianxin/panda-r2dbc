@@ -68,6 +68,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         return new R2dbcDeleteSupport<>(R2dbcOperationParameter.<T, T>builder()
                 .template(template)
                 .domainType(domainType)
+                .returnType(domainType)
                 .build());
     }
 
@@ -77,10 +78,6 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
 
         private R2dbcDeleteSupport(R2dbcOperationParameter<T, T> operationParameter) {
             super(operationParameter);
-        }
-
-        private R2dbcDeleteSupport(R2dbcOperationParameter.R2dbcOperationParameterBuilder<T, T> parameterBuilder) {
-            super(parameterBuilder);
         }
 
         /*
@@ -119,6 +116,7 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         @Override
         public Mono<Long> all() {
             return executorBuilder(R2dbcDeleteExecutor::<T, Long>builder)
+                    .returnType(Long.class)
                     .build()
                     .execute();
         }
@@ -126,7 +124,6 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         @Override
         public Mono<Boolean> using(T entity) {
             Assert.notNull(entity, "Entity must not be null");
-
             return executorBuilder(R2dbcDeleteExecutor::<T, Long>builder)
                     .returnType(Long.class)
                     .build()
@@ -137,9 +134,9 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         @Override
         public <ID> Mono<Boolean> byId(ID id) {
             Assert.notNull(id, "ID must not be empty");
-//            return byId(id, false);
             return executorBuilder(R2dbcDeleteExecutor::<T, Long>builder)
-                    .queryHandler(parameter->QueryKit.queryById(parameter.getDomainType(), id))
+                    .returnType(Long.class)
+                    .queryHandler(parameter -> QueryKit.queryById(parameter.getDomainType(), id))
                     .build()
                     .execute()
                     .map(it -> it > 0);
@@ -148,8 +145,9 @@ public final class R2dbcDeleteOperationSupport extends R2dbcOperationSupport imp
         @Override
         public <ID> Mono<Long> byIds(Collection<ID> ids) {
             Assert.notEmpty(ids, "ID collection must not be empty");
-               return executorBuilder(R2dbcDeleteExecutor::<T, Long>builder)
-                    .queryHandler(parameter->QueryKit.queryById(parameter.getDomainType(), ids))
+            return executorBuilder(R2dbcDeleteExecutor::<T, Long>builder)
+                    .returnType(Long.class)
+                    .queryHandler(parameter -> QueryKit.queryById(parameter.getDomainType(), ids))
                     .build()
                     .execute();
         }

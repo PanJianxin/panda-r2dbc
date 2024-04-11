@@ -39,7 +39,7 @@ public class R2dbcOperationSupport {
     }
 
 
-    @SuppressWarnings({"deprecation", "unchecked"})
+    @SuppressWarnings({"unchecked"})
     protected static class R2dbcSupport<T> {
         private final R2dbcOperationParameter<T, T> operationParameter;
 

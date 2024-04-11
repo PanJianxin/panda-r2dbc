@@ -48,6 +48,7 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
         return new R2dbcDestroySupport<>(R2dbcOperationParameter.<T, T>builder()
                 .template(template)
                 .domainType(domainType)
+                .returnType(domainType)
                 .build());
     }
 
@@ -57,10 +58,6 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
 
         private R2dbcDestroySupport(R2dbcOperationParameter<T, T> operationParameter) {
             super(operationParameter);
-        }
-
-        private R2dbcDestroySupport(R2dbcOperationParameter.R2dbcOperationParameterBuilder<T, T> parameterBuilder) {
-            super(parameterBuilder);
         }
 
         /**
@@ -116,6 +113,7 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
         @Override
         public <ID> Mono<Boolean> byId(ID id) {
             return executorBuilder(R2dbcDestroyExecutor::<T, Long>builder)
+                    .returnType(Long.class)
                     .queryHandler(parameter -> QueryKit.queryById(parameter.getDomainType(), id))
                     .build()
                     .execute()
@@ -125,6 +123,7 @@ public final class R2dbcDestroyOperationSupport extends R2dbcOperationSupport im
         @Override
         public <ID> Mono<Long> byIds(Collection<ID> ids) {
             return executorBuilder(R2dbcDestroyExecutor::<T, Long>builder)
+                    .returnType(Long.class)
                     .queryHandler(parameter -> QueryKit.queryById(parameter.getDomainType(), ids))
                     .build()
                     .execute();

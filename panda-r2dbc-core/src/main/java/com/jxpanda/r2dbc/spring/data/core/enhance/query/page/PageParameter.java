@@ -42,7 +42,7 @@ public class PageParameter implements Page {
 
     public PageRequest buildRequest() {
         // 由于PageRequest的页码是从0开始计算的，所以这里需要减1
-        return PageRequest.of(getPageNumber(), getPageSize(), getSort());
+        return PageRequest.of(getPageNumber() - 1, getPageSize(), getSort());
     }
 
 }

@@ -223,7 +223,6 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
 
                         // 这里的意思是：如果是最后一页数据了，就不用count查询了，可以直接使用数据计算出共有多少条数据
                         if (!records.isEmpty() && pageable.getPageSize() > records.size()) {
-//                            return Mono.just(new PageImpl<>(records, pageable, pageable.getOffset() + records.size()));
                             return Mono.just(paginationBuilder.records(records)
                                     .totalElements(pageable.getOffset() + records.size())
                                     .build());
@@ -277,56 +276,6 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                     .build()
                     .execute(resultHandler);
         }
-
-
-//        private RowsFetchSpec<T> doSelect(Query query, Class<T> entityClass, SqlIdentifier tableName, Class<T> returnType) {
-//
-//            // 是否是聚合对象
-//            boolean isAggregate = false;
-//
-//            if (entityClass.isAnnotationPresent(TableEntity.class)) {
-//                isAggregate = entityClass.getAnnotation(TableEntity.class).aggregate();
-//            }
-//
-//            StatementMapper statementMapper = isAggregate ? this.statementMapper() : this.statementMapper().forType(entityClass);
-//
-//            StatementMapper.SelectSpec selectSpec = statementMapper.createSelect(tableName)
-//                    .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, entityClass, returnType)));
-//
-//            if (query.getLimit() > 0) {
-//                selectSpec = selectSpec.limit(query.getLimit());
-//            }
-//
-//            if (query.getOffset() > 0) {
-//                selectSpec = selectSpec.offset(query.getOffset());
-//            }
-//
-//            if (query.isSorted()) {
-//                selectSpec = selectSpec.withSort(query.getSort());
-//            }
-//
-//            selectSpec = selectWithCriteria(selectSpec, query, entityClass);
-//
-//            PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-//
-//            return operationParameter.getTemplate().getRowsFetchSpec(operationParameter.getTemplate().getDatabaseClient().sql(operation), entityClass, returnType);
-//        }
-
-
-//        private Mono<T> selectMono(Query query, Class<T> entityClass, SqlIdentifier tableName,
-//                                   Class<T> returnType, Function<RowsFetchSpec<T>, Mono<T>> resultHandler) {
-//            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
-//                    .flatMap(result -> selectReference(entityClass, result))
-//                    .flatMap(it -> this.template.maybeCallAfterConvert(it, tableName));
-//        }
-//
-//        private Flux<T> selectFlux(Query query, Class<T> entityClass, SqlIdentifier tableName,
-//                                   Class<T> returnType, Function<RowsFetchSpec<T>, Flux<T>> resultHandler) {
-//            return resultHandler.apply(doSelect(query, entityClass, tableName, returnType))
-//                    .flatMap(result -> selectReference(entityClass, result))
-//                    .flatMap(it -> this.template.maybeCallAfterConvert(it, tableName));
-//        }
-
 
     }
 

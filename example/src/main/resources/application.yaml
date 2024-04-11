@@ -25,4 +25,4 @@ panda:
 
 logging:
   level:
-    root: info
+    root: DEBUG

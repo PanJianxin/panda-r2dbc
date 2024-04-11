@@ -12,6 +12,9 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,10 @@ public enum NamingStrategy implements org.springframework.data.relational.core.m
 
     private final Function<String, String> converter;
 
+    /**
+     * 字段名缓存
+     */
+    private final Map<String, String> columnNameCache = new HashMap<>(16);
 
     @NonNull
     @Override
@@ -61,6 +68,10 @@ public enum NamingStrategy implements org.springframework.data.relational.core.m
     @NonNull
     @Override
     public String getColumnName(@NonNull RelationalPersistentProperty property) {
+        String cacheKey = cacheKey(property);
+        if (columnNameCache.get(cacheKey) != null) {
+            return columnNameCache.get(cacheKey);
+        }
         String columnName = null;
         boolean isId = property.isAnnotationPresent(TableId.class);
         if (isId) {
@@ -71,7 +82,14 @@ public enum NamingStrategy implements org.springframework.data.relational.core.m
             // 如果设置了别名，则返回别名
             columnName = ObjectUtils.isEmpty(tableColumn.alias()) ? tableColumn.name() : tableColumn.alias();
         }
-        return ObjectUtils.isEmpty(columnName) ? convert(property.getName()) : columnName;
+        columnName = ObjectUtils.isEmpty(columnName) ? convert(property.getName()) : columnName;
+        // 缓存
+        columnNameCache.put(cacheKey, columnName);
+        return columnName;
+    }
+
+    private String cacheKey(RelationalPersistentProperty property) {
+        return property.getOwner().getName() + "#" + Objects.requireNonNull(property.getField()).getName();
     }
 
     public String convert(String string) {

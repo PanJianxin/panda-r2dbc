@@ -9,6 +9,7 @@ import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.CollectionKit;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.StringKit;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.reactivestreams.Publisher;
@@ -68,7 +69,7 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
         this.specBuilder = specBuilder != null ? specBuilder : defaultSpecBuilder();
         this.criteriaHandler = criteriaHandler != null ? criteriaHandler : defaultCriteriaHandler();
         this.preparedOperationBuilder = preparedOperationBuilder != null ? preparedOperationBuilder : defaultPreparedOperationBuilder();
-        this.rowMapperBuilder = rowMapperBuilder != null ? rowMapperBuilder : entityRowMapperBuilder();
+        this.rowMapperBuilder = rowMapperBuilder != null ? rowMapperBuilder : defaultRowMapperBuilder();
     }
 
     private BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, PreparedOperation<?>> defaultPreparedOperationBuilder() {
@@ -140,7 +141,7 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
     }
 
     @SuppressWarnings({"unchecked"})
-    private Function<R2dbcOperationParameter<T, R>, BiFunction<Row, RowMetadata, R>> entityRowMapperBuilder() {
+    private Function<R2dbcOperationParameter<T, R>, BiFunction<Row, RowMetadata, R>> defaultRowMapperBuilder() {
         return parameter -> {
             Class<R> returnType = parameter.getReturnType();
             Class<T> domainType = parameter.getDomainType();
@@ -249,18 +250,21 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
         // 聚合函数必须要使用Expressions.just()直接创建表达式
         // 实测使用Column创建的话，会被添加表名作为前缀，导致SQL的语法是错的
         TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
-        if (!R2dbcMappingKit.isFunctionProperty(property)) {
+        // 别名
+        String alias = tableColumn.alias();
+        if (R2dbcMappingKit.isFunctionProperty(property)) {
+            Assert.isTrue(!ObjectUtils.isEmpty(alias), "Alias must not be null with function property");
+            // 如果是函数，则采用函数的方式创建函数
+            return SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name())))
+                    .as(alias);
+        } else {
             String sql = tableColumn.name();
             // 如果设置了别名，添加别名的语法
-            if (!ObjectUtils.isEmpty(tableColumn.alias())) {
-                sql += SQL_AS + tableColumn.alias();
+            if (!ObjectUtils.isEmpty(alias)) {
+                sql += SQL_AS + alias;
             }
             // 如果不是函数，直接创建标准表达式
             return Expressions.just(sql);
-        } else {
-            // 如果是函数，则采用函数的方式创建函数
-            return SimpleFunction.create(tableColumn.function(), Collections.singletonList(Expressions.just(tableColumn.name())))
-                    .as(tableColumn.alias());
         }
     }
 

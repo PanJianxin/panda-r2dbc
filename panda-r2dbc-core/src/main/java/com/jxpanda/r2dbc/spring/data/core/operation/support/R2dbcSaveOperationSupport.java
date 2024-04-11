@@ -29,6 +29,7 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
         return new R2dbcSaveSupport<>(R2dbcOperationParameter.<T, T>builder()
                 .template(template)
                 .domainType(domainType)
+                .returnType(domainType)
                 .build());
     }
 
@@ -38,10 +39,6 @@ public class R2dbcSaveOperationSupport extends R2dbcOperationSupport implements 
 
         private R2dbcSaveSupport(R2dbcOperationParameter<T, T> operationParameter) {
             super(operationParameter);
-        }
-
-        private R2dbcSaveSupport(R2dbcOperationParameter.R2dbcOperationParameterBuilder<T, T> parameterBuilder) {
-            super(parameterBuilder);
         }
 
         @Override

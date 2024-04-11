@@ -87,9 +87,6 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
             super(operationParameter);
         }
 
-        public R2dbcUpdateSupport(R2dbcOperationParameter.R2dbcOperationParameterBuilder<T, T> parameterBuilder) {
-            super(parameterBuilder);
-        }
 
         /**
          * (non-Javadoc)
@@ -116,7 +113,6 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
 
             Assert.notNull(query, "Query must not be null");
 
-//            return new R2dbcUpdateSupport<>(this.template, this.domainType, query, this.tableName);
             return newSupport(rebuild().query(query), R2dbcUpdateSupport::new);
         }
 
@@ -145,151 +141,6 @@ public final class R2dbcUpdateOperationSupport extends R2dbcOperationSupport imp
                     .build()
                     .executeBatch(objectList);
         }
-
-
-//        @SuppressWarnings("deprecation")
-//        private <E> Mono<E> doUpdate(E entity, SqlIdentifier tableName) {
-//
-//
-//            RelationalPersistentEntity<E> persistentEntity = R2dbcMappingKit.getRequiredEntity(entity);
-//
-//            return template.maybeCallBeforeConvert(entity, tableName).flatMap(onBeforeConvert -> {
-//
-//                E entityToUse;
-//                Criteria matchingVersionCriteria;
-//
-//                if (persistentEntity.hasVersionProperty()) {
-//                    matchingVersionCriteria = createMatchingVersionCriteria(onBeforeConvert, persistentEntity);
-//                    entityToUse = incrementVersion(persistentEntity, onBeforeConvert);
-//                } else {
-//                    entityToUse = onBeforeConvert;
-//                    matchingVersionCriteria = null;
-//                }
-//
-//                OutboundRow outboundRow = getOutboundRow(entityToUse);
-//
-//                return template.maybeCallBeforeSave(entityToUse, outboundRow, tableName).flatMap(onBeforeSave -> {
-//
-//                    SqlIdentifier idColumn = persistentEntity.getRequiredIdProperty().getColumnName();
-//                    Parameter id = outboundRow.remove(idColumn);
-//
-//                    persistentEntity.forEach(property -> {
-//                        if (property.isInsertOnly() || !R2dbcMappingKit.isPropertyEffective(entityToUse, persistentEntity, property)) {
-//                            outboundRow.remove(property.getColumnName());
-//                        }
-//                    });
-//
-//                    Criteria criteria = Criteria.where(template.getDataAccessStrategy().toSql(idColumn)).is(id);
-//
-//                    if (matchingVersionCriteria != null) {
-//                        criteria = criteria.and(matchingVersionCriteria);
-//                    }
-//
-//                    return doUpdate(onBeforeSave, tableName, persistentEntity, criteria, outboundRow);
-//                });
-//            });
-//        }
-//
-//        private <E> Mono<Long> doUpdate(Query query, Update update, Class<E> entityClass, SqlIdentifier tableName) {
-//
-//            StatementMapper statementMapper = this.statementMapper().forType(entityClass);
-//
-//            StatementMapper.UpdateSpec selectSpec = statementMapper.createUpdate(tableName, update);
-//
-//            Optional<CriteriaDefinition> criteria = query.getCriteria();
-//            if (criteria.isPresent()) {
-//                selectSpec = criteria.map(selectSpec::withCriteria).orElse(selectSpec);
-//            }
-//
-//            PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-//            return this.databaseClient().sql(operation).fetch().rowsUpdated();
-//        }
-//
-//        @SuppressWarnings("rawtypes")
-//        private <E> Mono<E> doUpdate(E entity, SqlIdentifier tableName, RelationalPersistentEntity<E> persistentEntity, Criteria criteria, OutboundRow outboundRow) {
-//
-//
-//            Update update = Update.from((Map) outboundRow);
-//
-//            StatementMapper mapper = this.statementMapper();
-//            StatementMapper.UpdateSpec updateSpec = mapper.createUpdate(tableName, update).withCriteria(criteria);
-//
-//            PreparedOperation<?> operation = mapper.getMappedObject(updateSpec);
-//
-//            return this.databaseClient().sql(operation).fetch().rowsUpdated().handle((rowsUpdated, sink) -> {
-//
-//                if (rowsUpdated != 0) {
-//                    return;
-//                }
-//
-//                if (persistentEntity.hasVersionProperty()) {
-//                    sink.error(new OptimisticLockingFailureException(formatOptimisticLockingExceptionMessage(entity, persistentEntity)));
-//                } else {
-//                    sink.error(new TransientDataAccessResourceException(formatTransientEntityExceptionMessage(entity, persistentEntity)));
-//                }
-//            }).then(template.maybeCallAfterSave(entity, outboundRow, tableName));
-//        }
-//
-//        /**
-//         * 批量插入数据
-//         * 暂时使用循环来做
-//         * 后期考虑通过批量插入语句来做
-//         */
-//        private <E> Flux<E> doUpdateBatch(Collection<E> entityList, SqlIdentifier tableName) {
-//            // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
-//            // 需要主动管理
-//            return Mono.just(entityList)
-//                    .filter(list -> !ObjectUtils.isEmpty(list))
-//                    .flatMapMany(Flux::fromIterable)
-//                    .flatMap(entity -> doUpdate(entity, tableName))
-//                    .switchIfEmpty(Flux.empty())
-//                    .as(this.transactionalOperator()::transactional);
-//        }
-//
-//        private <E> Criteria createMatchingVersionCriteria(E entity, RelationalPersistentEntity<E> persistentEntity) {
-//
-//            PersistentPropertyAccessor<?> propertyAccessor = persistentEntity.getPropertyAccessor(entity);
-//
-//            Optional<RelationalPersistentProperty> versionPropertyOptional = Optional.ofNullable(persistentEntity.getVersionProperty());
-//
-//            return versionPropertyOptional.map(versionProperty -> {
-//                Object version = propertyAccessor.getProperty(versionProperty);
-//                Criteria.CriteriaStep versionColumn = Criteria.where(template.getDataAccessStrategy().toSql(versionProperty.getColumnName()));
-//                if (version == null) {
-//                    return versionColumn.isNull();
-//                } else {
-//                    return versionColumn.is(version);
-//                }
-//            }).orElse(Criteria.empty());
-//
-//        }
-//
-//        private <E> E incrementVersion(RelationalPersistentEntity<E> persistentEntity, E entity) {
-//
-//            PersistentPropertyAccessor<?> propertyAccessor = persistentEntity.getPropertyAccessor(entity);
-//
-//            Optional<RelationalPersistentProperty> versionPropertyOptional = Optional.ofNullable(persistentEntity.getVersionProperty());
-//
-//            versionPropertyOptional.ifPresent(versionProperty -> {
-//                ConversionService conversionService = this.converter().getConversionService();
-//                Optional<Object> currentVersionValue = Optional.ofNullable(propertyAccessor.getProperty(versionProperty));
-//
-//                long newVersionValue = currentVersionValue.map(it -> conversionService.convert(it, Long.class)).map(it -> it + 1).orElse(1L);
-//
-//                propertyAccessor.setProperty(versionProperty, conversionService.convert(newVersionValue, versionProperty.getType()));
-//            });
-//            return (E) propertyAccessor.getBean();
-//        }
-//
-//        private <E> String formatOptimisticLockingExceptionMessage(E entity, RelationalPersistentEntity<E> persistentEntity) {
-//
-//            return String.format("Failed to update table [%s]; Version does not match for row with Id [%s]", persistentEntity.getQualifiedTableName(), persistentEntity.getIdentifierAccessor(entity).getIdentifier());
-//        }
-//
-//        private <E> String formatTransientEntityExceptionMessage(E entity, RelationalPersistentEntity<E> persistentEntity) {
-//
-//            return String.format("Failed to update table [%s]; Row with Id [%s] does not exist", persistentEntity.getQualifiedTableName(), persistentEntity.getIdentifierAccessor(entity).getIdentifier());
-//        }
 
     }
 }

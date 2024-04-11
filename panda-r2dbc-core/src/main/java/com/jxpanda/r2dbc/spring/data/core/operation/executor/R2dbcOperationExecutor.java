@@ -140,7 +140,7 @@ public class R2dbcOperationExecutor<T, R> {
 
         OutboundRow row = new OutboundRow();
 
-        this.operationParameter.getTemplate().getConverter().write(object, row);
+        converter().write(object, row);
 
         RelationalPersistentEntity<?> entity = R2dbcMappingKit.getRequiredEntity(ClassUtils.getUserClass(object));
 

@@ -12,8 +12,10 @@ import org.springframework.data.mapping.model.SpELExpressionEvaluator;
 import org.springframework.data.r2dbc.convert.MappingR2dbcConverter;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.relational.core.conversion.RowDocumentAccessor;
+import org.springframework.data.relational.core.mapping.NamingStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
+import org.springframework.data.relational.domain.RowDocument;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.Parameter;
@@ -21,10 +23,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * 该类继承 {@link MappingR2dbcConverter}
@@ -40,6 +40,8 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
     private final R2dbcCustomTypeHandlers typeHandlers;
 
+    private final NamingStrategy namingStrategy;
+
     /**
      * Creates a new {@link MappingReactiveConverter} given {@link MappingContext} and {@link CustomConversions} and {@link R2dbcCustomTypeHandlers}.
      *
@@ -50,12 +52,19 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     public MappingReactiveConverter(
             MappingContext<? extends RelationalPersistentEntity<?>, ? extends RelationalPersistentProperty> context,
             CustomConversions conversions,
-            R2dbcCustomTypeHandlers typeHandlers) {
+            R2dbcCustomTypeHandlers typeHandlers,
+            NamingStrategy namingStrategy
+    ) {
         super(context, conversions);
         this.typeHandlers = typeHandlers;
+        this.namingStrategy = namingStrategy;
     }
 
     /**
+     * FIXME: Spring通过这个函数来处理值的读取，因此可以通过增强该函数来植入增强逻辑
+     *  增加了typeHandlers的介入，处理typeHandlers所支持的类型
+     *  目前typeHandler只支持枚举和json的处理
+     * <p>
      * 创建一个新的RelationalPropertyValueProvider实例。
      * 该方法通过使用父类的newValueProvider方法来创建一个基础的DocumentValueProvider实例，然后将其包装在一个RelationalPropertyValueProviderDecorator中，以提供额外的功能或处理。
      *
@@ -67,12 +76,110 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
     @Override
     protected RelationalPropertyValueProvider newValueProvider(RowDocumentAccessor documentAccessor, SpELExpressionEvaluator evaluator, ConversionContext context) {
         // 创建并返回一个RelationalPropertyValueProviderDecorator实例，注入类型处理器
-        return new RelationalPropertyValueProviderDecorator((DocumentValueProvider) super.newValueProvider(documentAccessor, evaluator, context), getTypeHandlers());
+        return new RelationalPropertyValueProviderDecorator((DocumentValueProvider) super.newValueProvider(documentAccessor, evaluator, context), getTypeHandlers(), getNamingStrategy());
     }
 
     // ----------------------------------
     // Entity writing
     // ----------------------------------
+    @Override
+    @Nullable
+    public Object writeValue(@Nullable Object value, TypeInformation<?> type) {
+
+        if (value == null) {
+            return null;
+        }
+
+        /*
+         *  FIXME: 这里的逻辑是后加的，之所以这么做是因为希望实现入参传递枚举，但是数据库存储的是枚举的code的功能
+         *      因此在前置逻辑中，已经使用枚举处理器把枚举转为数字类型了
+         *      而蛋疼的是，Spring中有一个ConversionService，执行之后又会把数字类型转回枚举类型
+         *      所以这里需要判断是枚举的话，就直接返回值
+         *      这里是一个临时处理，期望未来能有更优雅的解决方案
+         * */
+        if (type.getType().isEnum()) {
+            return value;
+        }
+
+        if (getConversions().isSimpleType(value.getClass())) {
+
+            if (TypeInformation.OBJECT != type && getConversionService().canConvert(value.getClass(), type.getType())) {
+                value = getConversionService().convert(value, type.getType());
+            }
+
+            return getPotentiallyConvertedSimpleWrite(value);
+        }
+
+        if (value.getClass().isArray()) {
+            return writeArray(value, type);
+        }
+
+        if (value instanceof Collection<?>) {
+            return writeCollection((Iterable<?>) value, type);
+        }
+
+        RelationalPersistentEntity<?> persistentEntity = getMappingContext().getPersistentEntity(value.getClass());
+
+        if (persistentEntity != null) {
+
+            Object id = persistentEntity.getIdentifierAccessor(value).getIdentifier();
+            return writeValue(id, type);
+        }
+
+        return getConversionService().convert(value, type.getType());
+    }
+
+    private Object writeArray(Object value, TypeInformation<?> type) {
+
+        Class<?> componentType = value.getClass().getComponentType();
+        Optional<Class<?>> optionalWriteTarget = getConversions().getCustomWriteTarget(componentType);
+
+        if (optionalWriteTarget.isEmpty() && !componentType.isEnum()) {
+            return value;
+        }
+
+        Class<?> customWriteTarget = optionalWriteTarget
+                .orElseGet(() -> componentType.isEnum() ? String.class : componentType);
+
+        // optimization: bypass identity conversion
+        if (customWriteTarget.equals(componentType)) {
+            return value;
+        }
+
+        TypeInformation<?> component = TypeInformation.OBJECT;
+        if (type.isCollectionLike() && type.getActualType() != null) {
+            component = type.getRequiredComponentType();
+        }
+
+        int length = Array.getLength(value);
+        Object target = Array.newInstance(customWriteTarget, length);
+        for (int i = 0; i < length; i++) {
+            Array.set(target, i, writeValue(Array.get(value, i), component));
+        }
+
+        return target;
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    private Object writeCollection(Iterable<?> value, TypeInformation<?> type) {
+
+        List<Object> mapped = new ArrayList<>();
+
+        TypeInformation<?> component = TypeInformation.OBJECT;
+        if (type.isCollectionLike() && type.getActualType() != null) {
+            component = type.getRequiredComponentType();
+        }
+
+        for (Object o : value) {
+            mapped.add(writeValue(o, component));
+        }
+
+        if (type.getType().isInstance(mapped) || !type.isCollectionLike()) {
+            return mapped;
+        }
+
+        return getConversionService().convert(mapped, type.getType());
+    }
 
     /*
      * (non-Javadoc)
@@ -119,6 +226,9 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
                 IdentifierAccessor identifierAccessor = entity.getIdentifierAccessor(accessor.getBean());
                 value = identifierAccessor.getIdentifier();
             } else if (typeHandlers.hasTypeHandler(property)) {
+                /*
+                 *  FIXME: 这一个分支是新增逻辑，由于增加了类型处理器，这里需要介入，优先用类型处理器的处理方式
+                 * */
                 value = typeHandlers.write(accessor.getProperty(property), property);
             } else {
                 value = accessor.getProperty(property);
@@ -261,7 +371,9 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
      * @param typeHandlers          自定义类型处理器，用于处理特定类型的值的读取。
      */
     private record RelationalPropertyValueProviderDecorator(DocumentValueProvider originalValueProvider,
-                                                            R2dbcCustomTypeHandlers typeHandlers) implements RelationalPropertyValueProvider {
+                                                            R2dbcCustomTypeHandlers typeHandlers,
+                                                            NamingStrategy namingStrategy
+    ) implements RelationalPropertyValueProvider {
 
         /**
          * 检查给定的属性是否有值。
@@ -271,6 +383,10 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
          */
         @Override
         public boolean hasValue(RelationalPersistentProperty property) {
+            boolean hasAlias = hasAlias(property);
+            if (hasAlias) {
+                return getValueWithAlias(property) != null;
+            }
             return originalValueProvider.hasValue(property);
         }
 
@@ -283,7 +399,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         @Override
         public RelationalPropertyValueProvider withContext(ConversionContext context) {
             DocumentValueProvider valueProvider = originalValueProvider.withContext(context);
-            return new RelationalPropertyValueProviderDecorator(valueProvider, typeHandlers);
+            return new RelationalPropertyValueProviderDecorator(valueProvider, typeHandlers, namingStrategy);
         }
 
         /**
@@ -296,17 +412,46 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         @Override
         @SuppressWarnings("unchecked")
         public <T> T getPropertyValue(RelationalPersistentProperty property) {
+
+            Object value = null;
+
+            // 如果有别名的话，尝试从别名获取值
+            if (hasAlias(property)) {
+                value = getValueWithAlias(property);
+            }
+
             // 检查是否有针对当前属性的类型处理器
             if (typeHandlers.hasTypeHandler(property)) {
-                Object value = originalValueProvider.accessor().get(property);
+                value = value != null ? value : originalValueProvider.accessor().get(property);
                 // 断言，值不会为null， 因为前置的hasValue方法已经检查过属性是否有值
                 Assert.notNull(value, "Value must be not null!");
                 // 使用类型处理器读取和转换属性值
                 return (T) typeHandlers.read(value, property);
             }
-            // 如果没有特殊处理器，直接从原始提供者获取值
-            return originalValueProvider.getPropertyValue(property);
+
+            // 如果没有特殊处理，直接从原始提供者获取值
+            return value != null ? (T) value : originalValueProvider.getPropertyValue(property);
         }
+
+        /**
+         * 检查是否有别名，有的话优先利用别名获取数据，使用getName可以直接获取到别名（没有设定别名则获取字段名）
+         * 所以如果字段名和别名不一样，则说明有别名的存在（如果别名的设置和字段名一样，也等于没设置）
+         */
+        private boolean hasAlias(RelationalPersistentProperty property) {
+            String name = getColumnName(property);
+            return !name.equals(property.getColumnName().getReference());
+        }
+
+        @Nullable
+        private Object getValueWithAlias(RelationalPersistentProperty property) {
+            RowDocument document = originalValueProvider.accessor().getDocument();
+            return document.get(getColumnName(property));
+        }
+
+        private String getColumnName(RelationalPersistentProperty property) {
+            return namingStrategy.getColumnName(property);
+        }
+
     }
 
 

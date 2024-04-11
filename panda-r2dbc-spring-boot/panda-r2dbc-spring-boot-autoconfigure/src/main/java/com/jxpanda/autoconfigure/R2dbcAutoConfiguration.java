@@ -79,8 +79,9 @@ public class R2dbcAutoConfiguration {
     @ConditionalOnMissingBean
     public MappingReactiveConverter r2dbcConverter(R2dbcMappingContext mappingContext,
                                                    R2dbcCustomConversions r2dbcCustomConversions,
-                                                   R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
-        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers);
+                                                   R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers,
+                                                   NamingStrategy namingStrategy) {
+        return new MappingReactiveConverter(mappingContext, r2dbcCustomConversions, r2dbcCustomTypeHandlers, namingStrategy);
     }
 
 

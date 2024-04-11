@@ -186,7 +186,6 @@ public class TestAPI {
     @GetMapping("/order/sum")
     public Mono<OrderSum> getOrderSum() {
         return reactiveEntityTemplate.select(OrderSum.class)
-                .matching(Query.query(EnhancedCriteria.where(Order::getId).greaterThan("3005542952022835202")))
                 .one();
     }
 
