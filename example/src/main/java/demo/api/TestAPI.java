@@ -2,19 +2,14 @@ package demo.api;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.PageParameter;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import demo.model.*;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -115,7 +110,7 @@ public class TestAPI {
     @GetMapping("/page")
     public Mono<Pagination<Order>> paginationMono(Integer current, Integer size, Boolean needCount) {
         return reactiveEntityTemplate.select(Order.class)
-                .page(PageParameter.of(current, size).withSort(Sort.by(Sort.Direction.DESC, "id")));
+                .page(Pagination.of(current, size));
     }
 
     @GetMapping("{userId}")
@@ -209,7 +204,7 @@ public class TestAPI {
                 .all();
     }
 
-//    @Transactional
+    //    @Transactional
     @GetMapping("/transaction")
     public Mono<?> transaction(String userId, String orderId) {
         User user = User.builder()

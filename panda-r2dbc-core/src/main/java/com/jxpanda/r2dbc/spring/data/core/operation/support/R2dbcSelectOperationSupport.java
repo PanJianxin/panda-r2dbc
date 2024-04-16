@@ -17,7 +17,7 @@ package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.PageParameter;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.Seeker;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
@@ -25,9 +25,6 @@ import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcOperationOptio
 import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcOperationParameter;
 import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcSelectExecutor;
 import org.reactivestreams.Publisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.r2dbc.core.ReactiveSelectOperation;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
@@ -195,45 +192,13 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
         }
 
         @Override
-        public Mono<Pagination<T>> page(PageParameter pageParameter) {
-            PageRequest pageable = pageParameter.buildRequest();
+        public Mono<Pagination<T>> page(Pageable pageable) {
+            return doPage(pageable, R2dbcOperationParameter::getQuery);
+        }
 
-            Mono<Long> totalSupplier = Mono.defer(() -> {
-                if (pageable.isPaged()) {
-                    return doCount(parameter -> parameter.getQuery().with(pageable));
-                }
-                return Mono.just(-1L);
-            });
-
-            return doSelect(parameter -> parameter.getQuery().with(pageable), RowsFetchSpec::all)
-                    .collectList()
-                    .flatMap(records -> {
-                        // 有两种情况不需要count查询
-                        // 1、不支持分页 [或] （查询的是第一页数据 [且] 第一页数据的长度小于页长）
-                        // 2、支持分页，但是查询的是最后一页数据，可以通过最后一页数据的长度+偏移量offset计算得到总数据量
-
-                        Pagination.Builder<T> paginationBuilder = Pagination
-                                .<T>builder(pageParameter.getPageNumber(), pageParameter.getPageSize())
-                                .records(records);
-
-                        // 不支持分页，或者查询的是第一页数据，且第一页数据的长度小于页长
-                        if (pageable.isUnpaged() || (pageable.getOffset() == 0 && pageable.getPageSize() > records.size())) {
-                            return Mono.just(paginationBuilder.pageSize(records.size()).build());
-                        }
-
-                        // 这里的意思是：如果是最后一页数据了，就不用count查询了，可以直接使用数据计算出共有多少条数据
-                        if (!records.isEmpty() && pageable.getPageSize() > records.size()) {
-                            return Mono.just(paginationBuilder.records(records)
-                                    .totalElements(pageable.getOffset() + records.size())
-                                    .build());
-                        }
-
-                        // count以下共有多少条数据之后再返回分页对象
-                        return totalSupplier.map(total -> paginationBuilder
-                                .totalElements(total)
-                                .records(records)
-                                .build());
-                    });
+        @Override
+        public Mono<Pagination<T>> seek(Seeker<T> seeker) {
+            return doPage(seeker.takePageable(), parameter -> seeker.buildQuery(parameter.getDomainType()));
         }
 
 
@@ -275,6 +240,35 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
                     .queryHandler(queryHandler)
                     .build()
                     .execute(resultHandler);
+        }
+
+        private Mono<Pagination<T>> doPage(Pageable pageable, Function<R2dbcOperationParameter<T, T>, Query> queryHandler) {
+            return doSelect(queryHandler, RowsFetchSpec::all)
+                    .collectList()
+                    .flatMap(records -> {
+                        // 判断是否需要做count查询
+                        // 判定规则如下：
+                        boolean isNeedCount =
+                                // 1、分页没有被禁用，这三个条件判断分页有没有被禁用
+                                pageable.isPaged() && pageable.getPageSize() > 0
+                                // 2、查询回来的数据不为空（还有数据）
+                                && !records.isEmpty()
+                                // 3、可能还有下一页（页长等于查询回来的数据长度，则可能还有下一页，页长如果大于数据长度，则肯定没有下一页了）
+                                && pageable.getPageSize() <= records.size();
+
+                        Mono<Long> totalSupplier = Mono.defer(() -> {
+                            // 分页没有被禁用，且可能还有下一页数据，则需要做count查询
+                            if (isNeedCount) {
+                                // 调用count函数返回一共有多少条数据
+                                return doCount(parameter -> parameter.getQuery().with(pageable));
+                            }
+                            // 如果不需要查询，就返回offset+record.size()
+                            return Mono.just(pageable.getOffset() + records.size());
+                        });
+
+                        // count以下共有多少条数据之后再返回分页对象
+                        return totalSupplier.map(total -> new Pagination<>(records, pageable, total));
+                    });
         }
 
     }

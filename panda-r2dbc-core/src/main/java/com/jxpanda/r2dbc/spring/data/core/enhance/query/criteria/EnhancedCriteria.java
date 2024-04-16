@@ -96,7 +96,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
         }
 
         if (criteria.size() == 1) {
-            return criteria.get(0);
+            return criteria.getFirst();
         }
 
         return EMPTY.and(criteria);
@@ -156,7 +156,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
         SqlIdentifier identifier = SqlIdentifier.unquoted(column);
         return new DefaultEnhancedCriteriaStep(identifier) {
             @Override
-            protected EnhancedCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
+            protected EnhancedCriteria createCriteria(Comparator comparator, @Nullable Object value) {
                 return new EnhancedCriteria(EnhancedCriteria.this, Combinator.AND, Collections.emptyList(), identifier, comparator, value);
             }
         };
@@ -203,7 +203,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
         SqlIdentifier identifier = SqlIdentifier.unquoted(column);
         return new DefaultEnhancedCriteriaStep(identifier) {
             @Override
-            protected EnhancedCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
+            protected EnhancedCriteria createCriteria(Comparator comparator, @Nullable Object value) {
                 return new EnhancedCriteria(EnhancedCriteria.this, Combinator.OR, Collections.emptyList(), identifier, comparator, value);
             }
         };
@@ -495,6 +495,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
         return "null";
     }
 
+
     /**
      * Interface declaring terminal builder methods to build a {@link EnhancedCriteria}.
      */
@@ -644,7 +645,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
             Assert.notNull(value, "Value must not be null");
 
-            return createLambdaCriteria(Comparator.EQ, value);
+            return createCriteria(Comparator.EQ, value);
         }
 
         @Override
@@ -652,7 +653,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
             Assert.notNull(value, "Value must not be null");
 
-            return createLambdaCriteria(Comparator.NEQ, value);
+            return createCriteria(Comparator.NEQ, value);
         }
 
         @Override
@@ -666,7 +667,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
                         "You can only pass in one argument of type " + values[1].getClass().getName());
             }
 
-            return createLambdaCriteria(Comparator.IN, Arrays.asList(values));
+            return createCriteria(Comparator.IN, Arrays.asList(values));
         }
 
         @Override
@@ -675,7 +676,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values.toArray(), "Values must not contain a null value");
 
-            return createLambdaCriteria(Comparator.IN, values);
+            return createCriteria(Comparator.IN, values);
         }
 
         @Override
@@ -689,7 +690,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
                         "You can only pass in one argument of type " + values[1].getClass().getName());
             }
 
-            return createLambdaCriteria(Comparator.NOT_IN, Arrays.asList(values));
+            return createCriteria(Comparator.NOT_IN, Arrays.asList(values));
         }
 
         @Override
@@ -698,7 +699,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values.toArray(), "Values must not contain a null value");
 
-            return createLambdaCriteria(Comparator.NOT_IN, values);
+            return createCriteria(Comparator.NOT_IN, values);
         }
 
         @Override
@@ -707,7 +708,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
             Assert.notNull(begin, "Begin value must not be null");
             Assert.notNull(end, "End value must not be null");
 
-            return createLambdaCriteria(Comparator.BETWEEN, Pair.of(begin, end));
+            return createCriteria(Comparator.BETWEEN, Pair.of(begin, end));
         }
 
         @Override
@@ -716,7 +717,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
             Assert.notNull(begin, "Begin value must not be null");
             Assert.notNull(end, "End value must not be null");
 
-            return createLambdaCriteria(Comparator.NOT_BETWEEN, Pair.of(begin, end));
+            return createCriteria(Comparator.NOT_BETWEEN, Pair.of(begin, end));
         }
 
         @Override
@@ -724,7 +725,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
             Assert.notNull(value, "Value must not be null");
 
-            return createLambdaCriteria(Comparator.LT, value);
+            return createCriteria(Comparator.LT, value);
         }
 
         @Override
@@ -732,7 +733,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
             Assert.notNull(value, "Value must not be null");
 
-            return createLambdaCriteria(Comparator.LTE, value);
+            return createCriteria(Comparator.LTE, value);
         }
 
         @Override
@@ -740,7 +741,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
             Assert.notNull(value, "Value must not be null");
 
-            return createLambdaCriteria(Comparator.GT, value);
+            return createCriteria(Comparator.GT, value);
         }
 
         @Override
@@ -748,7 +749,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
             Assert.notNull(value, "Value must not be null");
 
-            return createLambdaCriteria(Comparator.GTE, value);
+            return createCriteria(Comparator.GTE, value);
         }
 
         @Override
@@ -756,36 +757,36 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
             Assert.notNull(value, "Value must not be null");
 
-            return createLambdaCriteria(Comparator.LIKE, value);
+            return createCriteria(Comparator.LIKE, value);
         }
 
         @Override
         public EnhancedCriteria notLike(Object value) {
             Assert.notNull(value, "Value must not be null");
-            return createLambdaCriteria(Comparator.NOT_LIKE, value);
+            return createCriteria(Comparator.NOT_LIKE, value);
         }
 
         @Override
         public EnhancedCriteria isNull() {
-            return createLambdaCriteria(Comparator.IS_NULL, null);
+            return createCriteria(Comparator.IS_NULL, null);
         }
 
         @Override
         public EnhancedCriteria isNotNull() {
-            return createLambdaCriteria(Comparator.IS_NOT_NULL, null);
+            return createCriteria(Comparator.IS_NOT_NULL, null);
         }
 
         @Override
         public EnhancedCriteria isTrue() {
-            return createLambdaCriteria(Comparator.IS_TRUE, true);
+            return createCriteria(Comparator.IS_TRUE, true);
         }
 
         @Override
         public EnhancedCriteria isFalse() {
-            return createLambdaCriteria(Comparator.IS_FALSE, false);
+            return createCriteria(Comparator.IS_FALSE, false);
         }
 
-        protected EnhancedCriteria createLambdaCriteria(Comparator comparator, @Nullable Object value) {
+        protected EnhancedCriteria createCriteria(Comparator comparator, @Nullable Object value) {
             return new EnhancedCriteria(this.property, comparator, value);
         }
     }

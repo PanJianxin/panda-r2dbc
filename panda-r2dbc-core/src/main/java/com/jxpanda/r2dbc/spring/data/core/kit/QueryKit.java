@@ -14,37 +14,17 @@ import java.util.stream.Collectors;
  */
 @UtilityClass
 public class QueryKit {
-
-    public static <T> CriteriaAdapter<T> with(Class<T> clazz) {
-        return new CriteriaAdapter<>(clazz);
-    }
-
     public static <T, ID> Query queryById(Class<T> clazz, ID id) {
-        return Query.query(with(clazz).whereId().is(id));
+        return Query.query(whereId(clazz).is(id));
     }
 
     public static <T, ID> Query queryByIds(Class<T> clazz, Collection<ID> ids) {
-        return Query.query(with(clazz).whereId().in(ids));
+        return Query.query(whereId(clazz).in(ids));
     }
 
-    public static class CriteriaAdapter<T> {
-
-        private final Class<T> clazz;
-
-        private final RelationalPersistentEntity<T> requiredEntity;
-
-        public CriteriaAdapter(Class<T> clazz) {
-            this.clazz = clazz;
-            this.requiredEntity = R2dbcMappingKit.getRequiredEntity(this.clazz);
-        }
-
-        public Criteria.CriteriaStep whereId() {
-            Assert.isTrue(requiredEntity.hasIdProperty(), "Domain type must has id property");
-            return Criteria.where(requiredEntity.getIdColumn().getReference());
-        }
-
-
+    private static <T> Criteria.CriteriaStep whereId(Class<T> clazz) {
+        RelationalPersistentEntity<T> requiredEntity = R2dbcMappingKit.getRequiredEntity(clazz);
+        return Criteria.where(requiredEntity.getIdColumn().getReference());
     }
-
 
 }
