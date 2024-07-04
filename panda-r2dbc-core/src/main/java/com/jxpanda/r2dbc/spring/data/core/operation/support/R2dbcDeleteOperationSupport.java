@@ -17,30 +17,17 @@ package com.jxpanda.r2dbc.spring.data.core.operation.support;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
-import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcDeleteOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcDeleteExecutor;
 import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcOperationParameter;
-import org.springframework.data.mapping.IdentifierAccessor;
-import org.springframework.data.mapping.MappingException;
 import org.springframework.data.r2dbc.core.ReactiveDeleteOperation;
-import org.springframework.data.r2dbc.core.StatementMapper;
-import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
-import org.springframework.data.relational.core.query.Criteria;
-import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
-import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
-import org.springframework.data.util.Pair;
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
-import org.springframework.r2dbc.core.PreparedOperation;
-import org.springframework.r2dbc.core.RowsFetchSpec;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
-import java.util.Optional;
 
 
 /**

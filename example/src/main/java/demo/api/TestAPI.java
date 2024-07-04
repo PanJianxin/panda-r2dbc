@@ -3,6 +3,8 @@ package demo.api;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSaveOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import demo.model.*;
 import lombok.AllArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
@@ -155,7 +157,8 @@ public class TestAPI {
     @PostMapping("/order/save-batch")
     public Flux<Order> saveBatch(@RequestBody Flux<Order> orderList) {
         return orderList.collectList()
-                .flatMapMany(orders -> reactiveEntityTemplate.save(Order.class).batch(orders));
+                .flatMapMany(orders -> reactiveEntityTemplate.save(Order.class)
+                        .batch(orders));
     }
 
     @PostMapping("/order/update")

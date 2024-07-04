@@ -4,10 +4,8 @@ import lombok.experimental.UtilityClass;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
-import org.springframework.util.Assert;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 /**
  * @author Panda

@@ -8,7 +8,7 @@ plugins {
 
 object Project {
     const val GROUP = "com.jxpanda.r2dbc"
-    const val VERSION = "3.0.0-gamma"
+    const val VERSION = "1.2.0"
 }
 
 allprojects {
@@ -24,7 +24,7 @@ configure(subprojects.filter { !it.name.endsWith("bom") }) {
     apply(plugin = "io.freefair.lombok")
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
         withSourcesJar()
     }
 

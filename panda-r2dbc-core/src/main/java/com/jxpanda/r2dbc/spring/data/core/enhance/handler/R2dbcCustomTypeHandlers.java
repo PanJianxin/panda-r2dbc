@@ -1,12 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.handler;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
-import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcEnumTypeHandler;
-import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcJacksonTypeHandler;
-import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcJsonTypeHandler;
-import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcTypeHandler;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 
 import java.util.HashMap;

@@ -3,7 +3,6 @@ package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
-import org.reactivestreams.Publisher;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.r2dbc.core.StatementMapper;
@@ -21,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
 
 @SuppressWarnings("deprecation")
 public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor<T, T> {

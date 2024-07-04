@@ -1,7 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
-import org.reactivestreams.Publisher;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.TransientDataAccessResourceException;

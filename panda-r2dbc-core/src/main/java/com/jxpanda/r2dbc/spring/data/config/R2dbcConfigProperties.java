@@ -14,7 +14,8 @@ import java.util.Map;
  * @param mapping     映射相关配置
  * @param logicDelete 逻辑删除相关配置
  */
-public record R2dbcConfigProperties(Database database, Mapping mapping, LogicDelete logicDelete) {
+public record R2dbcConfigProperties(
+        Database database, Mapping mapping, LogicDelete logicDelete) {
 
     /**
      * @param forceQuote         是否在对象映射的过程中强制加上引用符

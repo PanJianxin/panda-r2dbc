@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +36,7 @@ public enum Rule implements RuleFunction {
     LE(EnhancedCriteria.EnhancedCriteriaStep::lessThanOrEquals),
     IN(EnhancedCriteria.EnhancedCriteriaStep::in),
     NOT_IN(EnhancedCriteria.EnhancedCriteriaStep::notIn),
-    LIKE(EnhancedCriteria.EnhancedCriteriaStep::like),
+    LIKE((criteriaStep, value) -> criteriaStep.like(StringConstant.PERCENT_SIGN + value + StringConstant.PERCENT_SIGN)),
     BETWEEN((criteriaStep, params) -> {
         List<Object> objects = (List<Object>) params;
         return criteriaStep.between(objects.get(0), objects.get(1));

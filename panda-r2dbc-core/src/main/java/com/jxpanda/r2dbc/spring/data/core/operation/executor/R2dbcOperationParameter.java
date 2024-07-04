@@ -5,7 +5,6 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginContext;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
-import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.r2dbc.core.StatementMapper;

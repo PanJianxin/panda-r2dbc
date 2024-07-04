@@ -1,6 +1,5 @@
 package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginContext;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
 import lombok.Getter;
 

@@ -8,7 +8,7 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.model.SpELExpressionEvaluator;
+import org.springframework.data.mapping.model.ValueExpressionEvaluator;
 import org.springframework.data.r2dbc.convert.MappingR2dbcConverter;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.relational.core.conversion.RowDocumentAccessor;
@@ -74,9 +74,17 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
      * @return 返回一个RelationalPropertyValueProviderDecorator实例，该实例装饰了基础的DocumentValueProvider，并提供了类型处理器。
      */
     @Override
-    protected RelationalPropertyValueProvider newValueProvider(RowDocumentAccessor documentAccessor, SpELExpressionEvaluator evaluator, ConversionContext context) {
-        // 创建并返回一个RelationalPropertyValueProviderDecorator实例，注入类型处理器
-        return new RelationalPropertyValueProviderDecorator((DocumentValueProvider) super.newValueProvider(documentAccessor, evaluator, context), getTypeHandlers(), getNamingStrategy());
+    protected RelationalPropertyValueProvider newValueProvider(RowDocumentAccessor documentAccessor, ValueExpressionEvaluator evaluator, ConversionContext context) {
+        // FIXME: 创建并返回一个RelationalPropertyValueProviderDecorator实例，注入类型处理器
+        return new RelationalPropertyValueProviderDecorator((DocumentValueProvider) super.newValueProvider(documentAccessor, evaluator, context), documentAccessor, getTypeHandlers(), getNamingStrategy());
+    }
+
+    @Override
+    protected Object getPotentiallyConvertedSimpleRead(Object value, TypeInformation<?> type) {
+        /*
+         * FIXME: 目前研究下来，最终值转换的函数就是这个函数，这里标记一下，以备用
+         * */
+        return super.getPotentiallyConvertedSimpleRead(value, type);
     }
 
     // ----------------------------------
@@ -371,6 +379,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
      * @param typeHandlers          自定义类型处理器，用于处理特定类型的值的读取。
      */
     private record RelationalPropertyValueProviderDecorator(DocumentValueProvider originalValueProvider,
+                                                            RowDocumentAccessor documentAccessor,
                                                             R2dbcCustomTypeHandlers typeHandlers,
                                                             NamingStrategy namingStrategy
     ) implements RelationalPropertyValueProvider {
@@ -399,7 +408,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         @Override
         public RelationalPropertyValueProvider withContext(ConversionContext context) {
             DocumentValueProvider valueProvider = originalValueProvider.withContext(context);
-            return new RelationalPropertyValueProviderDecorator(valueProvider, typeHandlers, namingStrategy);
+            return new RelationalPropertyValueProviderDecorator(valueProvider, documentAccessor, typeHandlers, namingStrategy);
         }
 
         /**
@@ -422,7 +431,10 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
             // 检查是否有针对当前属性的类型处理器
             if (typeHandlers.hasTypeHandler(property)) {
-                value = value != null ? value : originalValueProvider.accessor().get(property);
+                // FIXME:如果有类型处理器，直接读取原值，交给类型处理器处理
+                //  如果使用：originalValueProvider.getPropertyValue(property); 函数取值的话，这个函数内部会做一次值类型转换
+                //  typeHandlers要处理的就是特殊情况（通常无法使用值类型转换的属性），所以这里直接读取原值，交给类型处理器处理
+                value = documentAccessor.get(property);
                 // 断言，值不会为null， 因为前置的hasValue方法已经检查过属性是否有值
                 Assert.notNull(value, "Value must be not null!");
                 // 使用类型处理器读取和转换属性值
@@ -430,7 +442,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
             }
 
             // 如果没有特殊处理，直接从原始提供者获取值
-            return value != null ? (T) value : originalValueProvider.getPropertyValue(property);
+            return originalValueProvider.getPropertyValue(property);
         }
 
         /**
@@ -444,7 +456,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
         @Nullable
         private Object getValueWithAlias(RelationalPersistentProperty property) {
-            RowDocument document = originalValueProvider.accessor().getDocument();
+            RowDocument document = documentAccessor.getDocument();
             return document.get(getColumnName(property));
         }
 

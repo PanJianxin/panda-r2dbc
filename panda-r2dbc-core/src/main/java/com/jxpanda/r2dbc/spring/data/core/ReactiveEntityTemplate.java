@@ -33,7 +33,10 @@ import org.springframework.data.projection.EntityProjection;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.r2dbc.convert.EntityRowMapper;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
-import org.springframework.data.r2dbc.core.*;
+import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
+import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy;
+import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
 import org.springframework.data.r2dbc.mapping.OutboundRow;
 import org.springframework.data.r2dbc.mapping.event.AfterConvertCallback;
@@ -102,8 +105,6 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
     @Nullable
     @Getter(value = AccessLevel.PACKAGE)
     private ReactiveEntityCallbacks entityCallbacks;
-
-
 
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {
@@ -244,6 +245,12 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         return new R2dbcUpdateOperationSupport(this)
                 .update(R2dbcMappingKit.getRequiredEntity(entity).getType())
                 .using(entity);
+    }
+
+    public <T> Flux<T> updateBatch(Collection<T> entityList, Class<T> domainType) throws DataAccessException {
+        return new R2dbcUpdateOperationSupport(this)
+                .update(domainType)
+                .batch(entityList);
     }
 
     public Mono<Long> update(Query query, Update update, Class<?> entityClass) throws DataAccessException {

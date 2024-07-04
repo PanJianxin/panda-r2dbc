@@ -7,15 +7,10 @@ plugins {
 group = "com.jxpanda.r2dbc"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
-
 dependencies {
     implementation(project(":panda-r2dbc-spring-boot:panda-r2dbc-spring-boot-starter"))
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("com.jxpanda.commons:commons-base:1.2.9")
+//    implementation("com.jxpanda.commons:commons-base:1.2.9")
 
     runtimeOnly(libs.r2dbc.mysql)
 

@@ -3,9 +3,6 @@ package com.jxpanda.r2dbc.spring.data.core.enhance.annotation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.data.annotation.Reference;
-import org.springframework.data.mapping.PersistentEntity;
-import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
-import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Criteria;
 
 import java.lang.annotation.Documented;
@@ -15,7 +12,6 @@ import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.BiFunction;
 
 import static java.lang.annotation.ElementType.FIELD;
