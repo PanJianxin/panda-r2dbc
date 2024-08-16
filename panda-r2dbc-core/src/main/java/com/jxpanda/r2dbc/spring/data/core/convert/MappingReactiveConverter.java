@@ -399,6 +399,12 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
             return originalValueProvider.hasValue(property);
         }
 
+        @Override
+        public boolean hasNonEmptyValue(RelationalPersistentProperty property) {
+            // TODO：待实现
+            return false;
+        }
+
         /**
          * 通过提供转换上下文来创建一个新的属性值提供者实例。
          *

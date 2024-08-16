@@ -2,6 +2,7 @@ package com.jxpanda.r2dbc.spring.data.core.operation;
 
 /**
  * 物理删除，提供在开启逻辑删除的情况下，还需要使用物理删除的场景使用
+ * @author Panda
  */
 public interface R2dbcDestroyOperation {
 

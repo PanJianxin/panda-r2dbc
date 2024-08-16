@@ -7,5 +7,6 @@ dependencies {
     api(libs.r2dbc.pool)
     api(libs.bundles.jackson)
     implementation(libs.jakarta.annotation.api)
+    compileOnly(libs.r2dbc.postgresql)
 }
 

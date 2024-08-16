@@ -20,9 +20,9 @@ panda:
       field: deleted_date
     database:
       id-strategy: USE_GENERATOR
-      force-quote: true
+      force-quote: false
 
 
 logging:
   level:
-    root: DEBUG
+    root: INFO

@@ -22,6 +22,9 @@ import org.springframework.util.ObjectUtils;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * @author Panda
+ */
 @Component
 @AllArgsConstructor
 public class R2dbcMappingKit {
@@ -44,7 +47,7 @@ public class R2dbcMappingKit {
     }
 
     public static <T> SqlIdentifier getTableName(Class<T> entityClass) {
-        return R2dbcMappingKit.getRequiredEntity(entityClass).getTableName();
+        return R2dbcMappingKit.getRequiredEntity(entityClass).getQualifiedTableName();
     }
 
     public static <T> SqlIdentifier getTableNameOrEmpty(Class<T> entityClass) {

@@ -275,7 +275,7 @@ public class R2dbcOperationExecutor<T, R> {
 
         public final E build() {
             if (domainType != null || returnType != null) {
-               operationParameter = operationParameter.rebuild()
+                operationParameter = operationParameter.rebuild()
                         .domainType(domainType == null ? operationParameter.getDomainType() : domainType)
                         .returnType(returnType == null ? operationParameter.getReturnType() : returnType)
                         .build();
@@ -290,6 +290,11 @@ public class R2dbcOperationExecutor<T, R> {
          */
         protected abstract B self();
 
+        /**
+         * 构建SQL执行器
+         *
+         * @return SQL执行器
+         */
         protected abstract E buildExecutor();
 
         public B operationParameter(R2dbcOperationParameter<T, R> operationParameter) {

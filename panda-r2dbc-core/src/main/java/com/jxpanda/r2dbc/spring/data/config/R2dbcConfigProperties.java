@@ -80,6 +80,26 @@ public record R2dbcConfigProperties(
                 });
                 return valueHandler.covert(value());
             }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) {
+                    return true;
+                }
+                if (o == null || getClass() != o.getClass()) {
+                    return false;
+                }
+
+                Value value1 = (Value) o;
+                return value.equals(value1.value) && handlerClass.equals(value1.handlerClass);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = value.hashCode();
+                result = 31 * result + handlerClass.hashCode();
+                return result;
+            }
         }
 
         public interface ValueHandler {

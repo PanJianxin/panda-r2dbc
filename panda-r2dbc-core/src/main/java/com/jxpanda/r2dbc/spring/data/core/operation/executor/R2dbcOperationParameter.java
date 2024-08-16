@@ -26,7 +26,9 @@ public final class R2dbcOperationParameter<T, R> {
     private final ReactiveEntityTemplate template;
     private final Query query;
     private final Class<T> domainType;
-    // TODO: 这里应该可以有某种方法映射返回值类型，标记一下回头思考如何优雅处理
+    /**
+     * TODO: 这里应该可以有某种方法映射返回值类型，标记一下回头思考如何优雅处理
+     * */
     private final Class<R> returnType;
     private final SqlIdentifier tableName;
     private final OutboundRow outboundRow;

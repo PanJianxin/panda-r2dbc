@@ -15,7 +15,6 @@ import java.util.*;
  * 直接复制了Criteria的源码
  * 在原来的基础上增加了Lambda的支持
  */
-@SuppressWarnings({"unused", "BooleanMethodIsAlwaysInverted"})
 public class EnhancedCriteria implements CriteriaDefinition {
     static final EnhancedCriteria EMPTY = new EnhancedCriteria(SqlIdentifier.EMPTY, Comparator.INITIAL, null);
 
@@ -49,7 +48,6 @@ public class EnhancedCriteria implements CriteriaDefinition {
     }
 
     private EnhancedCriteria(@Nullable EnhancedCriteria previous, Combinator combinator, List<CriteriaDefinition> group) {
-
         this.previous = previous;
         this.combinator = previous != null && previous.isEmpty() ? Combinator.INITIAL : combinator;
         this.group = group;
@@ -288,7 +286,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
     @Override
     public boolean isEmpty() {
 
-        if (!doIsEmpty()) {
+        if (isNotEmpty()) {
             return false;
         }
 
@@ -296,7 +294,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
         while (parent != null) {
 
-            if (!parent.doIsEmpty()) {
+            if (parent.isNotEmpty()) {
                 return false;
             }
 
@@ -306,24 +304,24 @@ public class EnhancedCriteria implements CriteriaDefinition {
         return true;
     }
 
-    private boolean doIsEmpty() {
+    private boolean isNotEmpty() {
 
         if (this.comparator == Comparator.INITIAL) {
-            return true;
+            return false;
         }
 
         if (this.column != null) {
-            return false;
+            return true;
         }
 
         for (CriteriaDefinition criteria : group) {
 
             if (!criteria.isEmpty()) {
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     /**

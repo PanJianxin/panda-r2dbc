@@ -12,9 +12,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 //    implementation("com.jxpanda.commons:commons-base:1.2.9")
 
-    runtimeOnly(libs.r2dbc.mysql)
+    runtimeOnly(libs.r2dbc.postgresql)
 
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.0")
