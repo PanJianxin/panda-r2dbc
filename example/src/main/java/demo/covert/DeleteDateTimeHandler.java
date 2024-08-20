@@ -1,11 +1,12 @@
 package demo.covert;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.PluginConfigValueHandler;
 import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
-public class DeleteDateTimeHandler implements R2dbcConfigProperties.LogicDelete.ValueHandler {
+public class DeleteDateTimeHandler implements PluginConfigValueHandler {
 
     @Override
     @NonNull

@@ -17,7 +17,7 @@ import java.util.List;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableEntity(name = "llm_prompt",schema = "ai")
+@TableEntity(name = "llm_prompt", schema = "ai")
 @EqualsAndHashCode(callSuper = true)
 public class LlmPrompt extends Entity {
 
@@ -30,7 +30,10 @@ public class LlmPrompt extends Entity {
     @TableColumn(name = "version")
     private String version;
 
-    @TableColumn(name = "params")
+    @TableColumn(name = "role")
+    private String role;
+
+    @TableColumn(name = "params", isJson = true)
     private List<Param> params;
 
     @TableColumn(name = "is_enable")

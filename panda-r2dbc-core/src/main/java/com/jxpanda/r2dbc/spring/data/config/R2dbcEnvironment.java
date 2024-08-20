@@ -1,5 +1,8 @@
 package com.jxpanda.r2dbc.spring.data.config;
 
+import com.jxpanda.r2dbc.spring.data.config.properties.DatabaseProperties;
+import com.jxpanda.r2dbc.spring.data.config.properties.LogicDeletePluginProperties;
+import com.jxpanda.r2dbc.spring.data.config.properties.MappingProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,18 +21,18 @@ public final class R2dbcEnvironment {
         propertiesOptional = Optional.of(r2dbcConfigProperties);
     }
 
-    public static R2dbcConfigProperties.Database getDatabase() {
+    public static DatabaseProperties getDatabaseProperties() {
         return propertiesOptional.map(R2dbcConfigProperties::database)
                 .orElseThrow();
     }
 
-    public static R2dbcConfigProperties.Mapping getMapping() {
+    public static MappingProperties getMappingProperties() {
         return propertiesOptional.map(R2dbcConfigProperties::mapping)
                 .orElseThrow();
     }
 
-    public static R2dbcConfigProperties.LogicDelete getLogicDelete() {
-        return propertiesOptional.map(R2dbcConfigProperties::logicDelete)
+    public static LogicDeletePluginProperties getLogicDeleteProperties() {
+        return propertiesOptional.map(it -> it.plugin().logicDelete())
                 .orElseThrow();
     }
 

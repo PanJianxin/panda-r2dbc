@@ -47,7 +47,7 @@ public class R2dbcCustomTypeHandlers {
      * 因此这里不重复判断是否能处理了
      */
     public Object read(Object value, RelationalPersistentProperty property) {
-        return getTypeHandler(property).read(value, property);
+        return getTypeHandler(value, property).read(value, property);
     }
 
     @Nullable
@@ -55,15 +55,16 @@ public class R2dbcCustomTypeHandlers {
         if (value == null) {
             return null;
         }
-        return getTypeHandler(property).write(value, property);
+        return getTypeHandler(value, property).write(value, property);
     }
 
 
-    private R2dbcTypeHandler getTypeHandler(RelationalPersistentProperty property) {
+    private R2dbcTypeHandler getTypeHandler(Object value, RelationalPersistentProperty property) {
         TableColumn tableColumn = property.getRequiredAnnotation(TableColumn.class);
         Class<? extends R2dbcTypeHandler> typeHandlerClass = tableColumn.typeHandler();
         boolean isDefault = typeHandlerClass.equals(R2dbcTypeHandler.DefaultHandler.class);
         if (isDefault) {
+            Class<?> valueType = value.getClass();
             if (property.getType().isEnum()) {
                 typeHandlerClass = R2dbcEnumTypeHandler.class;
             } else if (tableColumn.isJson()) {

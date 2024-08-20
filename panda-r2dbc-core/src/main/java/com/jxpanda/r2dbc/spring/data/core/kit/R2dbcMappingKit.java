@@ -164,7 +164,7 @@ public class R2dbcMappingKit {
         // 字段上的配置 > 类上的配置 > 全局配置文件的配置
 
         // 默认是全局校验策略
-        ValidationStrategy validationStrategy = R2dbcEnvironment.getMapping().validationStrategy();
+        ValidationStrategy validationStrategy = R2dbcEnvironment.getMappingProperties().validationStrategy();
 
         // 类上面的校验策略
         TableEntity tableEntity = entity.findAnnotation(TableEntity.class);

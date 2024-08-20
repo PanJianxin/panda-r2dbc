@@ -1,10 +1,12 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.plugin;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
+import com.jxpanda.r2dbc.spring.data.config.properties.LogicDeletePluginProperties;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Criteria;
@@ -12,6 +14,11 @@ import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ObjectUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author Panda
@@ -35,7 +42,7 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
 
     private <T, R> Update handleUpdate(R2dbcPluginContext<T, R, Update> context) {
         Class<T> domainType = context.getDomainType();
-        Pair<String, Object> logicDeleteColumn = R2DbcLogicDeletePlugin.getLogicDeleteColumn(domainType, R2DbcLogicDeletePlugin.LogicDeleteValue.DELETE_VALUE);
+        Pair<String, Object> logicDeleteColumn = R2DbcLogicDeletePlugin.getDelete(domainType);
         return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
     }
 
@@ -44,7 +51,8 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
         CriteriaDefinition criteriaDefinition = context.getLastPluginResult() == null ? Criteria.empty() : context.getLastPluginResult();
         if (isLogicDeleteEnable(domainType)) {
             // 获取查询对象中的逻辑删除字段和值，写入到criteria中
-            Pair<String, Object> logicDeleteColumn = getLogicDeleteColumn(domainType, LogicDeleteValue.UNDELETE_VALUE);
+//            Pair<String, Object> logicDeleteColumn = getLogicDeleteColumn(domainType, LogicDeleteValue.UNDELETE_VALUE);
+            Pair<String, Object> logicDeleteColumn = getUndelete(domainType);
             if (criteriaDefinition instanceof Criteria criteria) {
                 return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
             }
@@ -69,14 +77,22 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         if (logicDeleteProperty == null) {
             // 如果没有配置逻辑删除的字段，以全局配置为准
-            R2dbcConfigProperties.LogicDelete logicDeleteConfig = R2dbcEnvironment.getLogicDelete();
+            LogicDeletePluginProperties logicDeleteProperties = R2dbcEnvironment.getLogicDeleteProperties();
             // 开启了逻辑删除配置，并且配置了逻辑删除字段才生效
-            return logicDeleteConfig.enable() && !ObjectUtils.isEmpty(logicDeleteConfig.field());
+            return logicDeleteProperties.enable() && !ObjectUtils.isEmpty(logicDeleteProperties.field());
         } else {
             // 如果配置了逻辑删除字段，以注解的配置为准
             TableLogic tableLogicAnnotation = logicDeleteProperty.getRequiredAnnotation(TableLogic.class);
             return tableLogicAnnotation.enable();
         }
+    }
+
+    public static <T> Pair<String, Object> getDelete(Class<T> entityClass) {
+        return getLogicDeleteColumn(entityClass, LogicDeleteValueType.DELETE_VALUE);
+    }
+
+    public static <T> Pair<String, Object> getUndelete(Class<T> entityClass) {
+        return getLogicDeleteColumn(entityClass, LogicDeleteValueType.UNDELETE_VALUE);
     }
 
     /**
@@ -85,27 +101,21 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
      * @param entityClass entityClass
      * @return 第一个值是字段名，第二个值是逻辑删除的删除值
      */
-    public static <T> Pair<String, Object> getLogicDeleteColumn(Class<T> entityClass, LogicDeleteValue whichValue) {
+    private static <T> Pair<String, Object> getLogicDeleteColumn(Class<T> entityClass, LogicDeleteValueType valueType) {
         RelationalPersistentEntity<T> requiredEntity = R2dbcMappingKit.getRequiredEntity(entityClass);
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         // 默认取值是全局配置的逻辑删除字段
-        R2dbcConfigProperties.LogicDelete logicDeleteConfig = R2dbcEnvironment.getLogicDelete();
-        String logicDeleteField = logicDeleteConfig.field();
-        Object value = switch (whichValue) {
-            case DELETE_VALUE -> logicDeleteConfig.deleteValue();
-            case UNDELETE_VALUE -> logicDeleteConfig.undeleteValue();
-        };
+        LogicDeletePluginProperties logicDeleteProperties = R2dbcEnvironment.getLogicDeleteProperties();
+        String logicDeleteField = logicDeleteProperties.field();
+        Object value = valueType.getValueFromProperties(logicDeleteProperties);
         // 如果配置了注解，则以注解为准
         if (logicDeleteProperty != null) {
             logicDeleteField = logicDeleteProperty.getName();
             TableLogic tableLogicAnnotation = logicDeleteProperty.getRequiredAnnotation(TableLogic.class);
-            value = switch (whichValue) {
-                case DELETE_VALUE -> tableLogicAnnotation.deleteValue().getSupplier().get();
-                case UNDELETE_VALUE -> tableLogicAnnotation.undeleteValue().getSupplier().get();
-            };
+            value = valueType.getValueFromAnnotation(tableLogicAnnotation);
         }
 
-        if (value instanceof R2dbcConfigProperties.LogicDelete.Value customerValue) {
+        if (value instanceof Value customerValue) {
             value = customerValue.get();
         }
 
@@ -113,9 +123,73 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
     }
 
 
-    public enum LogicDeleteValue {
-        UNDELETE_VALUE,
-        DELETE_VALUE
+    @RequiredArgsConstructor
+    public enum LogicDeleteValueType {
+        UNDELETE_VALUE(
+                LogicDeletePluginProperties::undeleteValue,
+                TableLogic::undeleteValue
+        ),
+        DELETE_VALUE(
+                LogicDeletePluginProperties::deleteValue,
+                TableLogic::deleteValue
+        );
+
+        private final Function<LogicDeletePluginProperties, Object> valueFromProperties;
+        private final Function<TableLogic, TableLogic.Value> valueFromAnnotation;
+
+        private Object getValueFromProperties(LogicDeletePluginProperties logicDeletePluginProperties) {
+            return valueFromProperties.apply(logicDeletePluginProperties);
+        }
+
+        private Object getValueFromAnnotation(TableLogic tableLogic) {
+            return valueFromAnnotation.apply(tableLogic).getSupplier().get();
+        }
+
     }
+
+    /**
+     * 逻辑删除值
+     */
+    public record Value(String value, Class<? extends PluginConfigValueHandler> handlerClass) {
+
+        private static final Map<Value, PluginConfigValueHandler> HANDLER_CACHE = new HashMap<>();
+
+        public static Value empty() {
+            return new Value(StringConstant.BLANK, PluginConfigValueHandler.class);
+        }
+
+        public Object get() {
+            PluginConfigValueHandler valueHandler = HANDLER_CACHE.computeIfAbsent(this, key -> {
+                try {
+                    return this.handlerClass().getConstructor().newInstance();
+                } catch (Exception ignored) {
+                }
+                return new PluginConfigValueHandler() {
+                };
+            });
+            return valueHandler.covert(value());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Value value1 = (Value) o;
+            return value.equals(value1.value) && handlerClass.equals(value1.handlerClass);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = value.hashCode();
+            result = 31 * result + handlerClass.hashCode();
+            return result;
+        }
+    }
+
 
 }

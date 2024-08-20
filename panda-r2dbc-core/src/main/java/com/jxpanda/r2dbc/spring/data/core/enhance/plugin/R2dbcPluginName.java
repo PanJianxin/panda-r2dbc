@@ -17,6 +17,9 @@ public enum R2dbcPluginName {
     LOGIC_DELETE(Group.CRITERIA, "LOGIC_DELETE", "逻辑删除插件", R2DbcLogicDeletePlugin.class);
 
 
+    /**
+     * 分组
+     * */
     private final String group;
 
     /**

@@ -55,7 +55,6 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
                     T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
 
                     // id生成处理
-                    // TODO:ID生成部分未来需要优化，计划做成插件的形式
                     potentiallyGeneratorId(persistentEntity.getPropertyAccessor(domainEntity), persistentEntity.getIdProperty());
 
                     OutboundRow outboundRow = getOutboundRow(initializedEntity);
@@ -158,7 +157,7 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
      */
     private boolean shouldGeneratorIdValue(RelationalPersistentProperty idProperty) {
 
-        IdStrategy idStrategy = R2dbcEnvironment.getDatabase().idStrategy();
+        IdStrategy idStrategy = R2dbcEnvironment.getDatabaseProperties().idStrategy();
 
         TableId tableId = idProperty.findAnnotation(TableId.class);
         if (tableId != null) {

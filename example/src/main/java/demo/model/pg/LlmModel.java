@@ -44,6 +44,12 @@ public class LlmModel extends Entity {
     private String clientType;
 
     @TableColumn(name = "client_options", isJson = true)
-    private Map<String, Object> clientOptions;
+    private ClientOptions clientOptions;
+
+
+    @Data
+    public static class ClientOptions {
+        private Double topP;
+    }
 
 }

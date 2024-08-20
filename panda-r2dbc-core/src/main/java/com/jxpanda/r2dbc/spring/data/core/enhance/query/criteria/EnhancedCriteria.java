@@ -15,6 +15,7 @@ import java.util.*;
  * 直接复制了Criteria的源码
  * 在原来的基础上增加了Lambda的支持
  */
+@SuppressWarnings("unused")
 public class EnhancedCriteria implements CriteriaDefinition {
     static final EnhancedCriteria EMPTY = new EnhancedCriteria(SqlIdentifier.EMPTY, Comparator.INITIAL, null);
 
@@ -332,7 +333,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
     }
 
     /**
-     * @return {@link Combinator} to combine this criteria with a previous one.
+     * @return {@link Combinator} to combine the criteria with a previous one.
      */
     @NonNull
     public Combinator getCombinator() {
@@ -466,9 +467,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
             }
             case IS_NULL, IS_NOT_NULL, IS_TRUE, IS_FALSE -> {
             }
-            case IN, NOT_IN -> {
-                stringBuilder.append(" (").append(renderValue(criteria.getValue())).append(')');
-            }
+            case IN, NOT_IN -> stringBuilder.append(" (").append(renderValue(criteria.getValue())).append(')');
             default -> stringBuilder.append(' ').append(renderValue(criteria.getValue()));
         }
     }

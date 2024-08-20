@@ -428,19 +428,18 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
         @SuppressWarnings("unchecked")
         public <T> T getPropertyValue(RelationalPersistentProperty property) {
 
-            Object value = null;
-
-            // 如果有别名的话，尝试从别名获取值
-            if (hasAlias(property)) {
-                value = getValueWithAlias(property);
-            }
-
             // 检查是否有针对当前属性的类型处理器
             if (typeHandlers.hasTypeHandler(property)) {
+                Object value;
                 // FIXME:如果有类型处理器，直接读取原值，交给类型处理器处理
                 //  如果使用：originalValueProvider.getPropertyValue(property); 函数取值的话，这个函数内部会做一次值类型转换
                 //  typeHandlers要处理的就是特殊情况（通常无法使用值类型转换的属性），所以这里直接读取原值，交给类型处理器处理
-                value = documentAccessor.get(property);
+                // 如果有别名的话，尝试从别名获取值
+                if (hasAlias(property)) {
+                    value = getValueWithAlias(property);
+                } else {
+                    value = documentAccessor.get(property);
+                }
                 // 断言，值不会为null， 因为前置的hasValue方法已经检查过属性是否有值
                 Assert.notNull(value, "Value must be not null!");
                 // 使用类型处理器读取和转换属性值

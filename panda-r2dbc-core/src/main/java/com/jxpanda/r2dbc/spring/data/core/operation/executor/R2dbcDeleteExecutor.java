@@ -40,7 +40,7 @@ public class R2dbcDeleteExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
         if (logicDeleteUpdate.isPresent()) {
             return swap(R2dbcUpdateExecutor::builder)
                     .updateSupplier(() -> {
-                        Pair<String, Object> logicDeleteColumn = R2DbcLogicDeletePlugin.getLogicDeleteColumn(parameter.getDomainType(), R2DbcLogicDeletePlugin.LogicDeleteValue.DELETE_VALUE);
+                        Pair<String, Object> logicDeleteColumn = R2DbcLogicDeletePlugin.getDelete(parameter.getDomainType());
                         return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
                     })
                     .build()

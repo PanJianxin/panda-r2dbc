@@ -33,17 +33,17 @@ public @interface TableLogic {
 
     /**
      * 正常情况下的值「数据未删除」
-     * 默认逻辑未删除值（该值可无、会自动获取全局配置）
+     * 默认逻辑未删除值
      * 默认情况下，只要字段的值等于「undeleteValue」则表示该字段「未被删除」
      */
-    Value undeleteValue();
+    Value undeleteValue() default Value.USE_PROPERTIES_UNDELETE;
 
     /**
      * 被删除的值「数据已删除」
-     * 默认逻辑删除值（该值可无、会自动获取全局配置）
+     * 默认逻辑删除值
      * 默认情况下，只要字段的值不等于「undeleteValue」则表示该字段「被删除」
      */
-    Value deleteValue();
+    Value deleteValue() default Value.USE_PROPERTIES_DELETE;
 
 
     /**
@@ -98,13 +98,13 @@ public @interface TableLogic {
         DATETIME_NOW(LocalDateTime::now),
 
         /**
-         * 自定义值，从配置文件取值
+         * 使用配置文件的值
          */
-        CUSTOMER_UNDELETE(() -> ValueConstant.UNDELETE),
+        USE_PROPERTIES_UNDELETE(() -> ValueConstant.UNDELETE),
         /**
-         * 自定义值，从配置文件取值
+         * 使用配置文件的值
          */
-        CUSTOMER_DELETE(() -> ValueConstant.DELETE);
+        USE_PROPERTIES_DELETE(() -> ValueConstant.DELETE);
 
 
         private final Supplier<Object> supplier;
@@ -117,8 +117,8 @@ public @interface TableLogic {
         private static final Object DELETE;
 
         static {
-            UNDELETE = R2dbcEnvironment.getLogicDelete().undeleteValue();
-            DELETE = R2dbcEnvironment.getLogicDelete().deleteValue();
+            UNDELETE = R2dbcEnvironment.getLogicDeleteProperties().undeleteValue();
+            DELETE = R2dbcEnvironment.getLogicDeleteProperties().deleteValue();
         }
 
     }
