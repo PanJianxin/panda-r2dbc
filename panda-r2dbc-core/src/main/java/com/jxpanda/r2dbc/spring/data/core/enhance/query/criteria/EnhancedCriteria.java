@@ -95,7 +95,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
         }
 
         if (criteria.size() == 1) {
-            return criteria.getFirst();
+            return criteria.get(0);
         }
 
         return EMPTY.and(criteria);
@@ -422,73 +422,58 @@ public class EnhancedCriteria implements CriteriaDefinition {
     }
 
     private void unrollGroup(List<? extends CriteriaDefinition> criteria, StringBuilder stringBuilder) {
-
         stringBuilder.append("(");
-
         boolean first = true;
         for (CriteriaDefinition criterion : criteria) {
-
             if (criterion.isEmpty()) {
                 continue;
             }
-
             if (!first) {
                 Combinator combinator = criterion.getCombinator() == Combinator.INITIAL ? Combinator.AND
                         : criterion.getCombinator();
                 stringBuilder.append(' ').append(combinator.name()).append(' ');
             }
-
             unroll(criterion, stringBuilder);
             first = false;
         }
-
         stringBuilder.append(")");
     }
 
     private void render(CriteriaDefinition criteria, StringBuilder stringBuilder) {
-
         if (criteria.isEmpty()) {
             return;
         }
-
         if (criteria.isGroup()) {
             unrollGroup(criteria.getGroup(), stringBuilder);
             return;
         }
-
         stringBuilder.append(Objects.requireNonNull(criteria.getColumn()).toSql(IdentifierProcessing.NONE)).append(' ')
                 .append(Objects.requireNonNull(criteria.getComparator()).getComparator());
-
         switch (criteria.getComparator()) {
             case BETWEEN, NOT_BETWEEN -> {
                 if (criteria.getValue() instanceof Pair<?, ?> pair) {
                     stringBuilder.append(' ').append(pair.getFirst()).append(" AND ").append(pair.getSecond());
                 }
             }
+            case IN, NOT_IN -> stringBuilder.append(" (").append(renderValue(criteria.getValue())).append(')');
             case IS_NULL, IS_NOT_NULL, IS_TRUE, IS_FALSE -> {
             }
-            case IN, NOT_IN -> stringBuilder.append(" (").append(renderValue(criteria.getValue())).append(')');
             default -> stringBuilder.append(' ').append(renderValue(criteria.getValue()));
         }
     }
 
     private static String renderValue(@Nullable Object value) {
-
         if (value instanceof Number number) {
             return number.toString();
         }
-
         if (value instanceof Collection<?> collection) {
-
             StringJoiner joiner = new StringJoiner(", ");
             collection.forEach(o -> joiner.add(renderValue(o)));
             return joiner.toString();
         }
-
         if (value != null) {
             return String.format("'%s'", value);
         }
-
         return "null";
     }
 
@@ -639,121 +624,93 @@ public class EnhancedCriteria implements CriteriaDefinition {
 
         @Override
         public EnhancedCriteria is(Object value) {
-
             Assert.notNull(value, "Value must not be null");
-
             return createCriteria(Comparator.EQ, value);
         }
 
         @Override
         public EnhancedCriteria not(Object value) {
-
             Assert.notNull(value, "Value must not be null");
-
             return createCriteria(Comparator.NEQ, value);
         }
 
         @Override
         public EnhancedCriteria in(Object... values) {
-
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values, "Values must not contain a null value");
-
             if (values.length > 1 && values[1] instanceof Collection) {
                 throw new InvalidDataAccessApiUsageException(
                         "You can only pass in one argument of type " + values[1].getClass().getName());
             }
-
             return createCriteria(Comparator.IN, Arrays.asList(values));
         }
 
         @Override
         public EnhancedCriteria in(Collection<?> values) {
-
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values.toArray(), "Values must not contain a null value");
-
             return createCriteria(Comparator.IN, values);
         }
 
         @Override
         public EnhancedCriteria notIn(Object... values) {
-
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values, "Values must not contain a null value");
-
             if (values.length > 1 && values[1] instanceof Collection) {
                 throw new InvalidDataAccessApiUsageException(
                         "You can only pass in one argument of type " + values[1].getClass().getName());
             }
-
             return createCriteria(Comparator.NOT_IN, Arrays.asList(values));
         }
 
         @Override
         public EnhancedCriteria notIn(Collection<?> values) {
-
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values.toArray(), "Values must not contain a null value");
-
             return createCriteria(Comparator.NOT_IN, values);
         }
 
         @Override
         public EnhancedCriteria between(Object begin, Object end) {
-
             Assert.notNull(begin, "Begin value must not be null");
             Assert.notNull(end, "End value must not be null");
-
             return createCriteria(Comparator.BETWEEN, Pair.of(begin, end));
         }
 
         @Override
         public EnhancedCriteria notBetween(Object begin, Object end) {
-
             Assert.notNull(begin, "Begin value must not be null");
             Assert.notNull(end, "End value must not be null");
-
             return createCriteria(Comparator.NOT_BETWEEN, Pair.of(begin, end));
         }
 
         @Override
         public EnhancedCriteria lessThan(Object value) {
-
             Assert.notNull(value, "Value must not be null");
-
             return createCriteria(Comparator.LT, value);
         }
 
         @Override
         public EnhancedCriteria lessThanOrEquals(Object value) {
-
             Assert.notNull(value, "Value must not be null");
-
             return createCriteria(Comparator.LTE, value);
         }
 
         @Override
         public EnhancedCriteria greaterThan(Object value) {
-
             Assert.notNull(value, "Value must not be null");
-
             return createCriteria(Comparator.GT, value);
         }
 
         @Override
         public EnhancedCriteria greaterThanOrEquals(Object value) {
-
             Assert.notNull(value, "Value must not be null");
-
             return createCriteria(Comparator.GTE, value);
         }
 
         @Override
         public EnhancedCriteria like(Object value) {
-
             Assert.notNull(value, "Value must not be null");
-
             return createCriteria(Comparator.LIKE, value);
         }
 

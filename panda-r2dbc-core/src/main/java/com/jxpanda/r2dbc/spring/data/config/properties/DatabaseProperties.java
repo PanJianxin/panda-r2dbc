@@ -11,7 +11,8 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
  * @param dataCenterId 数据中心ID，影响雪花算法ID生成规则，如果不使用雪花算法，这个配置不生效
  * @param workerId     工作节点ID，影响雪花算法ID生成规则，如果不使用雪花算法，这个配置不生效
  */
-public record DatabaseProperties(boolean forceQuote, IdStrategy idStrategy, int dataCenterId, int workerId) {
+public record DatabaseProperties(
+        boolean forceQuote, IdStrategy idStrategy, int dataCenterId, int workerId) {
 
     public static DatabaseProperties empty() {
         return new DatabaseProperties(false, IdStrategy.DEFAULT, 0, 0);

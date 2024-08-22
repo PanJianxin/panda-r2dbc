@@ -29,8 +29,7 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
     private final BiFunction<R2dbcOperationParameter<T, T>, StatementMapper.InsertSpec, PreparedOperation<?>> preparedOperationBuilder;
 
     private R2dbcInsertExecutor(R2dbcOperationParameter<T, T> operationParameter,
-                                Function<R2dbcOperationParameter<T, T>, Query> queryHandler
-    ) {
+                                Function<R2dbcOperationParameter<T, T>, Query> queryHandler) {
         super(operationParameter, queryHandler);
         this.specBuilder = defaultSpecBuilder();
         this.preparedOperationBuilder = (parameter, insertSpec) -> parameter.getStatementMapper().getMappedObject(insertSpec);
@@ -53,27 +52,21 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
         return template().maybeCallBeforeConvert(domainEntity, tableName)
                 .flatMap(onBeforeConvert -> {
                     T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
-
                     // id生成处理
                     potentiallyGeneratorId(persistentEntity.getPropertyAccessor(domainEntity), persistentEntity.getIdProperty());
-
                     OutboundRow outboundRow = getOutboundRow(initializedEntity);
-
                     potentiallyRemoveId(persistentEntity, outboundRow);
                     return template().maybeCallBeforeSave(initializedEntity, outboundRow, tableName)
                             .flatMap(entityToSave -> {
                                 StatementMapper.InsertSpec insertSpec = specBuilder.apply(parameter, outboundRow);
                                 PreparedOperation<?> operation = preparedOperationBuilder.apply(parameter, insertSpec);
-
                                 List<SqlIdentifier> identifierColumns = getIdentifierColumns(domainEntity.getClass());
-
                                 return this.databaseClient().sql(operation)
                                         .filter(statement -> {
                                             if (identifierColumns.isEmpty()) {
                                                 return statement.returnGeneratedValues();
                                             }
-
-                                            return statement.returnGeneratedValues(dataAccessStrategy().renderForGeneratedValues(identifierColumns.getFirst()));
+                                            return statement.returnGeneratedValues(dataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
                                         })
                                         .map(converter().populateIdIfNecessary(domainEntity))
                                         .all().last(domainEntity)
@@ -88,7 +81,6 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
             StatementMapper statementMapper = parameter.getStatementMapper();
             SqlIdentifier tableName = parameter.getTableName();
             StatementMapper.InsertSpec insertSpec = statementMapper.createInsert(tableName);
-
             for (Map.Entry<SqlIdentifier, Parameter> entry : outboundRow.entrySet()) {
                 if (entry.getValue().hasValue()) {
                     insertSpec = insertSpec.withColumn(entry.getKey(), entry.getValue());
@@ -103,14 +95,11 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
     }
 
     private void potentiallyGeneratorId(PersistentPropertyAccessor<?> propertyAccessor, @Nullable RelationalPersistentProperty idProperty) {
-
         if (idProperty == null) {
             return;
         }
-
         // 检查一下是否主动传递了id字段，没有传递的时候才生成
         Object idValue = propertyAccessor.getProperty(idProperty);
-
         // 如果id没有主动且策略是生成策略才生成id
         if (idValue == null && shouldGeneratorIdValue(idProperty)) {
             Object generatedIdValue = idGenerator().generate();
@@ -119,33 +108,25 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void potentiallyRemoveId(RelationalPersistentEntity<?> persistentEntity, OutboundRow outboundRow) {
-
         RelationalPersistentProperty idProperty = persistentEntity.getIdProperty();
         if (idProperty == null) {
             return;
         }
-
         SqlIdentifier columnName = idProperty.getColumnName();
         Parameter parameter = outboundRow.get(columnName);
-
         if (shouldSkipIdValue(parameter)) {
             outboundRow.remove(columnName);
         }
     }
 
-    @SuppressWarnings("deprecation")
     private boolean shouldSkipIdValue(@Nullable Parameter value) {
-
         if (value == null || value.getValue() == null) {
             return true;
         }
-
         if (value.getValue() instanceof Number numberValue) {
             return numberValue.longValue() == 0L;
         }
-
         return false;
     }
 
@@ -156,37 +137,30 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
      * @param idProperty idProperty
      */
     private boolean shouldGeneratorIdValue(RelationalPersistentProperty idProperty) {
-
         IdStrategy idStrategy = R2dbcEnvironment.getDatabaseProperties().idStrategy();
-
         TableId tableId = idProperty.findAnnotation(TableId.class);
         if (tableId != null) {
             idStrategy = tableId.idStrategy() == IdStrategy.DEFAULT ? idStrategy : tableId.idStrategy();
         }
-
         return idStrategy == IdStrategy.USE_GENERATOR;
     }
 
 
     @SuppressWarnings("unchecked")
     <E> E setVersionIfNecessary(RelationalPersistentEntity<E> persistentEntity, E entity) {
-
         RelationalPersistentProperty versionProperty = persistentEntity.getVersionProperty();
         if (versionProperty == null) {
             return entity;
         }
-
         Class<?> versionPropertyType = versionProperty.getType();
         Long version = versionPropertyType.isPrimitive() ? 1L : 0L;
         ConversionService conversionService = this.converter().getConversionService();
         PersistentPropertyAccessor<?> propertyAccessor = persistentEntity.getPropertyAccessor(entity);
         propertyAccessor.setProperty(versionProperty, conversionService.convert(version, versionPropertyType));
-
         return (E) propertyAccessor.getBean();
     }
 
     public static final class R2dbcInsertExecutorBuilder<T> extends R2dbcOperationExecutor.R2dbcExecutorBuilder<T, T, R2dbcInsertExecutor<T>, R2dbcInsertExecutorBuilder<T>> {
-
         public R2dbcInsertExecutor<T> buildExecutor() {
             return new R2dbcInsertExecutor<>(operationParameter, queryHandler);
         }

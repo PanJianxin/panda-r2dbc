@@ -1,8 +1,11 @@
 package com.jxpanda.r2dbc.spring.data.infrastructure.kit;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.AccessorFunction;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.GenericTypeResolver;
@@ -172,21 +175,6 @@ public final class ReflectionKit {
         setFieldValue(entity, field, defaultValue);
     }
 
-//    /**
-//     * 使用空构造器新建对象
-//     *
-//     * @param clazz 目标类
-//     * @return 对象实例
-//     */
-//    public static Object newInstance(Class<?> clazz) {
-//        try {
-//            return clazz.getConstructor().newInstance();
-//        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-//                 NoSuchMethodException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-
     /**
      * 使用空构造器新建对象
      *
@@ -331,14 +319,14 @@ public final class ReflectionKit {
     /**
      * 获取泛型的类型
      *
-     * @param clazz      目标类
-     * @param genericIfc 从中解析类型参数的泛型接口或超类，一般是目标类所继承的超类或者所实现的接口
-     * @param index      下标
+     * @param clazz       目标类
+     * @param genericType 从中解析类型参数的泛型接口或超类，一般是目标类所继承的超类或者所实现的接口
+     * @param index       下标
      * @return 泛型的类型
      */
-    public static Class<?> getSuperClassGenericType(final Class<?> clazz, final Class<?> genericIfc, int index) {
-        Class<?>[] classes = GenericTypeResolver.resolveTypeArguments(clazz, genericIfc);
-        return classes == null ? null : classes[index];
+    public static <T> Class<T> getSuperClassGenericType(final Class<?> clazz, final Class<?> genericType, int index) {
+        Class<?>[] classes = GenericTypeResolver.resolveTypeArguments(clazz, genericType);
+        return classes == null ? null : cast(classes[index]);
     }
 
     /**
@@ -393,5 +381,9 @@ public final class ReflectionKit {
         return field;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T cast(Object object) {
+        return (T) object;
+    }
 
 }

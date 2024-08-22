@@ -10,17 +10,17 @@ panda:
     mapping:
       validation-strategy: NOT_EMPTY
       naming-strategy: CAMEL_CASE_TO_SNAKE_CASE
-    logic-delete:
-      enable: true
-      undelete-value:
-        value: 1970-01-01 00:00:00
-      delete-value:
-        value: CURRENT_TIMESTAMP
-        handler-class: demo.covert.DeleteDateTimeHandler
-      field: deleted_date
     database:
       id-strategy: USE_GENERATOR
       force-quote: false
+    plugin:
+      logic-delete:
+        enable: true
+        field: deleted_time
+        value:
+          type: DATE_TIME
+
+
 
 
 logging:

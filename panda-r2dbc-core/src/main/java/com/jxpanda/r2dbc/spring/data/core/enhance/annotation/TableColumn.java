@@ -84,6 +84,6 @@ public @interface TableColumn {
     /**
      * 类型处理器，默认是不处理，一般用于json字段的处理
      */
-    Class<? extends R2dbcTypeHandler<Object, Object>> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
+    Class<? extends R2dbcTypeHandler> typeHandler() default R2dbcTypeHandler.DefaultHandler.class;
 
 }

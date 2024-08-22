@@ -1,4 +1,4 @@
-package com.jxpanda.r2dbc.spring.data.core.enhance.plugin;
+package com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value;
 
 import org.springframework.lang.NonNull;
 
@@ -7,7 +7,7 @@ import org.springframework.lang.NonNull;
  * 作用是把配置的值转换成插件需要的值
  * 由于配置文件配置的属性值都是字符串，所以这里需要把配置的值转换成插件需要的值
  */
-public interface PluginConfigValueHandler {
+public interface PluginValueHandler {
 
     @NonNull
     default Object covert(@NonNull String value) {

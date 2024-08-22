@@ -1,7 +1,7 @@
 package demo.api.pg;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import demo.model.pg.LlmPrompt;
+import demo.model.pg.LlmModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("llm")
 @RequiredArgsConstructor
-public class LlmController implements Controller<LlmPrompt> {
+public class LlmController implements Controller<LlmModel> {
 
     private final ReactiveEntityTemplate reactiveEntityTemplate;
 

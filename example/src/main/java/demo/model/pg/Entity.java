@@ -3,6 +3,7 @@ package demo.model.pg;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValueType;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,7 +37,7 @@ public class Entity extends StandardEntity<String> {
 
     @JsonIgnore
     @TableColumn(name = "deleted_time")
-    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
+    @TableLogic(type = LogicDeleteValueType.DATE_TIME)
     private LocalDateTime deletedTime;
 
 }

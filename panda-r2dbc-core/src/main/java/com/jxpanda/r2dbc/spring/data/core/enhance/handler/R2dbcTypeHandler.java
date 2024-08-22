@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.handler;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 
 /**
@@ -23,6 +24,14 @@ public interface R2dbcTypeHandler<O, V> {
      * @return 返回一个Reader对象，该对象能够从关系数据库中读取指定的实体属性。
      */
     Reader<O, V> getReader(RelationalPersistentProperty property);
+
+    default Class<O> getObjectClass() {
+        return ReflectionKit.getSuperClassGenericType(this.getClass(), R2dbcTypeHandler.class, 0);
+    }
+
+    default Class<V> getValueClass() {
+        return ReflectionKit.getSuperClassGenericType(this.getClass(), R2dbcTypeHandler.class, 1);
+    }
 
 
     /**

@@ -8,7 +8,7 @@ plugins {
 
 object Project {
     const val GROUP = "com.jxpanda.r2dbc"
-    const val VERSION = "1.2.1"
+    const val VERSION = "1.3.0"
 }
 
 allprojects {

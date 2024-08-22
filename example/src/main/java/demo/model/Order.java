@@ -8,6 +8,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
 import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcEnumTypeHandler;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValueType;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import lombok.*;
 import lombok.experimental.Accessors;
@@ -38,7 +39,7 @@ public class Order extends StandardEntity<String> {
 
     @TableColumn
     @JsonIgnore
-    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
+    @TableLogic(type = LogicDeleteValueType.DATE_TIME)
     private LocalDateTime deletedDate;
 
     @TableColumn(name = "parent_id")

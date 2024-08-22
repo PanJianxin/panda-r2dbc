@@ -5,21 +5,22 @@ import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplateAdapter;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.convert.MappingReactiveConverter;
 import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcCustomTypeHandlers;
+import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcJsonTypeHandler;
+import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcPostgresJsonTypeHandler;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.AbstractSnowflakeGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2DbcLogicDeletePlugin;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.convert.CustomConversions;
-import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.r2dbc.dialect.R2dbcDialect;
@@ -37,7 +38,7 @@ import java.util.List;
  * @author Panda
  */
 @AutoConfiguration(after = org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
-@EnableConfigurationProperties(R2dbcProperties.class)
+@EnableConfigurationProperties(R2dbcConfigProperties.class)
 @ComponentScan(basePackages = {"com.jxpanda.r2dbc.spring.data.config", "com.jxpanda.r2dbc.spring.data.core.kit"})
 public class R2dbcAutoConfiguration {
 
@@ -45,23 +46,18 @@ public class R2dbcAutoConfiguration {
 
     private final R2dbcDialect r2dbcDialect;
 
-    private final R2dbcProperties r2dbcProperties;
+    private final R2dbcConfigProperties r2dbcConfigProperties;
 
 
-    public R2dbcAutoConfiguration(DatabaseClient databaseClient, R2dbcProperties r2dbcProperties) {
+    public R2dbcAutoConfiguration(DatabaseClient databaseClient, R2dbcConfigProperties r2dbcConfigProperties) {
         this.databaseClient = databaseClient;
         this.r2dbcDialect = r2dbcDialect(databaseClient);
-        this.r2dbcProperties = r2dbcProperties;
+        this.r2dbcConfigProperties = r2dbcConfigProperties;
     }
 
     @Bean
     public R2dbcDialect r2dbcDialect(DatabaseClient databaseClient) {
         return DialectResolver.getDialect(databaseClient.getConnectionFactory());
-    }
-
-    @Bean
-    public R2dbcConfigProperties r2dbcConfigProperties(R2dbcProperties r2dbcProperties) {
-        return r2dbcProperties.transfer();
     }
 
     @Bean
@@ -92,7 +88,7 @@ public class R2dbcAutoConfiguration {
                                                    R2dbcCustomConversions r2dbcCustomConversions) {
         R2dbcMappingContext relationalMappingContext = new R2dbcMappingContext(
                 namingStrategy.getIfAvailable(() -> DefaultNamingStrategy.INSTANCE));
-        relationalMappingContext.setForceQuote(this.r2dbcProperties.database().forceQuote());
+        relationalMappingContext.setForceQuote(this.r2dbcConfigProperties.database().forceQuote());
         relationalMappingContext.setSimpleTypeHolder(r2dbcCustomConversions.getSimpleTypeHolder());
         return relationalMappingContext;
     }
@@ -100,7 +96,7 @@ public class R2dbcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public NamingStrategy namingStrategy() {
-        return this.r2dbcProperties.mapping().namingStrategy();
+        return this.r2dbcConfigProperties.mapping().namingStrategy();
     }
 
 
@@ -121,6 +117,13 @@ public class R2dbcAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnClass(name = "io.r2dbc.postgresql.codec.Json")
+    public boolean registerPostgresJsonTypeHandler(R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
+        r2dbcCustomTypeHandlers.register(R2dbcJsonTypeHandler.class, new R2dbcPostgresJsonTypeHandler<>());
+        return true;
+    }
+
+    @Bean
     @ConditionalOnMissingBean
     public R2dbcPluginExecutor r2dbcPluginExecutor() {
         return new R2dbcPluginExecutor()
@@ -132,7 +135,7 @@ public class R2dbcAutoConfiguration {
     @ConditionalOnMissingBean
     public IdGenerator<?> idGenerator() {
 
-        return new AbstractSnowflakeGenerator<String>(this.r2dbcProperties.database().dataCenterId(), this.r2dbcProperties.database().workerId()) {
+        return new AbstractSnowflakeGenerator<String>(this.r2dbcConfigProperties.database().dataCenterId(), this.r2dbcConfigProperties.database().workerId()) {
             @Override
             protected String cast(Long id) {
                 return id.toString();

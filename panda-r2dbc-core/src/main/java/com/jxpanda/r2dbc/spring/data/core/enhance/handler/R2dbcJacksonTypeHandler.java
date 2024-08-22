@@ -19,7 +19,7 @@ import java.lang.reflect.Type;
  */
 @Slf4j
 @AllArgsConstructor
-public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> {
+public class R2dbcJacksonTypeHandler<O, V> extends R2dbcJsonTypeHandler<O, V> {
 
     /**
      * jackson的objectMapper
@@ -47,7 +47,7 @@ public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> 
     }
 
     @Override
-    protected T readFromJson(byte[] jsonBytes, RelationalPersistentProperty property) {
+    protected O readFromJson(byte[] jsonBytes, RelationalPersistentProperty property) {
         try {
             return objectMapper.readValue(jsonBytes, typeReference(property));
         } catch (IOException e) {
@@ -57,7 +57,7 @@ public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> 
     }
 
     @Override
-    protected T readFromJson(String json, RelationalPersistentProperty property) {
+    protected O readFromJson(String json, RelationalPersistentProperty property) {
         try {
             return objectMapper.readValue(json, typeReference(property));
         } catch (JsonProcessingException e) {
@@ -68,7 +68,7 @@ public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> 
 
 
     @Override
-    protected String writeToJson(T object) {
+    protected String writeToJson(O object) {
         try {
             return objectMapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
@@ -77,7 +77,7 @@ public class R2dbcJacksonTypeHandler<T> extends R2dbcJsonTypeHandler<T, String> 
         }
     }
 
-    private TypeReference<T> typeReference(RelationalPersistentProperty property) {
+    private TypeReference<O> typeReference(RelationalPersistentProperty property) {
         return new TypeReference<>() {
             @Override
             public Type getType() {

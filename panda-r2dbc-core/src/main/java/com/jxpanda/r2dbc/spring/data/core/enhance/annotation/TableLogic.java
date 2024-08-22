@@ -1,17 +1,14 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.annotation;
 
-import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
-import com.jxpanda.r2dbc.spring.data.infrastructure.constant.DateTimeConstant;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.DefaultValueHandler;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValueType;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.PluginValueHandler;
+import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.function.Supplier;
 
 import static java.lang.annotation.ElementType.FIELD;
 
@@ -32,95 +29,38 @@ public @interface TableLogic {
     boolean enable() default true;
 
     /**
-     * 正常情况下的值「数据未删除」
-     * 默认逻辑未删除值
-     * 默认情况下，只要字段的值等于「undeleteValue」则表示该字段「未被删除」
+     * 逻辑删除值的类型，枚举中已经配置了常用的类型，如果类型不支持，可以自定义类型
+     * 默认是跟随全局配置
      */
-    Value undeleteValue() default Value.USE_PROPERTIES_UNDELETE;
+    LogicDeleteValueType type() default LogicDeleteValueType.USE_PROPERTIES;
+
 
     /**
      * 被删除的值「数据已删除」
      * 默认逻辑删除值
      * 默认情况下，只要字段的值不等于「undeleteValue」则表示该字段「被删除」
+     * 只有type == CUSTOMER的时候才生效
      */
-    Value deleteValue() default Value.USE_PROPERTIES_DELETE;
-
+    String deleteValue() default StringConstant.BLANK;
 
     /**
-     * 注解里的成员变量类型范围有限，只能用几个常用的类型和枚举
-     * 所以要实现能自定义设置值，特别是需要动态取值（例如获取当前时间）的时候，用枚举是一个不错的方法
-     * 这里枚举了常用的逻辑删除值
-     * 以及两个自定义设置的值，两个自定义的值可以通过配置文件配置
+     * 删除值的类型处理器
+     * 只有type == CUSTOMER的时候才生效
      */
-    @Getter
-    @AllArgsConstructor
-    enum Value {
+    Class<? extends PluginValueHandler> deleteValueHandler() default DefaultValueHandler.class;
 
-        /**
-         * null
-         */
-        NULL(() -> null),
+    /**
+     * 正常情况下的值「数据未删除」
+     * 默认逻辑未删除值
+     * 默认情况下，只要字段的值等于「undeleteValue」则表示该字段「未被删除」
+     * 只有type == CUSTOMER的时候才生效
+     */
+    String undeleteValue() default StringConstant.BLANK;
 
-        /**
-         * 0
-         */
-        ZERO(() -> 0),
-        /**
-         * 1
-         */
-        ONE(() -> 1),
-
-        /**
-         * false
-         */
-        FALSE(() -> false),
-        /**
-         * true
-         */
-        TRUE(() -> true),
-
-        /**
-         * 1970-01-01 00:00:00
-         */
-        DATE_1970(() -> DateTimeConstant.DATE_1970_01_01_00_00_00),
-        /**
-         * now
-         */
-        DATE_NOW(Date::new),
-
-        /**
-         * 1970-01-01 00:00:00
-         */
-        DATETIME_1970(() -> DateTimeConstant.DATETIME_1970_01_01_00_00_00),
-        /**
-         * now
-         */
-        DATETIME_NOW(LocalDateTime::now),
-
-        /**
-         * 使用配置文件的值
-         */
-        USE_PROPERTIES_UNDELETE(() -> ValueConstant.UNDELETE),
-        /**
-         * 使用配置文件的值
-         */
-        USE_PROPERTIES_DELETE(() -> ValueConstant.DELETE);
-
-
-        private final Supplier<Object> supplier;
-
-    }
-
-    final class ValueConstant {
-
-        private static final Object UNDELETE;
-        private static final Object DELETE;
-
-        static {
-            UNDELETE = R2dbcEnvironment.getLogicDeleteProperties().undeleteValue();
-            DELETE = R2dbcEnvironment.getLogicDeleteProperties().deleteValue();
-        }
-
-    }
+    /**
+     * 未删除值的类型处理器
+     * 只有type == CUSTOMER的时候才生效
+     */
+    Class<? extends PluginValueHandler> undeleteValueHandler() default DefaultValueHandler.class;
 
 }

@@ -3,9 +3,11 @@ package com.jxpanda.r2dbc.spring.data.core.enhance.plugin;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
 import com.jxpanda.r2dbc.spring.data.config.properties.LogicDeletePluginProperties;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValue;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValueType;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.PluginValueHandler;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
-import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
@@ -15,8 +17,6 @@ import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ObjectUtils;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -88,11 +88,11 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
     }
 
     public static <T> Pair<String, Object> getDelete(Class<T> entityClass) {
-        return getLogicDeleteColumn(entityClass, LogicDeleteValueType.DELETE_VALUE);
+        return getLogicDeleteColumn(entityClass, WhichValue.DELETE_VALUE);
     }
 
     public static <T> Pair<String, Object> getUndelete(Class<T> entityClass) {
-        return getLogicDeleteColumn(entityClass, LogicDeleteValueType.UNDELETE_VALUE);
+        return getLogicDeleteColumn(entityClass, WhichValue.UNDELETE_VALUE);
     }
 
     /**
@@ -101,22 +101,18 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
      * @param entityClass entityClass
      * @return 第一个值是字段名，第二个值是逻辑删除的删除值
      */
-    private static <T> Pair<String, Object> getLogicDeleteColumn(Class<T> entityClass, LogicDeleteValueType valueType) {
+    private static <T> Pair<String, Object> getLogicDeleteColumn(Class<T> entityClass, WhichValue whichValue) {
         RelationalPersistentEntity<T> requiredEntity = R2dbcMappingKit.getRequiredEntity(entityClass);
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         // 默认取值是全局配置的逻辑删除字段
         LogicDeletePluginProperties logicDeleteProperties = R2dbcEnvironment.getLogicDeleteProperties();
         String logicDeleteField = logicDeleteProperties.field();
-        Object value = valueType.getValueFromProperties(logicDeleteProperties);
+        Object value = whichValue.getValueFromProperties(logicDeleteProperties.value());
         // 如果配置了注解，则以注解为准
         if (logicDeleteProperty != null) {
             logicDeleteField = logicDeleteProperty.getName();
             TableLogic tableLogicAnnotation = logicDeleteProperty.getRequiredAnnotation(TableLogic.class);
-            value = valueType.getValueFromAnnotation(tableLogicAnnotation);
-        }
-
-        if (value instanceof Value customerValue) {
-            value = customerValue.get();
+            value = whichValue.getValueFromAnnotation(tableLogicAnnotation);
         }
 
         return Pair.of(logicDeleteField, value);
@@ -124,71 +120,40 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
 
 
     @RequiredArgsConstructor
-    public enum LogicDeleteValueType {
-        UNDELETE_VALUE(
-                LogicDeletePluginProperties::undeleteValue,
-                TableLogic::undeleteValue
-        ),
+    public enum WhichValue {
         DELETE_VALUE(
-                LogicDeletePluginProperties::deleteValue,
-                TableLogic::deleteValue
+                LogicDeleteValue::getDeleteValue,
+                (tableLogic) -> tableLogic.type().getDeleteValue(),
+                TableLogic::deleteValue,
+                TableLogic::deleteValueHandler
+        ),
+        UNDELETE_VALUE(
+                LogicDeleteValue::getUndeleteValue,
+                (tableLogic) -> tableLogic.type().getUndeleteValue(),
+                TableLogic::undeleteValue,
+                TableLogic::undeleteValueHandler
         );
 
-        private final Function<LogicDeletePluginProperties, Object> valueFromProperties;
-        private final Function<TableLogic, TableLogic.Value> valueFromAnnotation;
+        private final Function<LogicDeleteValue, Object> valueFromProperties;
+        private final Function<TableLogic, Supplier<Object>> valueSupplierFromAnnotation;
+        private final Function<TableLogic, String> valueFromAnnotation;
+        private final Function<TableLogic, Class<? extends PluginValueHandler>> valueHandlerFromAnnotation;
 
-        private Object getValueFromProperties(LogicDeletePluginProperties logicDeletePluginProperties) {
-            return valueFromProperties.apply(logicDeletePluginProperties);
+        private Object getValueFromProperties(LogicDeleteValue logicDeleteValue) {
+            return valueFromProperties.apply(logicDeleteValue);
         }
 
         private Object getValueFromAnnotation(TableLogic tableLogic) {
-            return valueFromAnnotation.apply(tableLogic).getSupplier().get();
-        }
-
-    }
-
-    /**
-     * 逻辑删除值
-     */
-    public record Value(String value, Class<? extends PluginConfigValueHandler> handlerClass) {
-
-        private static final Map<Value, PluginConfigValueHandler> HANDLER_CACHE = new HashMap<>();
-
-        public static Value empty() {
-            return new Value(StringConstant.BLANK, PluginConfigValueHandler.class);
-        }
-
-        public Object get() {
-            PluginConfigValueHandler valueHandler = HANDLER_CACHE.computeIfAbsent(this, key -> {
-                try {
-                    return this.handlerClass().getConstructor().newInstance();
-                } catch (Exception ignored) {
-                }
-                return new PluginConfigValueHandler() {
-                };
-            });
-            return valueHandler.covert(value());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
+            LogicDeleteValueType logicDeleteValueType = tableLogic.type();
+            if (logicDeleteValueType == LogicDeleteValueType.CUSTOMER) {
+                Class<? extends PluginValueHandler> handler = valueHandlerFromAnnotation.apply(tableLogic);
+                String value = valueFromAnnotation.apply(tableLogic);
+                return LogicDeleteValue.getValue(value, handler);
+            } else {
+                return valueSupplierFromAnnotation.apply(tableLogic).get();
             }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            Value value1 = (Value) o;
-            return value.equals(value1.value) && handlerClass.equals(value1.handlerClass);
         }
 
-        @Override
-        public int hashCode() {
-            int result = value.hashCode();
-            result = 31 * result + handlerClass.hashCode();
-            return result;
-        }
     }
 
 

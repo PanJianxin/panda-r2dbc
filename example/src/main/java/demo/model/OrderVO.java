@@ -2,6 +2,7 @@ package demo.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.*;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValueType;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
 import lombok.Data;
 import org.springframework.data.annotation.Reference;
@@ -20,7 +21,7 @@ public class OrderVO implements Entity<String> {
 
     @TableColumn
     @JsonIgnore
-    @TableLogic(undeleteValue = TableLogic.Value.DATETIME_1970, deleteValue = TableLogic.Value.DATETIME_NOW)
+    @TableLogic(type = LogicDeleteValueType.DATE_TIME)
     private LocalDateTime deletedDate;
 
     @TableColumn(name = "parent_id")

@@ -95,7 +95,11 @@ public interface Controller<T extends Entity> {
     @PostMapping("/query")
     default Mono<Pagination<T>> query(@RequestBody Seeker<T> seeker) {
         return reactiveEntityTemplate().select(getEntityClass())
-                .seek(seeker);
+                .seek(seeker)
+                .map(it->{
+                    System.out.println(it);
+                    return it;
+                });
     }
 
 
