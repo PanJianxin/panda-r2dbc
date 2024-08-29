@@ -36,8 +36,8 @@ public class R2dbcEnumTypeHandler implements R2dbcTypeHandler<Enum<?>, Object> {
                 return ReflectionKit.getFieldValue(enumConstant, field);
             }
 
-            // 容灾：默认返回枚举的序号
-            return enumConstant.ordinal();
+            // 容灾：默认返回枚举的名称
+            return enumConstant.name();
         };
     }
 

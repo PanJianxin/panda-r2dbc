@@ -638,9 +638,9 @@ public class EnhancedCriteria implements CriteriaDefinition {
         public EnhancedCriteria in(Object... values) {
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values, "Values must not contain a null value");
-            if (values.length > 1 && values[1] instanceof Collection) {
+            if (values.length > 1 && values[0] instanceof Collection) {
                 throw new InvalidDataAccessApiUsageException(
-                        "You can only pass in one argument of type " + values[1].getClass().getName());
+                        "You can only pass in one argument of type " + values[0].getClass().getName());
             }
             return createCriteria(Comparator.IN, Arrays.asList(values));
         }
@@ -656,7 +656,7 @@ public class EnhancedCriteria implements CriteriaDefinition {
         public EnhancedCriteria notIn(Object... values) {
             Assert.notNull(values, "Values must not be null");
             Assert.noNullElements(values, "Values must not contain a null value");
-            if (values.length > 1 && values[1] instanceof Collection) {
+            if (values.length > 1 && values[0] instanceof Collection) {
                 throw new InvalidDataAccessApiUsageException(
                         "You can only pass in one argument of type " + values[1].getClass().getName());
             }

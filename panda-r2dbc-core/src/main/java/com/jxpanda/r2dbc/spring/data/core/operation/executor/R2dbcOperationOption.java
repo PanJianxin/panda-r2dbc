@@ -14,8 +14,6 @@ import java.util.stream.Collectors;
 @Getter
 public class R2dbcOperationOption {
 
-//    private R2dbcOperationParameter<T, R> operationParameter;
-
     private final boolean selectReference;
 
     private final Map<R2dbcPluginName, Boolean> pluginSwitch;

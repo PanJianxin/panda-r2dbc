@@ -51,7 +51,6 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
         CriteriaDefinition criteriaDefinition = context.getLastPluginResult() == null ? Criteria.empty() : context.getLastPluginResult();
         if (isLogicDeleteEnable(domainType)) {
             // 获取查询对象中的逻辑删除字段和值，写入到criteria中
-//            Pair<String, Object> logicDeleteColumn = getLogicDeleteColumn(domainType, LogicDeleteValue.UNDELETE_VALUE);
             Pair<String, Object> logicDeleteColumn = getUndelete(domainType);
             if (criteriaDefinition instanceof Criteria criteria) {
                 return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
@@ -117,7 +116,6 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
 
         return Pair.of(logicDeleteField, value);
     }
-
 
     @RequiredArgsConstructor
     public enum WhichValue {

@@ -86,6 +86,10 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
     @Getter(value = AccessLevel.PUBLIC)
     private final StatementMapper statementMapper;
 
+    @Nullable
+    @Getter(value = AccessLevel.PACKAGE)
+    private ReactiveEntityCallbacks entityCallbacks;
+
     @Resource
     @Getter(value = AccessLevel.PUBLIC)
     private IdGenerator<?> idGenerator;
@@ -98,13 +102,9 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
     @Getter(value = AccessLevel.PUBLIC)
     private TransactionalOperator transactionalOperator;
 
-    @Getter
     @Resource
+    @Getter(value = AccessLevel.PUBLIC)
     private R2dbcPluginExecutor pluginExecutor;
-
-    @Nullable
-    @Getter(value = AccessLevel.PACKAGE)
-    private ReactiveEntityCallbacks entityCallbacks;
 
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {

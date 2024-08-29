@@ -104,19 +104,17 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
             rowsFetchSpec = executeSpec.map(rowMapperBuilder.apply(parameter));
         }
 
-        // 处理回调
-        return callback(resultHandler.apply(rowsFetchSpec), parameter);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <P extends Publisher<R>> P callback(P publisher, R2dbcOperationParameter<T, R> parameter) {
+        // 执行
+        P publisher = resultHandler.apply(rowsFetchSpec);
         if (publisher instanceof Mono<?> mono) {
-            return (P) mono.flatMap(result -> selectReference(parameter, (R) result))
+            Mono<R> monoResult = mono.flatMap(result -> selectReference(parameter, ReflectionKit.cast(result)))
                     .flatMap(it -> template().maybeCallAfterConvert(it, parameter.getTableName()));
+            return ReflectionKit.cast(monoResult);
 
         } else if (publisher instanceof Flux<?> flux) {
-            return (P) flux.flatMap(result -> selectReference(parameter, (R) result))
+            Flux<R> fluxResult = flux.flatMap(result -> selectReference(parameter, ReflectionKit.cast(result)))
                     .flatMap(it -> template().maybeCallAfterConvert(it, parameter.getTableName()));
+            return ReflectionKit.cast(fluxResult);
         }
         return publisher;
     }

@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.With;
+import org.springframework.data.relational.core.query.Criteria;
 
 @Data
 @Builder

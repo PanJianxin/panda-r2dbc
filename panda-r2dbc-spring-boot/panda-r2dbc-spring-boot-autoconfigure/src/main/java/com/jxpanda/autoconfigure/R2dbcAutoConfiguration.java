@@ -13,6 +13,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2DbcLogicDeletePlugin;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
+import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -122,6 +123,7 @@ public class R2dbcAutoConfiguration {
         r2dbcCustomTypeHandlers.register(R2dbcJsonTypeHandler.class, new R2dbcPostgresJsonTypeHandler<>());
         return true;
     }
+
 
     @Bean
     @ConditionalOnMissingBean

@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NonNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 
 import java.util.ArrayList;

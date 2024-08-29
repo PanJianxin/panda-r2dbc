@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Entity extends StandardEntity<String> {
+public class Entity extends StandardEntity<Long> {
 
     @TableColumn(name = "creator_id")
     private String creatorId;

@@ -57,34 +57,6 @@ public class R2dbcCustomTypeHandlers {
     }
 
     /**
-     * 读取字段值，通过类型处理器
-     * 能调用这个函数，说明一定经过了hasCustomReadTarget函数的检查
-     * 因此这里不重复判断是否能处理了
-     *
-     * @param value    字段值
-     * @param property 数据库映射属性
-     * @return 通过类型处理器处理后的字段值
-     */
-    public Object read(Object value, RelationalPersistentProperty property) {
-        return getTypeHandler(value, property).read(value, property);
-    }
-
-    /**
-     * 写入字段值，通过类型处理器
-     *
-     * @param value    字段值，可能为null
-     * @param property 数据库映射属性
-     * @return 通过类型处理器处理后的字段值，如果输入值为null，则返回null
-     */
-    @Nullable
-    public Object write(@Nullable Object value, RelationalPersistentProperty property) {
-        if (value == null) {
-            return null;
-        }
-        return getTypeHandler(value, property).write(value, property);
-    }
-
-    /**
      * 获取类型处理器
      *
      * @param value    字段值
@@ -112,6 +84,34 @@ public class R2dbcCustomTypeHandlers {
         }
         // 获取或新建实例化自定义的类型处理器
         return handlerCache.getOrNewInstance(typeHandlerClass, valueType, typeHandlerClass);
+    }
+
+    /**
+     * 读取字段值，通过类型处理器
+     * 能调用这个函数，说明一定经过了hasCustomReadTarget函数的检查
+     * 因此这里不重复判断是否能处理了
+     *
+     * @param value    字段值
+     * @param property 数据库映射属性
+     * @return 通过类型处理器处理后的字段值
+     */
+    public Object read(Object value, RelationalPersistentProperty property) {
+        return getTypeHandler(value, property).read(value, property);
+    }
+
+    /**
+     * 写入字段值，通过类型处理器
+     *
+     * @param value    字段值，可能为null
+     * @param property 数据库映射属性
+     * @return 通过类型处理器处理后的字段值，如果输入值为null，则返回null
+     */
+    @Nullable
+    public Object write(@Nullable Object value, RelationalPersistentProperty property) {
+        if (value == null) {
+            return null;
+        }
+        return getTypeHandler(value, property).write(value, property);
     }
 
     /**
