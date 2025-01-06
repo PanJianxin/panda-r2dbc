@@ -1,5 +1,6 @@
 package demo.model.pg;
 
+import com.jxpanda.r2dbc.spring.data.core.enhance.StandardEnum;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.DateTimeKit;
@@ -50,11 +51,21 @@ public class LlmPrompt extends Entity {
         private ScriptReturnType scriptReturnType;
     }
 
-    public enum Role{
+    public enum Role implements StandardEnum {
         UNKNOWN,
         SYSTEM,
         USER,
         ASSISTANT;
+
+        @Override
+        public Integer getCode() {
+            return this.ordinal();
+        }
+
+        @Override
+        public String getDescription() {
+            return "";
+        }
     }
 
     @RequiredArgsConstructor

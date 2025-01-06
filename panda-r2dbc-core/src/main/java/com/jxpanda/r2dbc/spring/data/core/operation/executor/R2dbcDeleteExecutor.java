@@ -59,7 +59,12 @@ public class R2dbcDeleteExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
         }
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
-        return this.databaseClient().sql(operation).fetch().rowsUpdated().defaultIfEmpty(0L)
+        return this.databaseClient()
+                .sql(operation)
+                .filter(template().getStatementFilterFunction())
+                .fetch()
+                .rowsUpdated()
+                .defaultIfEmpty(0L)
                 .cast(parameter.getReturnType());
     }
 

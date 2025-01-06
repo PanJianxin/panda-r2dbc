@@ -17,7 +17,11 @@ public abstract class R2dbcJsonTypeHandler<O, V> implements R2dbcTypeHandler<O, 
 
     protected abstract O readFromJson(byte[] jsonBytes, RelationalPersistentProperty property);
 
+    protected abstract O readFromJson(byte[] jsonBytes, Class<O> valueClass);
+
     protected abstract O readFromJson(String json, RelationalPersistentProperty property);
+
+    protected abstract O readFromJson(String json, Class<O> valueClass);
 
     protected abstract String writeToJson(O object);
 
@@ -28,12 +32,27 @@ public abstract class R2dbcJsonTypeHandler<O, V> implements R2dbcTypeHandler<O, 
     }
 
     @Override
+    public Writer<V, O> getWriter(Class<O> objectClass) {
+        return (object -> this.jsonValueConvert.cast(writeToJson(object)));
+    }
+
+    @Override
     public Reader<O, V> getReader(RelationalPersistentProperty property) {
         return (v -> {
             if (v instanceof byte[] bytes) {
                 return readFromJson(bytes, property);
             }
             return readFromJson(this.jsonValueConvert.toString(v), property);
+        });
+    }
+
+    @Override
+    public Reader<O, V> getReader(Class<O> valueClass) {
+        return (v -> {
+            if (v instanceof byte[] bytes) {
+                return readFromJson(bytes, valueClass);
+            }
+            return readFromJson(this.jsonValueConvert.toString(v), valueClass);
         });
     }
 

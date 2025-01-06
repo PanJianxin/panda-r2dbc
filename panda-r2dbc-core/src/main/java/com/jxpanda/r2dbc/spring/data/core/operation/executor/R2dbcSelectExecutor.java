@@ -92,7 +92,9 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
 
         PreparedOperation<?> preparedOperation = preparedOperationBuilder.apply(parameter, selectSpec);
 
-        DatabaseClient.GenericExecuteSpec executeSpec = databaseClient().sql(preparedOperation);
+        DatabaseClient.GenericExecuteSpec executeSpec = databaseClient().sql(preparedOperation)
+                .filter(template().getStatementFilterFunction()
+                        .andThen(parameter.getFilterFunction()));
 
         RowsFetchSpec<R> rowsFetchSpec;
 

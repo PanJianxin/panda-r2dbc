@@ -8,7 +8,7 @@ dependencies {
     api(libs.bundles.jackson)
 
     compileOnly(libs.r2dbc.postgresql)
-    implementation(libs.jakarta.annotation.api)
+//    implementation(libs.jakarta.annotation.api)
     implementation(libs.spring.boot)
     annotationProcessor(libs.spring.configuration.processor)
 }

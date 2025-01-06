@@ -30,10 +30,16 @@ public class LogicDeleteValue {
     }
 
     public Object getDeleteValue() {
+        if (deleteValue == null) {
+            return type.getDeleteValue().get();
+        }
         return getValue(deleteValue, deleteValueHandler);
     }
 
     public Object getUndeleteValue() {
+        if (undeleteValue == null) {
+            return type.getUndeleteValue().get();
+        }
         return getValue(undeleteValue, undeleteValueHandler);
     }
 

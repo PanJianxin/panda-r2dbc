@@ -17,6 +17,8 @@ public interface R2dbcTypeHandler<O, V> {
      */
     Writer<V, O> getWriter(RelationalPersistentProperty property);
 
+    Writer<V, O> getWriter(Class<O> objectClass);
+
     /**
      * 获取一个用于从关系数据库读取实体属性的Reader。
      *
@@ -24,6 +26,8 @@ public interface R2dbcTypeHandler<O, V> {
      * @return 返回一个Reader对象，该对象能够从关系数据库中读取指定的实体属性。
      */
     Reader<O, V> getReader(RelationalPersistentProperty property);
+
+    Reader<O, V> getReader(Class<O> valueClass);
 
     default Class<O> getObjectClass() {
         return ReflectionKit.getSuperClassGenericType(this.getClass(), R2dbcTypeHandler.class, 0);
@@ -48,6 +52,20 @@ public interface R2dbcTypeHandler<O, V> {
     }
 
     /**
+     * 把对象序列化为值
+     * 即：
+     * object -> value
+     *
+     * @param objectClass 对象的类型
+     * @param object      对象
+     * @return 序列化之后的值
+     */
+    default V write(O object, Class<O> objectClass) {
+        return getWriter(objectClass).apply(object);
+    }
+
+
+    /**
      * 把值反序列化为对象
      * 即：
      * value -> object
@@ -59,6 +77,20 @@ public interface R2dbcTypeHandler<O, V> {
     default O read(V value, RelationalPersistentProperty property) {
         return getReader(property).apply(value);
     }
+
+    /**
+     * 把值反序列化为对象
+     * 即：
+     * value -> object
+     *
+     * @param objectClass 对象的类型
+     * @param value       值
+     * @return 反序列化之后的对象
+     */
+    default O read(V value, Class<O> objectClass) {
+        return getReader(objectClass).apply(value);
+    }
+
 
     /**
      * 什么都不处理的类型处理器
@@ -73,7 +105,17 @@ public interface R2dbcTypeHandler<O, V> {
         }
 
         @Override
+        public Writer<Object, Object> getWriter(Class<Object> objectClass) {
+            return (object) -> object;
+        }
+
+        @Override
         public Reader<Object, Object> getReader(RelationalPersistentProperty property) {
+            return (value) -> value;
+        }
+
+        @Override
+        public Reader<Object, Object> getReader(Class<Object> valueClass) {
             return (value) -> value;
         }
     }
@@ -96,7 +138,17 @@ public interface R2dbcTypeHandler<O, V> {
         }
 
         @Override
+        public Writer<Object, Object> getWriter(Class<Object> objectClass) {
+            return (object) -> object;
+        }
+
+        @Override
         public Reader<Object, Object> getReader(RelationalPersistentProperty property) {
+            return (value) -> value;
+        }
+
+        @Override
+        public Reader<Object, Object> getReader(Class<Object> valueClass) {
             return (value) -> value;
         }
     }

@@ -63,6 +63,9 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
                                 List<SqlIdentifier> identifierColumns = getIdentifierColumns(domainEntity.getClass());
                                 return this.databaseClient().sql(operation)
                                         .filter(statement -> {
+
+                                            statement = template().getStatementFilterFunction().apply(statement);
+
                                             if (identifierColumns.isEmpty()) {
                                                 return statement.returnGeneratedValues();
                                             }

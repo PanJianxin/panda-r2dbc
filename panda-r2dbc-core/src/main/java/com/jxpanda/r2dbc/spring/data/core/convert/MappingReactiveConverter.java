@@ -106,7 +106,12 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
          *      这里是一个临时处理，期望未来能有更优雅的解决方案
          * */
         if (type.getType().isEnum()) {
+            // TODO: 实测，这里在MySQL和PostgreSQL的行为中会有差异，
+            //  这里需要思考一下要如何处理，一直在反复横跳，待定
+            // 在MySQL中，会返回数字类型
             return value;
+            // 而在PostgreSQL中，需要返回枚举类型
+            // return this.getTypeHandlers().writeEnumValue(value);
         }
 
         if (getConversions().isSimpleType(value.getClass())) {

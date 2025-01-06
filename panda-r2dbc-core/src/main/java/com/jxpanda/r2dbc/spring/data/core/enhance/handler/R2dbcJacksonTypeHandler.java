@@ -57,9 +57,29 @@ public class R2dbcJacksonTypeHandler<O, V> extends R2dbcJsonTypeHandler<O, V> {
     }
 
     @Override
+    protected O readFromJson(byte[] jsonBytes, Class<O> objectClass) {
+        try {
+            return objectMapper.readValue(jsonBytes, objectClass);
+        } catch (IOException e) {
+            log.error("[JSON READ ERROR]", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     protected O readFromJson(String json, RelationalPersistentProperty property) {
         try {
             return objectMapper.readValue(json, typeReference(property));
+        } catch (JsonProcessingException e) {
+            log.error("[JSON READ ERROR]", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    protected O readFromJson(String json, Class<O> objectClass) {
+        try {
+            return objectMapper.readValue(json, objectClass);
         } catch (JsonProcessingException e) {
             log.error("[JSON READ ERROR]", e);
             throw new RuntimeException(e);

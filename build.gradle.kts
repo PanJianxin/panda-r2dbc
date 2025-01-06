@@ -3,12 +3,12 @@ plugins {
     java
     `maven-publish`
     `java-library`
-    id("io.freefair.lombok") version "8.6"
+    alias(libs.plugins.lombok)
 }
 
 object Project {
     const val GROUP = "com.jxpanda.r2dbc"
-    const val VERSION = "1.3.2"
+    const val VERSION = "1.4.1"
 }
 
 allprojects {

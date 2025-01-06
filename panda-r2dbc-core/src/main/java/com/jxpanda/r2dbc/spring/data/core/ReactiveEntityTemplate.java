@@ -23,9 +23,11 @@ import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
+import io.r2dbc.spi.Statement;
 import jakarta.annotation.Resource;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
@@ -105,6 +107,10 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
     @Resource
     @Getter(value = AccessLevel.PUBLIC)
     private R2dbcPluginExecutor pluginExecutor;
+
+    @Setter
+    @Getter(value = AccessLevel.PUBLIC)
+    private Function<Statement, Statement> statementFilterFunction = Function.identity();
 
 
     public ReactiveEntityTemplate(DatabaseClient databaseClient, R2dbcDialect dialect, R2dbcConverter converter) {

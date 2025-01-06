@@ -4,6 +4,7 @@ import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
+import io.r2dbc.spi.Statement;
 import org.reactivestreams.Publisher;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
@@ -100,6 +101,10 @@ public class R2dbcOperationExecutor<T, R> {
 
     protected Dialect dialect() {
         return template().getDialect();
+    }
+
+    protected Function<Statement, Statement> statementFilterFunction() {
+        return template().getStatementFilterFunction();
     }
 
     protected TransactionalOperator transactionalOperator() {

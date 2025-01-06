@@ -107,7 +107,11 @@ public class R2dbcUpdateExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
         }
 
         PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-        return this.databaseClient().sql(operation).fetch().rowsUpdated();
+        return this.databaseClient()
+                .sql(operation)
+                .filter(template().getStatementFilterFunction())
+                .fetch()
+                .rowsUpdated();
     }
 
     private BiConsumer<Long, SynchronousSink<Object>> updateHandler(T domainEntity, RelationalPersistentEntity<T> persistentEntity) {

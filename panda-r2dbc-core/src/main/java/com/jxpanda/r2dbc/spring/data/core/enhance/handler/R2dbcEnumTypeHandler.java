@@ -19,6 +19,12 @@ public class R2dbcEnumTypeHandler implements R2dbcTypeHandler<Enum<?>, Object> {
 
     @Override
     public Writer<Object, Enum<?>> getWriter(RelationalPersistentProperty property) {
+        Class<Enum<?>> enumClass = ReflectionKit.cast(property.getType());
+        return getWriter(enumClass);
+    }
+
+    @Override
+    public Writer<Object, Enum<?>> getWriter(Class<Enum<?>> objectClass) {
         return (enumConstant) -> {
 
             // 如果实现了StandardEnum接口，直接返回code
@@ -27,7 +33,7 @@ public class R2dbcEnumTypeHandler implements R2dbcTypeHandler<Enum<?>, Object> {
             }
 
             // 否则找@EnumValue注解标识的字段，返回该字段的值
-            Field field = Arrays.stream(property.getType().getDeclaredFields())
+            Field field = Arrays.stream(objectClass.getDeclaredFields())
                     .filter(it -> it.isAnnotationPresent(EnumValue.class))
                     .findFirst()
                     .orElse(null);
@@ -46,15 +52,29 @@ public class R2dbcEnumTypeHandler implements R2dbcTypeHandler<Enum<?>, Object> {
         return (value) -> getOrDefault(property, value.toString());
     }
 
+    @Override
+    public Reader<Enum<?>, Object> getReader(Class<Enum<?>> enumClass) {
+        return (value) -> getOrDefault(enumClass, value.toString());
+    }
+
     private Enum<?> getOrDefault(RelationalPersistentProperty property, String value) {
         Map<String, Enum<?>> enumMap = getEnumMap(property);
         return enumMap.getOrDefault(value, enumMap.get("0"));
     }
 
+    private Enum<?> getOrDefault(Class<Enum<?>> enumClass, String value) {
+        Map<String, Enum<?>> enumMap = getEnumMap(enumClass);
+        return enumMap.getOrDefault(value, enumMap.get("0"));
+    }
+
     private Map<String, Enum<?>> getEnumMap(RelationalPersistentProperty property) {
-        Class<? extends Enum<?>> objectClass = ReflectionKit.cast(property.getType());
-        return enumCache.getOrCreateLevelOneCache(objectClass, (k) -> Arrays.stream(objectClass.getEnumConstants())
-                .collect(Collectors.toMap(it -> write(it, property).toString(), it -> it)));
+        Class<Enum<?>> enumClass = ReflectionKit.cast(property.getType());
+        return getEnumMap(enumClass);
+    }
+
+    private Map<String, Enum<?>> getEnumMap(Class<Enum<?>> enumClass) {
+        return enumCache.getOrCreateLevelOneCache(enumClass, (k) -> Arrays.stream(enumClass.getEnumConstants())
+                .collect(Collectors.toMap(it -> write(it, enumClass).toString(), it -> it)));
     }
 
 }

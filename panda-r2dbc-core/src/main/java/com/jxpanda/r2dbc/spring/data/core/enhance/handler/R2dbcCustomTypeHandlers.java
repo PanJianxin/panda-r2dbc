@@ -114,6 +114,11 @@ public class R2dbcCustomTypeHandlers {
         return getTypeHandler(value, property).write(value, property);
     }
 
+    public Object writeEnumValue(Object value) {
+        return handlerCache.getEnumHandler(value.getClass())
+                .write(value, value.getClass());
+    }
+
     /**
      * 自定义类型处理器缓存类，用于缓存不同类型处理器的实例
      * 通过缓存机制，避免重复实例化相同类型的处理器，提高性能

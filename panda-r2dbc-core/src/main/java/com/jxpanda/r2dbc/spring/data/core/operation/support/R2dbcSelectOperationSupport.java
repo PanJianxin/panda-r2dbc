@@ -118,6 +118,12 @@ public final class R2dbcSelectOperationSupport extends R2dbcOperationSupport imp
             return newSupport(rebuild(returnType, returnType), R2dbcSelectSupport::new);
         }
 
+        @Override
+        @NonNull
+        public SelectWithQuery<T> withFetchSize(int fetchSize) {
+            return newSupport(rebuild().filterFunction(statement -> statement.fetchSize(fetchSize)), R2dbcSelectSupport::new);
+        }
+
         /*
          * (non-Javadoc)
          * @see org.springframework.data.r2dbc.core.ReactiveSelectOperation.SelectWithQuery#matching(org.springframework.data.r2dbc.query.Query)
