@@ -1,6 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableJoin;
+import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcStatementKit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.r2dbc.convert.R2dbcConverter;
@@ -62,6 +62,7 @@ public class R2dbcStatementMapper implements StatementMapper {
                                                       @Nullable RelationalPersistentEntity<?> entity) {
 
         Table table = selectSpec.getTable();
+
         SelectBuilder.SelectAndFrom selectAndFrom = StatementBuilder.select(getSelectList(selectSpec, entity));
 
         if (selectSpec.isDistinct()) {
@@ -71,15 +72,12 @@ public class R2dbcStatementMapper implements StatementMapper {
         SelectBuilder.SelectFromAndJoin selectBuilder = selectAndFrom.from(table);
 
         BindMarkers bindMarkers = this.dialect.getBindMarkersFactory().create();
-        Bindings bindings = Bindings.empty();
         CriteriaDefinition criteria = selectSpec.getCriteria();
 
+        R2dbcStatementKit.SelectHandler selectHandler = R2dbcStatementKit.buildHandler(table, selectBuilder, entity, criteria, bindMarkers, this.updateMapper);
+
         if (criteria != null && !criteria.isEmpty()) {
-
-            BoundCondition mappedObject = this.updateMapper.getMappedObject(bindMarkers, criteria, table, entity);
-
-            bindings = mappedObject.getBindings();
-            selectBuilder.where(mappedObject.getCondition());
+            selectHandler.handleWhere();
         }
 
         if (selectSpec.getSort().isSorted()) {
@@ -99,19 +97,11 @@ public class R2dbcStatementMapper implements StatementMapper {
             selectBuilder.lock(selectSpec.getLock());
         }
 
-        Select select;
-        boolean isJoin = entity != null && entity.isAnnotationPresent(TableJoin.class);
-        if (!isJoin) {
-            select = selectBuilder.build();
-        } else {
-            TableJoin tableJoin = entity.getRequiredAnnotation(TableJoin.class);
-            select = tableJoin.joinType().getFunction().apply(selectBuilder, Table.create(tableJoin.rightTable()))
-                    .on(Conditions.just(tableJoin.on()))
-                    .build();
-        }
+        Select select = selectHandler.buildSelect();
 
-        return new DefaultPreparedOperation<>(select, this.renderContext, bindings);
+        return new DefaultPreparedOperation<>(select, this.renderContext, selectHandler.getBindings());
     }
+
 
     protected List<Expression> getSelectList(SelectSpec selectSpec, @Nullable RelationalPersistentEntity<?> entity) {
 

@@ -1,6 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Extend;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Rule;
@@ -15,6 +15,7 @@ import org.springframework.data.relational.core.query.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Data
@@ -34,6 +35,12 @@ public class Seeker<T> {
      * 分页对象
      */
     private final Pagination.Request pagination;
+
+    @JsonIgnore
+    private Function<Criteria, Criteria> criteriaHandler = Function.identity();
+
+    @JsonIgnore
+    private Function<Sort, Sort> sortHandler = Function.identity();
 
     public Seeker() {
         this.probes = new ArrayList<>();
@@ -140,17 +147,17 @@ public class Seeker<T> {
      * 用下来基本够用，暂时没必要优化
      */
     public Query buildQuery(Class<T> clazz) {
+        Criteria criteria = getCriteriaHandler().apply(buildCriteria(clazz));
 
-        EnhancedCriteria criteria = this.getProbes()
-                .stream()
-                // 把SKIP掉或者字段名为空的过滤掉
-                .filter(probe -> !Extend.SKIP.equals(probe.getExtend()) || probe.getField().isBlank())
-                // 根据Extend做字段预处理
-                .map(probe -> probe.getExtend().handle(probe, clazz))
-                // 执行探机的函数逻辑，获取Criteria
-                .reduce(EnhancedCriteria.empty(), (currentCriteria, probe) -> probe.apply(currentCriteria), (a, b) -> b);
+        Sort sort = getSortHandler().apply(buildSort());
 
-        Sort sort = this.getSorters()
+        return Query.query(criteria)
+                .sort(sort)
+                .with(takePageable());
+    }
+
+    public Sort buildSort() {
+        return this.getSorters()
                 .stream()
                 .map(Sorter::execute)
                 .collect(Collectors.collectingAndThen(Collectors.toList(),
@@ -158,10 +165,21 @@ public class Seeker<T> {
                             List<Sort.Order> orderList = result.isEmpty() ? List.of(Sort.Order.desc("id")) : result;
                             return Sort.by(orderList);
                         }));
+    }
 
-        return Query.query(criteria)
-                .sort(sort)
-                .with(takePageable());
+    public Criteria buildCriteria(Class<T> clazz) {
+        return buildCriteria(Criteria.empty(), clazz);
+    }
+
+    public Criteria buildCriteria(Criteria criteria, Class<T> clazz) {
+        return this.getProbes()
+                .stream()
+                // 把SKIP掉或者字段名为空的过滤掉
+                .filter(probe -> !Extend.SKIP.equals(probe.getExtend()) || probe.getField().isBlank())
+                // 根据Extend做字段预处理
+                .map(probe -> probe.getExtend().handle(probe, clazz))
+                // 执行探机的函数逻辑，获取Criteria
+                .reduce(criteria, (currentCriteria, probe) -> probe.apply(currentCriteria), (a, b) -> b);
     }
 
 }

@@ -101,6 +101,11 @@ public class EnhancedCriteria implements CriteriaDefinition {
         return EMPTY.and(criteria);
     }
 
+    public static CriteriaDefinition replaceColumn(CriteriaDefinition criteria, SqlIdentifier newColumn) {
+        Assert.notNull(criteria, "LambdaCriteria must not be null");
+        return new EnhancedCriteria(newColumn, criteria.getComparator(), criteria.getValue());
+    }
+
     /**
      * Static factory method to create a LambdaCriteria using the provided {@code column} name.
      *

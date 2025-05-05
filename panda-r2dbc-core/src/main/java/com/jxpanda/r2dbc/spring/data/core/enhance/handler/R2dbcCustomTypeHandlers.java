@@ -1,6 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.handler;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
+import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.lang.Nullable;
 
@@ -109,6 +110,7 @@ public class R2dbcCustomTypeHandlers {
     @Nullable
     public Object write(@Nullable Object value, RelationalPersistentProperty property) {
         if (value == null) {
+            // TODO: 要处理默认值的策略
             return null;
         }
         return getTypeHandler(value, property).write(value, property);

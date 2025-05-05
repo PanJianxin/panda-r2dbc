@@ -2,6 +2,7 @@ package com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import lombok.AllArgsConstructor;
+import org.springframework.data.relational.core.query.Criteria;
 
 import java.util.function.BiFunction;
 
@@ -10,15 +11,15 @@ public enum Synapse {
     /**
      * 拼接AND条件
      */
-    AND(EnhancedCriteria::and),
+    AND(Criteria::and),
     /**
      * 拼接OR条件
      */
-    OR(EnhancedCriteria::or);
+    OR(Criteria::or);
 
-    private final BiFunction<EnhancedCriteria, String, EnhancedCriteria.EnhancedCriteriaStep> synapseFunction;
+    private final BiFunction<Criteria, String, Criteria.CriteriaStep> synapseFunction;
 
-    public EnhancedCriteria.EnhancedCriteriaStep execute(EnhancedCriteria criteria, String field) {
+    public Criteria.CriteriaStep execute(Criteria criteria, String field) {
         return synapseFunction.apply(criteria, field);
     }
 

@@ -85,13 +85,10 @@ public class R2dbcMappingKit {
         return tableEntity != null && tableEntity.aggregate();
     }
 
-    public static <E> boolean isJoin(Class<E> entityClass) {
-        RelationalPersistentEntity<E> persistentEntity = getPersistentEntity(entityClass);
-        return persistentEntity != null && isJoin(persistentEntity);
-    }
-
-    public static <E> boolean isJoin(RelationalPersistentEntity<E> relationalPersistentEntity) {
-        return relationalPersistentEntity.isAnnotationPresent(TableJoin.class);
+    public static <E> List<RelationalPersistentProperty> getProperties(RelationalPersistentEntity<E> relationalPersistentEntity) {
+        return StreamUtils.createStreamFromIterator(relationalPersistentEntity.iterator())
+                .filter(property -> property.isAnnotationPresent(TableColumn.class))
+                .toList();
     }
 
     public static <E> List<RelationalPersistentProperty> getReferenceProperties(Class<E> entityClass) {
@@ -187,11 +184,6 @@ public class R2dbcMappingKit {
         // 使用策略判定字段是否有效
         return validationStrategy.isEffective(value);
     }
-
-
-
-
-
 
 
 }

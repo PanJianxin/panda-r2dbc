@@ -86,10 +86,10 @@ public class Probe {
         return snakeCase ? StringKit.snakeCase(this.field) : this.field;
     }
 
-    public EnhancedCriteria apply(EnhancedCriteria criteria) {
-        EnhancedCriteria.EnhancedCriteriaStep criteriaStep;
+    public Criteria apply(Criteria criteria) {
+        Criteria.CriteriaStep criteriaStep;
         if (criteria == null || criteria.isEmpty()) {
-            criteriaStep = EnhancedCriteria.where(this.getField());
+            criteriaStep = Criteria.where(this.getField());
         } else {
             criteriaStep = getSynapse().execute(criteria, this.getField());
         }

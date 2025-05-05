@@ -1,3 +1,3 @@
 dependencies{
-    api(project(":panda-r2dbc-core"))
+    implementation(project(":panda-r2dbc-core"))
 }

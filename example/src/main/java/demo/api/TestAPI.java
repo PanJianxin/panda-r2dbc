@@ -3,9 +3,11 @@ package demo.api;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.Seeker;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSaveOperation;
 import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
 import demo.model.*;
+import demo.model.join.InvoiceInfoCheck;
 import lombok.AllArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
@@ -97,10 +99,10 @@ public class TestAPI {
         return reactiveEntityTemplate.selectById(id, OrderVO.class);
     }
 
-    @GetMapping("join")
-    public Flux<OrderDTO> join() {
-        return reactiveEntityTemplate.select(OrderDTO.class)
-                .all();
+    @PostMapping("join")
+    public Mono<Pagination<InvoiceInfoCheck>> join(@RequestBody Seeker<InvoiceInfoCheck> seeker) {
+        return reactiveEntityTemplate.select(InvoiceInfoCheck.class)
+                .seek(seeker);
     }
 
     @GetMapping("r2dbc-join")

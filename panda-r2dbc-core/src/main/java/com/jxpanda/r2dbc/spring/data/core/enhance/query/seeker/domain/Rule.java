@@ -1,10 +1,10 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.relational.core.query.Criteria;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,25 +16,37 @@ public enum Rule implements RuleFunction {
     /**
      * 等于
      */
-    EQ(EnhancedCriteria.EnhancedCriteriaStep::is) {
+    EQ(Criteria.CriteriaStep::is) {
         @Override
-        public EnhancedCriteria nullParamFallback(EnhancedCriteria.EnhancedCriteriaStep criteriaStep) {
+        public Criteria nullParamFallback(Criteria.CriteriaStep criteriaStep) {
             return criteriaStep.isNull();
         }
     },
     /**
      * 不等于
      */
-    NE(EnhancedCriteria.EnhancedCriteriaStep::not) {
+    NE(Criteria.CriteriaStep::not) {
         @Override
-        public EnhancedCriteria nullParamFallback(EnhancedCriteria.EnhancedCriteriaStep criteriaStep) {
+        public Criteria nullParamFallback(Criteria.CriteriaStep criteriaStep) {
             return criteriaStep.isNotNull();
         }
     },
-    GT(EnhancedCriteria.EnhancedCriteriaStep::greaterThan),
-    GE(EnhancedCriteria.EnhancedCriteriaStep::greaterThanOrEquals),
-    LT(EnhancedCriteria.EnhancedCriteriaStep::lessThan),
-    LE(EnhancedCriteria.EnhancedCriteriaStep::lessThanOrEquals),
+    IS_NULL((criteriaStep, params) -> criteriaStep.isNull()) {
+        @Override
+        public boolean allowNull() {
+            return true;
+        }
+    },
+    IS_NOT_NULL((criteriaStep, params) -> criteriaStep.isNotNull()) {
+        @Override
+        public boolean allowNull() {
+            return true;
+        }
+    },
+    GT(Criteria.CriteriaStep::greaterThan),
+    GE(Criteria.CriteriaStep::greaterThanOrEquals),
+    LT(Criteria.CriteriaStep::lessThan),
+    LE(Criteria.CriteriaStep::lessThanOrEquals),
     IN(((criteriaStep, params) -> {
         if (params instanceof Collection<?> collection) {
             return criteriaStep.in(collection);
@@ -57,5 +69,5 @@ public enum Rule implements RuleFunction {
         return criteriaStep.notBetween(objects.get(0), objects.get(1));
     });
 
-    private final BiFunction<EnhancedCriteria.EnhancedCriteriaStep, Object, EnhancedCriteria> function;
+    private final BiFunction<Criteria.CriteriaStep, Object, Criteria> function;
 }
