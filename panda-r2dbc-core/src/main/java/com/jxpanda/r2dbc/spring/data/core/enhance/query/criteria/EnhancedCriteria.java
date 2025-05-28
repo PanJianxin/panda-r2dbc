@@ -614,6 +614,19 @@ public class EnhancedCriteria implements CriteriaDefinition {
          * @return a new {@link EnhancedCriteria} object
          */
         EnhancedCriteria isFalse();
+
+        /**
+         * Checks whether all specified bits are set in the column using bitwise AND.
+         * SQL equivalent: (column & bitmask) = bitmask
+         */
+        EnhancedCriteria matchesAllBit(int bitmask);
+
+        /**
+         * Checks whether any specified bits are set in the column using bitwise AND.
+         * SQL equivalent: (column & bitmask) != 0
+         */
+        EnhancedCriteria matchesAnyBit(int bitmask);
+
     }
 
     /**
@@ -745,8 +758,34 @@ public class EnhancedCriteria implements CriteriaDefinition {
             return createCriteria(Comparator.IS_FALSE, false);
         }
 
+
+        @Override
+        public EnhancedCriteria matchesAllBit(int bitmask) {
+            String expression = String.format("%s & %d", property.getReference(), bitmask);
+            EnhancedCriteria criteria = new EnhancedCriteria(
+                    SqlIdentifier.unquoted(expression),
+                    Comparator.EQ,
+                    bitmask
+            );
+            return new EnhancedCriteria(null, Combinator.AND, List.of(criteria));
+        }
+
+        @Override
+        public EnhancedCriteria matchesAnyBit(int bitmask) {
+            String expression = String.format("%s & %d", property.getReference(), bitmask);
+
+            EnhancedCriteria criteria = new EnhancedCriteria(
+                    SqlIdentifier.unquoted(expression),
+                    Comparator.NEQ,
+                    0
+            );
+            return new EnhancedCriteria(null, Combinator.AND, List.of(criteria));
+        }
+
+
         protected EnhancedCriteria createCriteria(Comparator comparator, @Nullable Object value) {
             return new EnhancedCriteria(this.property, comparator, value);
         }
     }
+
 }

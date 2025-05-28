@@ -14,7 +14,6 @@ import org.springframework.data.relational.core.mapping.RelationalPersistentProp
 import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Update;
-import org.springframework.data.util.Pair;
 import org.springframework.util.ObjectUtils;
 
 import java.util.function.Function;
@@ -42,8 +41,12 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
 
     private <T, R> Update handleUpdate(R2dbcPluginContext<T, R, Update> context) {
         Class<T> domainType = context.getDomainType();
-        Pair<String, Object> logicDeleteColumn = R2DbcLogicDeletePlugin.getDelete(domainType);
-        return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
+        return handleUpdate(domainType);
+    }
+
+    public static Update handleUpdate(Class<?> domainType){
+        LogicDeleteMetadata delete = R2DbcLogicDeletePlugin.getDelete(domainType);
+        return Update.update(delete.field(), delete.value());
     }
 
     private <T, R> CriteriaDefinition handleCriteria(R2dbcPluginContext<T, R, CriteriaDefinition> context) {
@@ -51,12 +54,12 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
         CriteriaDefinition criteriaDefinition = context.getLastPluginResult() == null ? Criteria.empty() : context.getLastPluginResult();
         if (isLogicDeleteEnable(domainType)) {
             // 获取查询对象中的逻辑删除字段和值，写入到criteria中
-            Pair<String, Object> logicDeleteColumn = getUndelete(domainType);
+            LogicDeleteMetadata undelete = getUndelete(domainType);
             if (criteriaDefinition instanceof Criteria criteria) {
-                return criteria.and(Criteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                return criteria.and(undelete.createCriteria());
             }
             if (criteriaDefinition instanceof EnhancedCriteria enhancedCriteria) {
-                return enhancedCriteria.and(EnhancedCriteria.where(logicDeleteColumn.getFirst()).is(logicDeleteColumn.getSecond()));
+                return enhancedCriteria.and(undelete.createCriteria());
             }
         }
         return criteriaDefinition;
@@ -86,11 +89,11 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
         }
     }
 
-    public static <T> Pair<String, Object> getDelete(Class<T> entityClass) {
+    public static LogicDeleteMetadata getDelete(Class<?> entityClass) {
         return getLogicDeleteColumn(entityClass, WhichValue.DELETE_VALUE);
     }
 
-    public static <T> Pair<String, Object> getUndelete(Class<T> entityClass) {
+    public static LogicDeleteMetadata getUndelete(Class<?> entityClass) {
         return getLogicDeleteColumn(entityClass, WhichValue.UNDELETE_VALUE);
     }
 
@@ -100,21 +103,31 @@ public class R2DbcLogicDeletePlugin extends R2dbcOperationPlugin {
      * @param entityClass entityClass
      * @return 第一个值是字段名，第二个值是逻辑删除的删除值
      */
-    private static <T> Pair<String, Object> getLogicDeleteColumn(Class<T> entityClass, WhichValue whichValue) {
-        RelationalPersistentEntity<T> requiredEntity = R2dbcMappingKit.getRequiredEntity(entityClass);
+    private static LogicDeleteMetadata getLogicDeleteColumn(Class<?> entityClass, WhichValue whichValue) {
+        RelationalPersistentEntity<?> requiredEntity = R2dbcMappingKit.getRequiredEntity(entityClass);
         RelationalPersistentProperty logicDeleteProperty = requiredEntity.getPersistentProperty(TableLogic.class);
         // 默认取值是全局配置的逻辑删除字段
         LogicDeletePluginProperties logicDeleteProperties = R2dbcEnvironment.getLogicDeleteProperties();
         String logicDeleteField = logicDeleteProperties.field();
         Object value = whichValue.getValueFromProperties(logicDeleteProperties.value());
+        LogicDeleteValueType logicDeleteValueType = logicDeleteProperties.value().getType();
         // 如果配置了注解，则以注解为准
         if (logicDeleteProperty != null) {
             logicDeleteField = logicDeleteProperty.getName();
             TableLogic tableLogicAnnotation = logicDeleteProperty.getRequiredAnnotation(TableLogic.class);
             value = whichValue.getValueFromAnnotation(tableLogicAnnotation);
+            logicDeleteValueType = tableLogicAnnotation.type();
         }
 
-        return Pair.of(logicDeleteField, value);
+        return new LogicDeleteMetadata(logicDeleteField, value, logicDeleteValueType);
+    }
+
+    public record LogicDeleteMetadata(String field, Object value, LogicDeleteValueType type) {
+
+        public Criteria createCriteria() {
+            return type.createCriteria(Criteria.where(field), value);
+        }
+
     }
 
     @RequiredArgsConstructor

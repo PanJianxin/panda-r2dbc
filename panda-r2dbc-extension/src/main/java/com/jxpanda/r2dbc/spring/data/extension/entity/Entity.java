@@ -9,7 +9,7 @@ import java.io.Serializable;
  *
  * @author Panda
  */
-public interface Entity<ID> extends Serializable {
+public interface Entity extends Serializable {
 
     /**
      * 定义实体的ID字段，默认值为"id"
@@ -21,7 +21,7 @@ public interface Entity<ID> extends Serializable {
      *
      * @return id
      */
-    ID getId();
+    String getId();
 
     /**
      * 返回当前entity是否有效

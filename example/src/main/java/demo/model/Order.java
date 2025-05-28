@@ -7,7 +7,6 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.EnumValue;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableEntity;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
-import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcEnumTypeHandler;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValueType;
 import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import lombok.*;
@@ -32,14 +31,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @TableEntity(name = "order")
-public class Order extends StandardEntity<String> {
+public class Order extends StandardEntity{
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     @TableColumn
     @JsonIgnore
-    @TableLogic(type = LogicDeleteValueType.DATE_TIME)
+    @TableLogic(type = LogicDeleteValueType.DATE_TIME_1970)
     private LocalDateTime deletedDate;
 
     @TableColumn(name = "parent_id")

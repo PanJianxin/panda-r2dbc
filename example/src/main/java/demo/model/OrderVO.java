@@ -14,14 +14,14 @@ import java.util.List;
 
 @Data
 @TableEntity(name = "order")
-public class OrderVO implements Entity<String> {
+public class OrderVO implements Entity {
 
     @TableId
     private String id;
 
     @TableColumn
     @JsonIgnore
-    @TableLogic(type = LogicDeleteValueType.DATE_TIME)
+    @TableLogic(type = LogicDeleteValueType.DATE_TIME_1970)
     private LocalDateTime deletedDate;
 
     @TableColumn(name = "parent_id")

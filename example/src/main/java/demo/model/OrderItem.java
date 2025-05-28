@@ -20,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @Accessors(chain = true)
 @TableEntity(name = "order_item")
-public class OrderItem extends StandardEntity<String> {
+public class OrderItem extends StandardEntity {
 
     @TableColumn(name = "order_id")
     private String orderId;

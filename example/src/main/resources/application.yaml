@@ -18,11 +18,9 @@ panda:
         enable: true
         field: deleted_time
         value:
-          type: DATE_TIME
-
-
-
-
-logging:
-  level:
-    root: INFO
+          type: DATE_TIME_9999
+    extension:
+      enable: true
+      crud-entity:
+        enable: true
+        scan-packages: demo.model

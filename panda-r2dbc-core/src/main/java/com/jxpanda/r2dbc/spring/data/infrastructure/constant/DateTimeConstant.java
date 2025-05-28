@@ -10,9 +10,15 @@ import java.util.Date;
  */
 public class DateTimeConstant {
 
-    public static final String STRING_1970_01_01_00_00_00 = "1970-01-01 00:00:00";
     public static final String STRING_TIME_00_00_00 = "00:00:00";
     public static final String STRING_TIME_23_59_59 = "23:59:59";
+
+    public static final String STRING_1970_01_01 = "1970-01-01";
+    public static final String STRING_1970_01_01_00_00_00 = "1970-01-01 00:00:00";
+
+    public static final String STRING_9999_12_31 = "9999-12-31";
+    public static final String STRING_9999_12_31_23_59_59 = "9999-12-31 23:59:59";
+
     public static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     /**
@@ -20,21 +26,25 @@ public class DateTimeConstant {
      * 取值为：1970-01-01 00:00:00
      */
     public static final Date DATE_1970_01_01_00_00_00;
+    public static final Date DATE_9999_12_31_23_59_59;
     /**
      * 1970-01-01 00:00:00
      */
     public static final LocalDateTime DATETIME_1970_01_01_00_00_00 = LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0);
+    public static final LocalDateTime DATETIME_9999_12_31_23_59_59 = LocalDateTime.of(9999, 12, 31, 23, 59, 59, 0);
 
     /**
      * 逻辑删除时间标记
      * 取值为：1970-01-01 00:00:00
      */
-    public static final LocalDateTime DELETED_DATE = DATETIME_1970_01_01_00_00_00;
+    public static final LocalDateTime DELETED_DATE_1970 = DATETIME_1970_01_01_00_00_00;
+    public static final LocalDateTime DELETED_DATE_9999 = DATETIME_9999_12_31_23_59_59;
 
 
     static {
         try {
-            DATE_1970_01_01_00_00_00 = new SimpleDateFormat(DATE_FORMAT_PATTERN).parse("1970-01-01 00:00:00");
+            DATE_1970_01_01_00_00_00 = new SimpleDateFormat(DATE_FORMAT_PATTERN).parse(STRING_1970_01_01_00_00_00);
+            DATE_9999_12_31_23_59_59 = new SimpleDateFormat(DATE_FORMAT_PATTERN).parse(STRING_9999_12_31_23_59_59);
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }

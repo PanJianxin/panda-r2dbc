@@ -17,7 +17,7 @@ import java.util.List;
 @SuperBuilder
 @TableEntity(name = "main_table")
 @EqualsAndHashCode(callSuper = true)
-public class MainTable extends StandardEntity<String> {
+public class MainTable extends StandardEntity {
 
     @TableColumn(name = "content")
     private String content;

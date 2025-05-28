@@ -20,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @Accessors(chain = true)
 @TableEntity(name = "user")
-public class User extends StandardEntity<String> {
+public class User extends StandardEntity {
 
     @TableColumn(name = "nickname")
     private String nickname;

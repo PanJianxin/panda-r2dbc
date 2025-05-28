@@ -4,10 +4,11 @@ import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.Seeker;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSaveOperation;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcUpdateOperation;
+import com.jxpanda.r2dbc.spring.data.extension.service.ReactiveEntityService;
+import demo.Test2Service;
 import demo.model.*;
 import demo.model.join.InvoiceInfoCheck;
+import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
@@ -33,9 +34,36 @@ public class TestAPI {
 
     private final R2dbcEntityTemplate r2dbcEntityTemplate;
 
-    private final OrderService orderService;
+    private final ReactiveEntityService<Test> testReactiveService;
 
-    private final OrderRepository orderRepository;
+    private final Test2Service test2Service;
+
+
+    @GetMapping("mask-test")
+    public Mono<List<Test>> maskTest(@RequestParam("mask") Integer mask) {
+//        return reactiveEntityTemplate.select(Test.class)
+//                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
+//                .all()
+//                .collectList();
+        return testReactiveService.list(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
+                .collectList();
+    }
+
+    @GetMapping("mask-test2")
+    public Mono<List<Test2>> maskTest2(@RequestParam("mask") Integer mask) {
+//        return reactiveEntityTemplate.select(Test.class)
+//                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
+//                .all()
+//                .collectList();
+        return test2Service.list(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
+                .collectList();
+    }
+
+
+    @GetMapping("logic-delete/{id}")
+    public Mono<Boolean> logicDelete(@PathVariable("id") String id) {
+        return reactiveEntityTemplate.deleteById(id, Test.class);
+    }
 
     @GetMapping("table-vo/{id:\\d+}")
     public Mono<TableVO> tableVO(@PathVariable("id") String id) {
@@ -130,10 +158,6 @@ public class TestAPI {
                 .delayElements(Duration.of(duration, ChronoUnit.SECONDS));
     }
 
-    @PostMapping("/order/insert")
-    public Mono<Order> insert(@RequestBody Order order) {
-        return orderService.insert(order);
-    }
 
     @PostMapping("/order/save")
     public Mono<Order> save(@RequestBody Order order) {
@@ -171,15 +195,6 @@ public class TestAPI {
                     order.setId(orderId);
                     return order;
                 });
-    }
-
-    @GetMapping("/order/{id}")
-    public Mono<Order> getOrder(@PathVariable("id") String id) {
-        String tableName = orderService.getTableName();
-        return orderService.selectById(id);
-//        return r2dbcEntityTemplate.select(Order.class)
-//                .matching(Query.query(Criteria.where("id").is(id)))
-//                .one();
     }
 
 

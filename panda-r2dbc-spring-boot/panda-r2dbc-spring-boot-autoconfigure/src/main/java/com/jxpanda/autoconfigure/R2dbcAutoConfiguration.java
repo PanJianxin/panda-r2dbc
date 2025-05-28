@@ -1,5 +1,6 @@
 package com.jxpanda.autoconfigure;
 
+
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplateAdapter;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
@@ -13,9 +14,8 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2DbcLogicDeletePlugin;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
-import io.r2dbc.spi.ConnectionFactory;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -38,8 +38,8 @@ import java.util.List;
 /**
  * @author Panda
  */
-@AutoConfiguration(after = org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
-@EnableConfigurationProperties(R2dbcConfigProperties.class)
+@AutoConfigureAfter(org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
+@EnableConfigurationProperties({R2dbcConfigProperties.class})
 @ComponentScan(basePackages = {"com.jxpanda.r2dbc.spring.data.config", "com.jxpanda.r2dbc.spring.data.core.kit"})
 public class R2dbcAutoConfiguration {
 

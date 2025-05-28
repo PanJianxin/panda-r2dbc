@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     idea
     java
@@ -8,32 +10,34 @@ plugins {
 
 object Project {
     const val GROUP = "com.jxpanda.r2dbc"
-    const val VERSION = "1.5.2"
+    const val VERSION = "1.6.0"
 }
 
 allprojects {
-    group = Project.GROUP
-    version = Project.VERSION
-}
-
-configure(subprojects.filter { !it.name.endsWith("bom") }) {
-    apply(plugin = "idea")
     apply(plugin = "java")
     apply(plugin = "java-library")
-    apply(plugin = "maven-publish")
-    apply(plugin = "io.freefair.lombok")
+    apply(plugin = rootProject.libs.plugins.lombok.get().pluginId)
+
+
+    group = Project.GROUP
+    version = Project.VERSION
 
     java {
         sourceCompatibility = JavaVersion.VERSION_17
         withSourcesJar()
     }
 
-    dependencies {
-        implementation(rootProject.libs.spotbugs.annotations)
-    }
 }
 
+
 configure(subprojects.filter { it.name.startsWith("panda-r2dbc") }) {
+    apply(plugin = "idea")
+    apply(plugin = "maven-publish")
+
+    dependencies{
+        implementation(rootProject.libs.spring.boot.starter)
+    }
+
     publishing {
         publications {
             create<MavenPublication>("mavenJava") {

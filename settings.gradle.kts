@@ -10,25 +10,18 @@ include("panda-r2dbc-spring-boot:panda-r2dbc-spring-boot-starter")
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
-            from(files("./settings-libs.toml"))
+            from("com.jxpanda:version-catalog:1.0.13")
         }
     }
 }
 
 dependencyResolutionManagement {
-    val username = "625e0df381699e5a37856249"
-    val password = "2Nyd7z_poSkV"
+    val username = "68258526c7c99a91a4d7f4ba"
+    val password = "J)h7ptbn]2Gb"
     repositories {
         mavenLocal()
         mavenCentral()
-        maven("https://maven.aliyun.com/repository/public")
-        maven("https://packages.aliyun.com/maven/repository/2218345-release-TG2hsk/") {
-            credentials {
-                this.username = username
-                this.password = password
-            }
-        }
-        maven("https://packages.aliyun.com/maven/repository/2218345-snapshot-1Qs4uI/") {
+        maven("https://packages.aliyun.com/6825856bf9ff7623b1ecd70a/maven/starship-release") {
             credentials {
                 this.username = username
                 this.password = password

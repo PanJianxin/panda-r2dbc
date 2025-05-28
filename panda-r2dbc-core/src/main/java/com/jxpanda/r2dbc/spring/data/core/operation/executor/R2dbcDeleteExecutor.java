@@ -39,10 +39,7 @@ public class R2dbcDeleteExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
         // 如果插件执行成功的话，则直接执行更新操作
         if (logicDeleteUpdate.isPresent()) {
             return swap(R2dbcUpdateExecutor::builder)
-                    .updateSupplier(() -> {
-                        Pair<String, Object> logicDeleteColumn = R2DbcLogicDeletePlugin.getDelete(parameter.getDomainType());
-                        return Update.update(logicDeleteColumn.getFirst(), logicDeleteColumn.getSecond());
-                    })
+                    .updateSupplier(() -> R2DbcLogicDeletePlugin.handleUpdate(parameter.getDomainType()))
                     .build()
                     .fetch(parameter);
         }

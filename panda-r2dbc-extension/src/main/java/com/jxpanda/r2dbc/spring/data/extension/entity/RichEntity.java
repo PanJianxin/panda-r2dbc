@@ -1,10 +1,9 @@
-package demo.model.pg;
+package com.jxpanda.r2dbc.spring.data.extension.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableLogic;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value.LogicDeleteValueType;
-import com.jxpanda.r2dbc.spring.data.extension.entity.StandardEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,15 +12,15 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
-/**
- * @author Panda
- */
 @Getter
 @Setter
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Entity extends StandardEntity {
+public class RichEntity extends StandardEntity implements AuditableEntity, TenantEntity, HashableEntity, OptimisticLockEntity {
+
+    @TableColumn(name = "tenant_id")
+    private String tenantId;
 
     @TableColumn(name = "creator_id")
     private String creatorId;
@@ -37,7 +36,20 @@ public class Entity extends StandardEntity {
 
     @JsonIgnore
     @TableColumn(name = "deleted_time")
-    @TableLogic(type = LogicDeleteValueType.DATE_TIME_1970)
+    @TableLogic(type = LogicDeleteValueType.DATE_TIME_9999)
     private LocalDateTime deletedTime;
 
+    @JsonIgnore
+    @TableColumn(name = "version")
+    private Integer version;
+
+    @JsonIgnore
+    @TableColumn(name = "data_hash")
+    private String dataHash;
+
+
+    @Override
+    public boolean isEffective() {
+        return super.isEffective() && !getId().equals("0");
+    }
 }

@@ -1,7 +1,5 @@
 package com.jxpanda.r2dbc.spring.data.extension.entity;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import lombok.*;
@@ -19,14 +17,13 @@ import org.springframework.util.ObjectUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = {"id"})
-public class StandardEntity<ID> implements Entity<ID> {
+public class StandardEntity implements Entity {
 
     /**
      * 主键ID
      */
     @TableId(validationPolicy = ValidationStrategy.NOT_EMPTY)
-    @JsonSerialize(using = ToStringSerializer.class)
-    private ID id;
+    private String id;
 
     @Override
     public boolean isEffective() {

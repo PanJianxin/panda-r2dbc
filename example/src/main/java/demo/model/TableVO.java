@@ -17,7 +17,7 @@ import java.util.List;
 @TableEntity(name = "main_table")
 @EqualsAndHashCode(callSuper = true)
 @TableJoin(leftTable = "main_table", rightTable = "sub_table", on = "main_table.id = sub_table.main_table_id")
-public class TableVO extends StandardEntity<String> {
+public class TableVO extends StandardEntity {
 
     @TableColumn(name = "content")
     private String content;

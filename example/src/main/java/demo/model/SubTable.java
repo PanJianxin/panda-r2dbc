@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @TableEntity(name = "sub_table")
 @EqualsAndHashCode(callSuper = true)
-public class SubTable extends StandardEntity<String> {
+public class SubTable extends StandardEntity {
 
     @TableColumn(name = "content")
     private String content;

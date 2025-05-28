@@ -1,12 +1,16 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.plugin.value;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.DateTimeConstant;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.relational.core.query.Criteria;
 
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -21,31 +25,52 @@ public enum LogicDeleteValueType {
 
     NUMBER(
             () -> 1,
-            () -> 0
+            () -> 0,
+            Criteria.CriteriaStep::is
     ),
     BOOLEAN(
             () -> true,
-            () -> false
+            () -> false,
+            Criteria.CriteriaStep::is
     ),
-    DATE(
+    DATE_1970(
             Date::new,
-            () -> DateTimeConstant.DATE_1970_01_01_00_00_00
+            () -> DateTimeConstant.DATE_1970_01_01_00_00_00,
+            Criteria.CriteriaStep::is
     ),
-    DATE_TIME(
+    DATE_9999(
+            Date::new,
+            Date::new,
+            Criteria.CriteriaStep::greaterThan
+    ),
+    DATE_TIME_1970(
             LocalDateTime::now,
-            () -> DateTimeConstant.DATETIME_1970_01_01_00_00_00
+            () -> DateTimeConstant.DATETIME_1970_01_01_00_00_00,
+            Criteria.CriteriaStep::is
+    ),
+    DATE_TIME_9999(
+            LocalDateTime::now,
+            LocalDateTime::now,
+            Criteria.CriteriaStep::greaterThan
     ),
     USE_PROPERTIES(
             () -> ValueConstant.DELETE,
-            () -> ValueConstant.UNDELETE
+            () -> ValueConstant.UNDELETE,
+            Criteria.CriteriaStep::is
     ),
     CUSTOMER(
             () -> null,
-            () -> null
+            () -> null,
+            Criteria.CriteriaStep::is
     );
 
     private final Supplier<Object> deleteValue;
     private final Supplier<Object> undeleteValue;
+    private final BiFunction<Criteria.CriteriaStep, Object, Criteria> criteriaFunction;
+
+    public Criteria createCriteria(Criteria.CriteriaStep criteriaStep, Object value) {
+        return criteriaFunction.apply(criteriaStep, value);
+    }
 
 
     static final class ValueConstant {

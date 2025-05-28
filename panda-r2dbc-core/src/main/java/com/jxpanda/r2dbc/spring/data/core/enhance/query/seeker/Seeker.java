@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 @Data
 public class Seeker<T> {
 
+    private final String cmd;
+
     /**
      * 筛选条件列表（探机群）
      */
@@ -43,6 +45,7 @@ public class Seeker<T> {
     private Function<Sort, Sort> sortHandler = Function.identity();
 
     public Seeker() {
+        this.cmd = "";
         this.probes = new ArrayList<>();
         this.sorters = new ArrayList<>();
         this.pagination = Pagination.Request.defaultPage();

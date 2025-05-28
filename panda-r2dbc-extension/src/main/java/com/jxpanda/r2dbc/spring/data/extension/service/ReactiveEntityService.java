@@ -2,11 +2,11 @@ package com.jxpanda.r2dbc.spring.data.extension.service;
 
 import com.jxpanda.r2dbc.spring.data.core.*;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.Seeker;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
 import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
 import com.jxpanda.r2dbc.spring.data.extension.entity.Entity;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.relational.core.query.Query;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -20,15 +20,9 @@ import java.util.stream.Collectors;
 /**
  * @author Panda
  */
-public interface Service<T extends Entity<ID>, ID> {
+public interface ReactiveEntityService<T extends Entity> {
 
     ReactiveEntityTemplate getReactiveEntityTemplate();
-
-    default String getTableName() {
-        return R2dbcMappingKit.getTableName(getEntityClass()).toSql(getReactiveEntityTemplate().getDialect().getIdentifierProcessing());
-    }
-
-    Class<ID> getIdClass();
 
     Class<T> getEntityClass();
 
@@ -83,7 +77,7 @@ public interface Service<T extends Entity<ID>, ID> {
     }
 
     /**
-     * 基于ID更新一条数据
+     * 基于String更新一条数据
      *
      * @param entity entity
      * @return 最新的 entity
@@ -102,13 +96,13 @@ public interface Service<T extends Entity<ID>, ID> {
     default Mono<T> update(T entity, Query query) {
         return update()
                 .matching(query)
-                .apply(ServiceHelper.buildUpdate(entity))
+                .apply(ReactiveEntityServiceHelper.buildUpdate(entity))
                 .thenReturn(entity);
     }
 
     /**
      * 保存一条数据
-     * 有ID则更新，无ID则创建
+     * 有String则更新，无String则创建
      *
      * @param entity entity
      * @return 最新的 entity
@@ -120,7 +114,7 @@ public interface Service<T extends Entity<ID>, ID> {
 
     /**
      * 批量保存
-     * 有ID则更新，无ID则创建
+     * 有String则更新，无String则创建
      *
      * @param entities entity列表
      * @return 保存后的集合
@@ -136,7 +130,7 @@ public interface Service<T extends Entity<ID>, ID> {
      * @param id id
      * @return 成功/失败
      */
-    default Mono<Boolean> deleteById(ID id) {
+    default Mono<Boolean> deleteById(String id) {
         return delete().byId(id);
     }
 
@@ -146,7 +140,7 @@ public interface Service<T extends Entity<ID>, ID> {
      * @param ids id集合
      * @return 影响了多少条数据
      */
-    default Mono<Long> deleteByIds(Collection<ID> ids) {
+    default Mono<Long> deleteByIds(Collection<String> ids) {
         return delete().byIds(ids);
     }
 
@@ -166,7 +160,7 @@ public interface Service<T extends Entity<ID>, ID> {
      * @param id id
      * @return 成功/失败
      */
-    default Mono<Boolean> destroyById(ID id) {
+    default Mono<Boolean> destroyById(String id) {
         return destroy().byId(id);
     }
 
@@ -176,7 +170,7 @@ public interface Service<T extends Entity<ID>, ID> {
      * @param ids id集合
      * @return 影响了多少条数据
      */
-    default Mono<Long> destroyByIds(Collection<ID> ids) {
+    default Mono<Long> destroyByIds(Collection<String> ids) {
         return destroy().byIds(ids);
     }
 
@@ -191,12 +185,12 @@ public interface Service<T extends Entity<ID>, ID> {
     }
 
     /**
-     * 使用ID查询1条数据
+     * 使用String查询1条数据
      *
      * @param id id
      * @return 查询到的entity
      */
-    default Mono<T> selectById(ID id) {
+    default Mono<T> selectById(String id) {
         return select().byId(id);
     }
 
@@ -216,7 +210,7 @@ public interface Service<T extends Entity<ID>, ID> {
      * @param ids id集合
      * @return 数据列表
      */
-    default Flux<T> listByIds(Collection<ID> ids) {
+    default Flux<T> listByIds(Collection<String> ids) {
         return select().byIds(ids);
     }
 
@@ -236,7 +230,7 @@ public interface Service<T extends Entity<ID>, ID> {
      * @param ids id列表
      * @return map结构的数据，key是id，value是entity
      */
-    default Mono<Map<ID, T>> associateByIds(Collection<ID> ids) {
+    default Mono<Map<String, T>> associateByIds(Collection<String> ids) {
         return select().byIds(ids)
                 .collect(Collectors.toMap(Entity::getId, Function.identity()));
     }
@@ -250,7 +244,8 @@ public interface Service<T extends Entity<ID>, ID> {
      */
     default <K> Mono<Map<K, T>> associateBy(Function<? super T, ? extends K> keySelector, Query query) {
         return select()
-                .matching(query).all()
+                .matching(query)
+                .all()
                 .collect(Collectors.toMap(keySelector, Function.identity()));
     }
 
@@ -264,19 +259,19 @@ public interface Service<T extends Entity<ID>, ID> {
      */
     default <K> Mono<Map<K, List<T>>> groupBy(Function<? super T, ? extends K> keySelector, Query query) {
         return select()
-                .matching(query).all()
+                .matching(query)
+                .all()
                 .collect(Collectors.groupingBy(keySelector));
     }
 
     /**
      * 分页查询
      *
-     * @param query 查询条件
+     * @param seeker 查询条件
      * @return 分页后的数据
      */
-    default Mono<Pagination<T>> page(Query query, Pageable pageable) {
-        return select().matching(query)
-                .page(pageable);
+    default Mono<Pagination<T>> seek(Seeker<T> seeker) {
+        return select().seek(seeker);
     }
 
 

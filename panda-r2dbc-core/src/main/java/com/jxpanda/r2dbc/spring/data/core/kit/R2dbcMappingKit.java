@@ -46,6 +46,14 @@ public class R2dbcMappingKit {
         staticTypeHandlers = typeHandlers;
     }
 
+    public static String getTableNameFromAnnotation(Class<?> entityClass) {
+        TableEntity tableEntity = entityClass.getAnnotation(TableEntity.class);
+        if (tableEntity != null) {
+            return tableEntity.name();
+        }
+        return null;
+    }
+
     public static <T> SqlIdentifier getTableName(Class<T> entityClass) {
         return R2dbcMappingKit.getRequiredEntity(entityClass).getQualifiedTableName();
     }
