@@ -9,3 +9,5 @@
 /panda-r2dbc-spring-boot/panda-r2dbc-spring-boot-autoconfigure/out/
 /example/out/
 /.fleet/
+/example/src/main/java/demo/model/Test2.java
+/src/main/resources/META-INF/spring-autoconfigure-metadata.properties
