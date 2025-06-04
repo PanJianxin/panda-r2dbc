@@ -1,7 +1,10 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance;
 
+import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.ToIntFunction;
 
 public interface BitmaskEnum extends StandardEnum {
 
@@ -46,12 +49,42 @@ public interface BitmaskEnum extends StandardEnum {
      * 将若干 BitmaskEnum 拼成一个整型掩码。
      */
     static int toMask(BitmaskEnum... items) {
-        int m = 0;
-        for (BitmaskEnum it : items) {
-            m |= it.getCode();
-        }
-        return m;
+        return toMask(BitmaskEnum::getCode, items);
     }
+
+    /**
+     * 将若干整型掩码拼成一个整型掩码。
+     */
+    static int toMask(Integer... codes) {
+        return toMask(Integer::intValue, codes);
+    }
+
+    static int toMask(List<Object> objectList) {
+        int mask = 0;
+        for (Object it : objectList) {
+            if (it instanceof BitmaskEnum be) {
+                mask |= be.getCode();
+            } else if (it instanceof Number num) {
+                mask |= num.intValue();
+            }
+        }
+        return mask;
+    }
+
+    /**
+     * 通用版 toMask：
+     * - extractor：告诉它怎么从 T 里拿到一个 int code
+     * - items：任意类型的数组，只要你能给出 extractor，就能合并掩码
+     */
+    @SafeVarargs
+    static <T> int toMask(ToIntFunction<T> extractor, T... items) {
+        int mask = 0;
+        for (T item : items) {
+            mask |= extractor.applyAsInt(item);
+        }
+        return mask;
+    }
+
 
     /**
      * （可选）从掩码解析出所有对应的枚举项。

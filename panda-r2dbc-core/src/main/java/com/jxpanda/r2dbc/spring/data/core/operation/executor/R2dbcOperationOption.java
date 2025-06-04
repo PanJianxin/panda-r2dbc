@@ -1,12 +1,8 @@
 package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
 import lombok.Getter;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * @author Panda
@@ -16,7 +12,7 @@ public class R2dbcOperationOption {
 
     private final boolean selectReference;
 
-    private final Map<R2dbcPluginName, Boolean> pluginSwitch;
+    private final Set<String> disabledPlugins;
 
 
     public R2dbcOperationOption() {
@@ -25,20 +21,16 @@ public class R2dbcOperationOption {
 
     public R2dbcOperationOption(boolean selectReference) {
         this.selectReference = selectReference;
-        this.pluginSwitch = Arrays.stream(R2dbcPluginName.values())
-                .collect(Collectors.toMap(Function.identity(), pluginName -> true));
+        this.disabledPlugins = new HashSet<>();
     }
 
-    public boolean isPluginEnable(R2dbcPluginName pluginName) {
-        return pluginSwitch.get(pluginName);
-    }
 
-    public void disablePlugin(R2dbcPluginName pluginName) {
-        pluginSwitch.put(pluginName, false);
-    }
-
-    public void enablePlugin(R2dbcPluginName pluginName) {
-        pluginSwitch.put(pluginName, true);
+    /**
+     * 禁用某个插件：返回一个新的 Context 副本，但把 pluginName 加到 disabledPlugins
+     */
+    public R2dbcOperationOption disablePlugin(String pluginName) {
+        this.disabledPlugins.add(pluginName);
+        return this;
     }
 
 }

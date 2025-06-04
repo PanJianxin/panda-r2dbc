@@ -72,5 +72,11 @@ public @interface TableEntity {
      */
     ValidationStrategy validationPolicy() default ValidationStrategy.DEFAULT;
 
+    /**
+     * 忽略的字段
+     * 用以处理虚拟字段，或者基础字段的差异。
+     * */
+    String[] ignoreColumns() default {};
+
 
 }

@@ -18,7 +18,9 @@ import org.springframework.data.util.StreamUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -115,12 +117,21 @@ public class R2dbcMappingKit {
      * 返回字段是否是存在的
      * 主要用于排除虚拟字段
      */
-    public static boolean isPropertyExists(@Nullable RelationalPersistentProperty property) {
+    public static boolean isPropertyExists(RelationalPersistentEntity<?> entity, @Nullable RelationalPersistentProperty property) {
         if (property == null) {
             return false;
         }
         if (property.isIdProperty()) {
             return true;
+        }
+        // 检测是否被过滤了
+        TableEntity tableEntity = entity.findAnnotation(TableEntity.class);
+        if (tableEntity != null && !ObjectUtils.isEmpty(tableEntity.ignoreColumns())) {
+            boolean ignored = Arrays.stream(tableEntity.ignoreColumns())
+                    .anyMatch(it -> property.getColumnName().getReference().equals(it) || property.getName().equals(it));
+            if (ignored) {
+                return false;
+            }
         }
         TableColumn tableColumn = property.findAnnotation(TableColumn.class);
         return tableColumn != null && tableColumn.exists();
@@ -149,6 +160,13 @@ public class R2dbcMappingKit {
             value = accessor.getProperty(property);
         }
         return value;
+    }
+
+    public static <T> boolean isIdEffective(T entity) {
+        RelationalPersistentEntity<T> requiredEntity = getRequiredEntity(entity);
+        RelationalPersistentProperty idProperty = requiredEntity.getIdProperty();
+        Object idValue = getPropertyValue(entity, requiredEntity, idProperty);
+        return isPropertyEffective(requiredEntity, requiredEntity.getIdProperty(), idValue);
     }
 
     public static <T> boolean isPropertyEffective(T entity, RelationalPersistentEntity<T> relationalPersistentEntity, @Nullable RelationalPersistentProperty property) {

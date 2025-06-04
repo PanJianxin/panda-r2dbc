@@ -2,6 +2,7 @@ package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 
 import com.jxpanda.r2dbc.spring.data.config.R2dbcEnvironment;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.model.R2dbcPluginContext;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.IdStrategy;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -14,9 +15,13 @@ import org.springframework.data.relational.core.sql.SqlIdentifier;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.*;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
+import reactor.util.function.Tuples;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -24,15 +29,15 @@ import java.util.function.Function;
 @SuppressWarnings("deprecation")
 public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor<T, T> {
 
-    private final BiFunction<R2dbcOperationParameter<T, T>, OutboundRow, StatementMapper.InsertSpec> specBuilder;
+    private final BiFunction<R2dbcOperationContext<T, T>, OutboundRow, StatementMapper.InsertSpec> specBuilder;
 
-    private final BiFunction<R2dbcOperationParameter<T, T>, StatementMapper.InsertSpec, PreparedOperation<?>> preparedOperationBuilder;
+    private final BiFunction<R2dbcOperationContext<T, T>, StatementMapper.InsertSpec, PreparedOperation<?>> preparedOperationBuilder;
 
-    private R2dbcInsertExecutor(R2dbcOperationParameter<T, T> operationParameter,
-                                Function<R2dbcOperationParameter<T, T>, Query> queryHandler) {
-        super(operationParameter, queryHandler);
+    private R2dbcInsertExecutor(R2dbcOperationContext<T, T> operationContext,
+                                Function<R2dbcOperationContext<T, T>, Query> queryHandler) {
+        super(operationContext, queryHandler);
         this.specBuilder = defaultSpecBuilder();
-        this.preparedOperationBuilder = (parameter, insertSpec) -> parameter.getStatementMapper().getMappedObject(insertSpec);
+        this.preparedOperationBuilder = (context, insertSpec) -> context.getStatementMapper().getMappedObject(insertSpec);
     }
 
 
@@ -41,48 +46,64 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
     }
 
     @Override
-    protected Mono<T> fetch(R2dbcOperationParameter<T, T> parameter) {
-        throw new UnsupportedOperationException("Unsupported operation");
-    }
-
-    @Override
-    protected Mono<T> fetch(T domainEntity, R2dbcOperationParameter<T, T> parameter) {
-        SqlIdentifier tableName = parameter.getTableName();
-        RelationalPersistentEntity<T> persistentEntity = parameter.getRelationalPersistentEntity();
-        return template().maybeCallBeforeConvert(domainEntity, tableName)
-                .flatMap(onBeforeConvert -> {
-                    T initializedEntity = setVersionIfNecessary(persistentEntity, onBeforeConvert);
-                    // id生成处理
-                    potentiallyGeneratorId(persistentEntity.getPropertyAccessor(domainEntity), persistentEntity.getIdProperty());
-                    OutboundRow outboundRow = getOutboundRow(initializedEntity);
-                    potentiallyRemoveId(persistentEntity, outboundRow);
-                    return template().maybeCallBeforeSave(initializedEntity, outboundRow, tableName)
-                            .flatMap(entityToSave -> {
-                                StatementMapper.InsertSpec insertSpec = specBuilder.apply(parameter, outboundRow);
-                                PreparedOperation<?> operation = preparedOperationBuilder.apply(parameter, insertSpec);
-                                List<SqlIdentifier> identifierColumns = getIdentifierColumns(domainEntity.getClass());
-                                return this.databaseClient().sql(operation)
-                                        .filter(statement -> {
-
-                                            statement = template().getStatementFilterFunction().apply(statement);
-
-                                            if (identifierColumns.isEmpty()) {
-                                                return statement.returnGeneratedValues();
-                                            }
-                                            return statement.returnGeneratedValues(dataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
-                                        })
-                                        .map(converter().populateIdIfNecessary(domainEntity))
-                                        .all().last(domainEntity)
-                                        .flatMap(saved -> template().maybeCallAfterSave(saved, outboundRow, tableName));
-                            });
+    protected Mono<T> fetch(R2dbcOperationContext<T, T> operationContext) {
+        return fetchBefore(operationContext)
+                .flatMap(tuple -> {
+                    R2dbcPluginContext<T, T> pluginContext = tuple.getT1();
+                    T entity = Objects.requireNonNull(pluginContext.getEntity());
+                    StatementMapper.InsertSpec insertSpec = specBuilder.apply(operationContext, tuple.getT2());
+                    PreparedOperation<?> operation = preparedOperationBuilder.apply(operationContext, insertSpec);
+                    List<SqlIdentifier> identifierColumns = getIdentifierColumns(entity.getClass());
+                    return this.databaseClient().sql(operation)
+                            .filter(statement -> {
+                                statement = template().getStatementFilterFunction().apply(statement);
+                                if (identifierColumns.isEmpty()) {
+                                    return statement.returnGeneratedValues();
+                                }
+                                return statement.returnGeneratedValues(dataAccessStrategy().renderForGeneratedValues(identifierColumns.get(0)));
+                            })
+                            .map(converter().populateIdIfNecessary(entity))
+                            .all().last(entity)
+                            .flatMap(savedEntity -> fetchAfter(operationContext, tuple.getT2(), pluginContext.withResult(this, savedEntity)));
                 });
     }
 
+    private Mono<Tuple2<R2dbcPluginContext<T, T>, OutboundRow>> fetchBefore(R2dbcOperationContext<T, T> operationContext) {
+        return template().maybeCallBeforeConvert(operationContext.getEntity(), operationContext.getTableName())
+                .flatMap(onConvertEntity -> {
+                    RelationalPersistentEntity<T> persistentEntity = operationContext.getRelationalPersistentEntity();
+                    T initializedEntity = setVersionIfNecessary(persistentEntity, onConvertEntity);
+                    // id生成处理
+                    // TODO: 增加了插件层之后，id的生成以及乐观锁的注入都可以考虑整合到插件层中，以后改
+                    potentiallyGeneratorId(persistentEntity.getPropertyAccessor(onConvertEntity), persistentEntity.getIdProperty());
+                    OutboundRow outboundRow = getOutboundRow(initializedEntity);
+                    potentiallyRemoveId(persistentEntity, outboundRow);
+                    return template()
+                            .maybeCallBeforeSave(initializedEntity, outboundRow, operationContext.getTableName())
+                            .zipWith(Mono.just(outboundRow));
+                })
+                .flatMap(tuple -> pluginExecutor()
+                        .runBefore(operationContext.createPluginContext(this, tuple.getT1()))
+                        .map(pluginContext -> {
+                            OutboundRow outboundRow = tuple.getT2();
+                            // 合并一下，后续生成SQL实际上是用这个对象生成的，和entity没关系了，如果不合并，插件等于没执行
+                            // 也不能强行替换，因为万一maybeCallBeforeSave这里有逻辑，改过OutboundRow对象，就失效了
+                            outboundRow.putAll(getOutboundRow(tuple.getT1()));
+                            return Tuples.of(pluginContext, outboundRow);
+                        }));
+    }
 
-    private BiFunction<R2dbcOperationParameter<T, T>, OutboundRow, StatementMapper.InsertSpec> defaultSpecBuilder() {
-        return (parameter, outboundRow) -> {
-            StatementMapper statementMapper = parameter.getStatementMapper();
-            SqlIdentifier tableName = parameter.getTableName();
+    private Mono<T> fetchAfter(R2dbcOperationContext<T, T> operationContext, OutboundRow outboundRow, R2dbcPluginContext<T, T> context) {
+        return template().maybeCallAfterSave(context.getResult(), outboundRow, operationContext.getTableName())
+                .flatMap(savedEntity -> pluginExecutor().runAfter(context.withResult(this, savedEntity)))
+                .mapNotNull(R2dbcPluginContext::getResult)
+                .doOnSuccess(operationContext::withResult);
+    }
+
+    private BiFunction<R2dbcOperationContext<T, T>, OutboundRow, StatementMapper.InsertSpec> defaultSpecBuilder() {
+        return (operationContext, outboundRow) -> {
+            StatementMapper statementMapper = operationContext.getStatementMapper();
+            SqlIdentifier tableName = operationContext.getTableName();
             StatementMapper.InsertSpec insertSpec = statementMapper.createInsert(tableName);
             for (Map.Entry<SqlIdentifier, Parameter> entry : outboundRow.entrySet()) {
                 if (entry.getValue().hasValue()) {
@@ -117,8 +138,8 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
             return;
         }
         SqlIdentifier columnName = idProperty.getColumnName();
-        Parameter parameter = outboundRow.get(columnName);
-        if (shouldSkipIdValue(parameter)) {
+        Parameter operationContext = outboundRow.get(columnName);
+        if (shouldSkipIdValue(operationContext)) {
             outboundRow.remove(columnName);
         }
     }
@@ -165,7 +186,7 @@ public class R2dbcInsertExecutor<T> extends R2dbcOperationExecutor.WriteExecutor
 
     public static final class R2dbcInsertExecutorBuilder<T> extends R2dbcOperationExecutor.R2dbcExecutorBuilder<T, T, R2dbcInsertExecutor<T>, R2dbcInsertExecutorBuilder<T>> {
         public R2dbcInsertExecutor<T> buildExecutor() {
-            return new R2dbcInsertExecutor<>(operationParameter, queryHandler);
+            return new R2dbcInsertExecutor<>(operationContext, queryHandler);
         }
 
         @Override

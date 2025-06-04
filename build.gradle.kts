@@ -10,7 +10,7 @@ plugins {
 
 object Project {
     const val GROUP = "com.jxpanda.r2dbc"
-    const val VERSION = "1.6.1"
+    const val VERSION = "1.7.1"
 }
 
 allprojects {

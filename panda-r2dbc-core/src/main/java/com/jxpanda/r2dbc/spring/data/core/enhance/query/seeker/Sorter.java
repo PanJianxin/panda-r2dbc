@@ -1,6 +1,6 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Sorting;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Sorting;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Sort;

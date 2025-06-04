@@ -5,6 +5,8 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import io.r2dbc.spi.Statement;
+import lombok.AccessLevel;
+import lombok.Getter;
 import org.reactivestreams.Publisher;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
@@ -29,45 +31,48 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * @author Panda
  */
+@Getter(AccessLevel.PROTECTED)
 @SuppressWarnings({"AlibabaAbstractClassShouldStartWithAbstractNaming", "deprecation"})
 public class R2dbcOperationExecutor<T, R> {
 
-    private final R2dbcOperationParameter<T, R> operationParameter;
+    private final R2dbcOperationContext<T, R> operationContext;
 
-    private final Function<R2dbcOperationParameter<T, R>, Query> queryHandler;
+    private final Function<R2dbcOperationContext<T, R>, Query> queryHandler;
 
-    public R2dbcOperationExecutor(R2dbcOperationParameter<T, R> operationParameter, Function<R2dbcOperationParameter<T, R>, Query> queryHandler) {
-        this.operationParameter = operationParameter;
-        this.queryHandler = queryHandler != null ? queryHandler : R2dbcOperationParameter::getQuery;
+    public R2dbcOperationExecutor(R2dbcOperationContext<T, R> operationContext, Function<R2dbcOperationContext<T, R>, Query> queryHandler) {
+        this.operationContext = operationContext;
+        this.queryHandler = queryHandler != null ? queryHandler : R2dbcOperationContext::getQuery;
     }
 
-    protected R2dbcOperationParameter<T, R> handleQuery() {
-        R2dbcOperationParameter<T, R> parameter = operationParameter;
-        Query query = queryHandler.apply(parameter);
-        if (query != parameter.getQuery()) {
-            parameter = parameter.rebuild().query(query).build();
+    protected R2dbcOperationExecutor<T, R> handleQuery() {
+        R2dbcOperationContext<T, R> operationContext = this.operationContext;
+        Query query = queryHandler.apply(operationContext);
+        if (query != operationContext.getQuery()) {
+            operationContext = operationContext.rebuilder().query(query).build();
         }
-        return parameter;
+        return new R2dbcOperationExecutor<>(operationContext, queryHandler);
     }
 
 
     protected <E extends R2dbcOperationExecutor<T, R>, B extends R2dbcOperationExecutor.R2dbcExecutorBuilder<T, R, E, B>> B swap(Supplier<B> builderSupplier) {
         return builderSupplier.get()
-                .operationParameter(operationParameter)
+                .operationContext(operationContext)
                 .queryHandler(queryHandler);
     }
 
 
     protected ReactiveEntityTemplate template() {
-        return this.operationParameter.getTemplate();
+        return this.operationContext.getTemplate();
     }
 
     protected R2dbcPluginExecutor pluginExecutor() {
@@ -152,7 +157,7 @@ public class R2dbcOperationExecutor<T, R> {
         for (RelationalPersistentProperty property : entity) {
 
             Parameter value = row.get(property.getColumnName());
-            if (value != null && shouldConvertArrayValue(property, value)) {
+            if (shouldConvertArrayValue(property, value)) {
                 Parameter writeValue = getArrayValue(value, property);
                 row.put(property.getColumnName(), writeValue);
             }
@@ -216,37 +221,40 @@ public class R2dbcOperationExecutor<T, R> {
     protected static abstract class ReadExecutor<T, R> extends R2dbcOperationExecutor<T, R> {
 
 
-        public ReadExecutor(R2dbcOperationParameter<T, R> operationParameter, Function<R2dbcOperationParameter<T, R>, Query> queryHandler) {
-            super(operationParameter, queryHandler);
+        public ReadExecutor(R2dbcOperationContext<T, R> operationContext, Function<R2dbcOperationContext<T, R>, Query> queryHandler) {
+            super(operationContext, queryHandler);
         }
 
         public <P extends Publisher<R>> P execute(Function<RowsFetchSpec<R>, P> resultHandler) {
-            return fetch(handleQuery(), resultHandler);
+            return fetch(handleQuery().getOperationContext(), resultHandler);
         }
 
-
-        protected abstract <P extends Publisher<R>> P fetch(R2dbcOperationParameter<T, R> parameter, Function<RowsFetchSpec<R>, P> resultHandler);
+        protected abstract <P extends Publisher<R>> P fetch(R2dbcOperationContext<T, R> operationContext, Function<RowsFetchSpec<R>, P> resultHandler);
 
     }
 
     protected static abstract class WriteExecutor<T, R> extends R2dbcOperationExecutor<T, R> {
 
 
-        public WriteExecutor(R2dbcOperationParameter<T, R> operationParameter, Function<R2dbcOperationParameter<T, R>, Query> queryHandler) {
-            super(operationParameter, queryHandler);
+        public WriteExecutor(R2dbcOperationContext<T, R> operationContext, Function<R2dbcOperationContext<T, R>, Query> queryHandler) {
+            super(operationContext, queryHandler);
         }
 
-        protected abstract Mono<R> fetch(T domainEntity, R2dbcOperationParameter<T, R> parameter);
+//        protected abstract Mono<R> fetch(T entity, R2dbcOperationContext<T, R> operationContext);
 
-        protected abstract Mono<R> fetch(R2dbcOperationParameter<T, R> parameter);
+        protected abstract Mono<R> fetch(R2dbcOperationContext<T, R> operationContext);
 
 
         public Mono<R> execute() {
-            return fetch(handleQuery());
+            return fetch(handleQuery().getOperationContext());
         }
 
-        public Mono<R> execute(T domainEntity) {
-            return fetch(domainEntity, handleQuery());
+        public Mono<R> execute(T entity) {
+            return fetch(handleQuery()
+                    .getOperationContext()
+                    .rebuilder()
+                    .entity(Objects.requireNonNull(entity))
+                    .build());
         }
 
         /**
@@ -254,11 +262,15 @@ public class R2dbcOperationExecutor<T, R> {
          * 暂时使用循环来做
          * 后期考虑通过批量相关的语句来做
          */
-        public Flux<R> executeBatch(Collection<T> domainEntityList) {
-            if (ObjectUtils.isEmpty(domainEntityList)) {
+        public Flux<R> executeBatch(Collection<T> entityList) {
+            if (ObjectUtils.isEmpty(entityList)) {
                 return Flux.empty();
             }
-            return Flux.fromIterable(domainEntityList)
+            // TODO：
+            //  这里是使用循环来一条条执行的，需要进一步研究一下：
+            //  1、是否能进一步优化多线程的处理？
+            //  2、能否把SQL语句转成批量处理模式
+            return Flux.fromIterable(entityList)
                     .flatMap(this::execute)
                     .switchIfEmpty(Flux.empty())
                     .as(transactionalOperator()::transactional);
@@ -270,19 +282,19 @@ public class R2dbcOperationExecutor<T, R> {
 
     @SuppressWarnings("AlibabaAbstractClassShouldStartWithAbstractNaming")
     public static abstract class R2dbcExecutorBuilder<T, R, E extends R2dbcOperationExecutor<T, R>, B extends R2dbcExecutorBuilder<T, R, E, B>> {
-        protected R2dbcOperationParameter<T, R> operationParameter;
+        protected R2dbcOperationContext<T, R> operationContext;
 
-        protected Function<R2dbcOperationParameter<T, R>, Query> queryHandler;
+        protected Function<R2dbcOperationContext<T, R>, Query> queryHandler;
 
-        private Class<T> domainType;
+        private Class<T> entityType;
 
-        private Class<R> returnType;
+        private Class<R> resultType;
 
         public final E build() {
-            if (domainType != null || returnType != null) {
-                operationParameter = operationParameter.rebuild()
-                        .domainType(domainType == null ? operationParameter.getDomainType() : domainType)
-                        .returnType(returnType == null ? operationParameter.getReturnType() : returnType)
+            if (entityType != null || resultType != null) {
+                operationContext = operationContext.rebuilder()
+                        .entityType(entityType == null ? operationContext.getEntityType() : entityType)
+                        .resultType(resultType == null ? operationContext.getResultType() : resultType)
                         .build();
             }
             return buildExecutor();
@@ -302,23 +314,23 @@ public class R2dbcOperationExecutor<T, R> {
          */
         protected abstract E buildExecutor();
 
-        public B operationParameter(R2dbcOperationParameter<T, R> operationParameter) {
-            this.operationParameter = operationParameter;
+        public B operationContext(R2dbcOperationContext<T, R> operationContext) {
+            this.operationContext = operationContext;
             return self();
         }
 
-        public B queryHandler(Function<R2dbcOperationParameter<T, R>, Query> queryHandler) {
+        public B queryHandler(Function<R2dbcOperationContext<T, R>, Query> queryHandler) {
             this.queryHandler = queryHandler;
             return self();
         }
 
-        public B domainType(Class<T> domainType) {
-            this.domainType = domainType;
+        public B entityType(Class<T> entityType) {
+            this.entityType = entityType;
             return self();
         }
 
-        public B returnType(Class<R> returnType) {
-            this.returnType = returnType;
+        public B resultType(Class<R> resultType) {
+            this.resultType = resultType;
             return self();
         }
 

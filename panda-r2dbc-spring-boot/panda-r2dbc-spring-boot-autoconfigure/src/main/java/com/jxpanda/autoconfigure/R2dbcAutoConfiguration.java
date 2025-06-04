@@ -1,6 +1,7 @@
 package com.jxpanda.autoconfigure;
 
 
+import com.jxpanda.autoconfigure.configure.PluginConfigure;
 import com.jxpanda.r2dbc.spring.data.config.R2dbcConfigProperties;
 import com.jxpanda.r2dbc.spring.data.core.R2dbcEntityTemplateAdapter;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
@@ -10,12 +11,14 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcJsonTypeHandler;
 import com.jxpanda.r2dbc.spring.data.core.enhance.handler.R2dbcPostgresJsonTypeHandler;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.AbstractSnowflakeGenerator;
 import com.jxpanda.r2dbc.spring.data.core.enhance.key.IdGenerator;
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2DbcLogicDeletePlugin;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcLogicDeletePlugin;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcOperationPlugin;
 import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
 import com.jxpanda.r2dbc.spring.data.dialect.DialectResolver;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -40,6 +43,7 @@ import java.util.List;
  */
 @AutoConfigureAfter(org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration.class)
 @EnableConfigurationProperties({R2dbcConfigProperties.class})
+@ImportAutoConfiguration({PluginConfigure.class})
 @ComponentScan(basePackages = {"com.jxpanda.r2dbc.spring.data.config", "com.jxpanda.r2dbc.spring.data.core.kit"})
 public class R2dbcAutoConfiguration {
 
@@ -122,14 +126,6 @@ public class R2dbcAutoConfiguration {
     public boolean registerPostgresJsonTypeHandler(R2dbcCustomTypeHandlers r2dbcCustomTypeHandlers) {
         r2dbcCustomTypeHandlers.register(R2dbcJsonTypeHandler.class, new R2dbcPostgresJsonTypeHandler<>());
         return true;
-    }
-
-
-    @Bean
-    @ConditionalOnMissingBean
-    public R2dbcPluginExecutor r2dbcPluginExecutor() {
-        return new R2dbcPluginExecutor()
-                .addPlugin(new R2DbcLogicDeletePlugin());
     }
 
 

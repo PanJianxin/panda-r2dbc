@@ -17,10 +17,13 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RichEntity extends StandardEntity implements AuditableEntity, TenantEntity, HashableEntity, OptimisticLockEntity {
+public class RichEntity extends StandardEntity implements TenantEntity, AclEntity, AuditableEntity, OptimisticLockEntity, HashableEntity {
 
     @TableColumn(name = "tenant_id")
     private String tenantId;
+
+    @TableColumn(name = "acl_id")
+    private String aclId;
 
     @TableColumn(name = "creator_id")
     private String creatorId;

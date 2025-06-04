@@ -1,6 +1,9 @@
 package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.model.R2dbcPluginContext;
+import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
+import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.TransientDataAccessResourceException;
@@ -18,8 +21,12 @@ import org.springframework.r2dbc.core.Parameter;
 import org.springframework.r2dbc.core.PreparedOperation;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SynchronousSink;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
+import reactor.util.function.Tuples;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -30,11 +37,11 @@ public class R2dbcUpdateExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
 
     private final Supplier<Update> updateSupplier;
 
-    private R2dbcUpdateExecutor(R2dbcOperationParameter<T, R> operationParameter,
-                               Function<R2dbcOperationParameter<T, R>, Query> queryHandler,
-                               Supplier<Update> updateSupplier
+    private R2dbcUpdateExecutor(R2dbcOperationContext<T, R> operationContext,
+                                Function<R2dbcOperationContext<T, R>, Query> queryHandler,
+                                Supplier<Update> updateSupplier
     ) {
-        super(operationParameter, queryHandler);
+        super(operationContext, queryHandler);
         this.updateSupplier = updateSupplier;
     }
 
@@ -43,107 +50,130 @@ public class R2dbcUpdateExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
     }
 
 
-    @Override
-    protected Mono<R> fetch(R2dbcOperationParameter<T, R> parameter) {
-        return doFetch(parameter, updateSupplier, parameter.getQuery().getCriteria().orElse(Criteria.empty()))
-                .cast(parameter.getReturnType());
-    }
 
-    @Override
-    protected Mono<R> fetch(T domainEntity, R2dbcOperationParameter<T, R> parameter) {
-        RelationalPersistentEntity<T> persistentEntity = parameter.getRelationalPersistentEntity();
-        SqlIdentifier tableName = parameter.getTableName();
-        Mono<T> mono = template().maybeCallBeforeConvert(domainEntity, tableName).flatMap(onBeforeConvert -> {
-            T entityToUse;
-            Criteria matchingVersionCriteria;
-
-            if (persistentEntity.hasVersionProperty()) {
-                matchingVersionCriteria = createMatchingVersionCriteria(onBeforeConvert, persistentEntity);
-                entityToUse = incrementVersion(persistentEntity, onBeforeConvert);
-            } else {
-                entityToUse = onBeforeConvert;
-                matchingVersionCriteria = null;
-            }
-
-            OutboundRow outboundRow = getOutboundRow(entityToUse);
-
-            return template().maybeCallBeforeSave(entityToUse, outboundRow, tableName).flatMap(onBeforeSave -> {
-
-                SqlIdentifier idColumn = persistentEntity.getRequiredIdProperty().getColumnName();
-                Parameter id = outboundRow.remove(idColumn);
-
-                persistentEntity.forEach(property -> {
-                    if (property.isInsertOnly() || !R2dbcMappingKit.isPropertyEffective(entityToUse, persistentEntity, property)) {
-                        outboundRow.remove(property.getColumnName());
+    private Mono<Tuple2<R2dbcPluginContext<T, R>, Optional<OutboundRow>>> fetchBefore(R2dbcOperationContext<T, R> operationContext) {
+        return Mono.just(operationContext)
+                .flatMap(it -> {
+                    if (operationContext.getEntity() == null) {
+                        return Mono.just(Tuples.of(updateSupplier.get(), operationContext.getQuery().getCriteria().orElse(Criteria.empty()), Optional.<OutboundRow>empty()));
                     }
+                    return fetchBeforeWithEntity(operationContext);
+                })
+                .flatMap(tuple -> {
+                    R2dbcPluginContext<T, R> pluginContext = operationContext.createPluginContext(this)
+                            .rebuilder()
+                            .update(tuple.getT1())
+                            .criteria(tuple.getT2())
+                            .build();
+                    return pluginExecutor().runBefore(pluginContext)
+                            .map(it -> Tuples.of(it, tuple.getT3()));
                 });
+    }
 
-                Criteria criteria = Criteria.where(dataAccessStrategy().toSql(idColumn)).is(id);
+    private Mono<Tuple3<Update, CriteriaDefinition, Optional<OutboundRow>>> fetchBeforeWithEntity(R2dbcOperationContext<T, R> operationContext) {
+        T entity = operationContext.getEntity();
+        RelationalPersistentEntity<T> persistentEntity = Objects.requireNonNull(operationContext.getRelationalPersistentEntity());
+        SqlIdentifier tableName = operationContext.getTableName();
+        return template().maybeCallBeforeConvert(entity, tableName)
+                .map(onBeforeConvertEntity -> {
+                    T entityToUse;
+                    Criteria matchingVersionCriteria;
 
-                if (matchingVersionCriteria != null) {
-                    criteria = criteria.and(matchingVersionCriteria);
-                }
+                    if (persistentEntity.hasVersionProperty()) {
+                        matchingVersionCriteria = createMatchingVersionCriteria(onBeforeConvertEntity, persistentEntity);
+                        entityToUse = incrementVersion(persistentEntity, onBeforeConvertEntity);
+                    } else {
+                        entityToUse = onBeforeConvertEntity;
+                        matchingVersionCriteria = null;
+                    }
 
+                    OutboundRow outboundRow = getOutboundRow(entityToUse);
+                    return Tuples.of(entityToUse, outboundRow, Optional.ofNullable(matchingVersionCriteria));
+                })
+                .flatMap(tuple -> template().maybeCallBeforeSave(tuple.getT1(), tuple.getT2(), tableName)
+                        .map(onBeforeSaveEntity -> Tuples.of(onBeforeSaveEntity, tuple.getT2(), tuple.getT3())))
+                .map(tuple -> {
+                    T onBeforeSaveEntity = tuple.getT1();
+                    SqlIdentifier idColumn = persistentEntity.getRequiredIdProperty().getColumnName();
+                    OutboundRow outboundRow = tuple.getT2();
+                    Parameter id = outboundRow.remove(idColumn);
 
-                Supplier<Update> updateSupplier = () -> Update.from((Map) outboundRow);
+                    persistentEntity.forEach(property -> {
+                        if (property.isInsertOnly() || !R2dbcMappingKit.isPropertyEffective(onBeforeSaveEntity, persistentEntity, property)) {
+                            outboundRow.remove(property.getColumnName());
+                        }
+                    });
 
-                return doFetch(parameter, updateSupplier, criteria)
-                        .handle(updateHandler(onBeforeSave, persistentEntity))
-                        .then(template().maybeCallAfterSave(onBeforeSave, outboundRow, tableName));
-            });
-        });
-        return mono.cast(parameter.getReturnType());
+                    Criteria criteria = Criteria.where(dataAccessStrategy().toSql(idColumn)).is(id);
+
+                    if (tuple.getT3().isPresent()) {
+                        criteria = criteria.and(tuple.getT3().get());
+                    }
+
+                    return Tuples.of(Update.from((Map) outboundRow), criteria, Optional.of(outboundRow));
+                });
+    }
+
+    @Override
+    protected Mono<R> fetch(R2dbcOperationContext<T, R> operationContext) {
+        return fetchBefore(operationContext)
+                .flatMap(tuple -> {
+                    R2dbcPluginContext<T, R> pluginContext = tuple.getT1();
+                    CriteriaDefinition criteria = pluginContext.getCriteria();
+                    StatementMapper statementMapper = operationContext.getStatementMapper();
+                    SqlIdentifier tableName = operationContext.getTableName();
+
+                    StatementMapper.UpdateSpec selectSpec = operationContext.getStatementMapper()
+                            .createUpdate(tableName, Objects.requireNonNull(pluginContext.getUpdate()));
+
+                    if (criteria != null && !criteria.isEmpty()) {
+                        selectSpec = selectSpec.withCriteria(criteria);
+                    }
+
+                    PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
+                    Mono<Long> rowsUpdated = this.databaseClient()
+                            .sql(operation)
+                            .filter(template().getStatementFilterFunction())
+                            .fetch()
+                            .rowsUpdated();
+                    return Mono.zip(rowsUpdated, Mono.just(pluginContext), Mono.just(tuple.getT2()));
+                })
+                .flatMap(tuple -> {
+                    if (operationContext.getEntity() != null && tuple.getT3().isPresent()) {
+                        R2dbcPluginContext<T, R> pluginContext = tuple.getT2();
+                        return Mono.just(tuple.getT1())
+                                .handle(updateHandler(pluginContext.getEntity(), R2dbcMappingKit.getPersistentEntity(pluginContext.getEntityType())))
+                                .then(template().maybeCallAfterSave(pluginContext.getEntity(), tuple.getT3().get(), operationContext.getTableName()))
+                                .map(it -> Tuples.of(it, pluginContext));
+
+                    }
+                    return Mono.just(tuple.getT1())
+                            .zipWith(Mono.just(tuple.getT2()));
+                })
+                .flatMap(tuple -> fetchAfter(operationContext, tuple));
     }
 
 
-    private Mono<Long> doFetch(R2dbcOperationParameter<T, R> parameter, Supplier<Update> updateSupplier, CriteriaDefinition criteria) {
-        StatementMapper statementMapper = parameter.getStatementMapper();
-        SqlIdentifier tableName = parameter.getTableName();
-
-        StatementMapper.UpdateSpec selectSpec = parameter.getStatementMapper().createUpdate(tableName, updateSupplier.get());
-
-        if (criteria != null && !criteria.isEmpty()) {
-            selectSpec = selectSpec.withCriteria(criteria);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(selectSpec);
-        return this.databaseClient()
-                .sql(operation)
-                .filter(template().getStatementFilterFunction())
-                .fetch()
-                .rowsUpdated();
+    private Mono<R> fetchAfter(R2dbcOperationContext<T, R> operationContext, Tuple2<?, R2dbcPluginContext<T, R>> resultTuple) {
+        R result = ReflectionKit.cast(resultTuple.getT1());
+        return pluginExecutor().runAfter(resultTuple.getT2().withResult(this, result))
+                .mapNotNull(R2dbcPluginContext::getResult)
+                .doOnSuccess(operationContext::withResult);
     }
 
-    private BiConsumer<Long, SynchronousSink<Object>> updateHandler(T domainEntity, RelationalPersistentEntity<T> persistentEntity) {
+
+    private BiConsumer<Long, SynchronousSink<Object>> updateHandler(T entity, RelationalPersistentEntity<T> persistentEntity) {
         return (rowsUpdated, sink) -> {
             if (rowsUpdated != 0) {
                 return;
             }
             if (persistentEntity.hasVersionProperty()) {
-                sink.error(new OptimisticLockingFailureException(formatOptimisticLockingExceptionMessage(domainEntity, persistentEntity)));
+                sink.error(new OptimisticLockingFailureException(formatOptimisticLockingExceptionMessage(entity, persistentEntity)));
             } else {
-                sink.error(new TransientDataAccessResourceException(formatTransientEntityExceptionMessage(domainEntity, persistentEntity)));
+                sink.error(new TransientDataAccessResourceException(formatTransientEntityExceptionMessage(entity, persistentEntity)));
             }
         };
     }
-
-//
-
-//    /**
-//     * 批量插入数据
-//     * 暂时使用循环来做
-//     * 后期考虑通过批量插入语句来做
-//     */
-//    private <E> Flux<E> doUpdateBatch(Collection<E> entityList, SqlIdentifier tableName) {
-//        // 这里要管理事务，这个函数不是public的，不能使用@Transactional注解来开启事务
-//        // 需要主动管理
-//        return Mono.just(entityList)
-//                .filter(list -> !ObjectUtils.isEmpty(list))
-//                .flatMapMany(Flux::fromIterable)
-//                .flatMap(entity -> doUpdate(entity, tableName))
-//                .switchIfEmpty(Flux.empty())
-//                .as(this.transactionalOperator()::transactional);
-//    }
 
     private <E> Criteria createMatchingVersionCriteria(E entity, RelationalPersistentEntity<E> persistentEntity) {
 
@@ -201,7 +231,7 @@ public class R2dbcUpdateExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
         }
 
         public R2dbcUpdateExecutor<T, R> buildExecutor() {
-            return new R2dbcUpdateExecutor<>(operationParameter, queryHandler, updateSupplier);
+            return new R2dbcUpdateExecutor<>(operationContext, queryHandler, updateSupplier);
         }
 
         @Override

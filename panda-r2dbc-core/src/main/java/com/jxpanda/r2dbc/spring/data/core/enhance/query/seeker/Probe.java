@@ -1,16 +1,15 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker;
 
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Extend;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Rule;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Synapse;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Extend;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Rule;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Synapse;
 import com.jxpanda.r2dbc.spring.data.infrastructure.constant.StringConstant;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.StringKit;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.With;
-import org.springframework.data.relational.core.query.Criteria;
 
 @Data
 @Builder
@@ -86,10 +85,10 @@ public class Probe {
         return snakeCase ? StringKit.snakeCase(this.field) : this.field;
     }
 
-    public Criteria apply(Criteria criteria) {
-        Criteria.CriteriaStep criteriaStep;
+    public EnhancedCriteria apply(EnhancedCriteria criteria) {
+        EnhancedCriteria.EnhancedCriteriaStep criteriaStep;
         if (criteria == null || criteria.isEmpty()) {
-            criteriaStep = Criteria.where(this.getField());
+            criteriaStep = EnhancedCriteria.where(this.getField());
         } else {
             criteriaStep = getSynapse().execute(criteria, this.getField());
         }

@@ -59,7 +59,7 @@ public enum NamingStrategy implements org.springframework.data.relational.core.m
         boolean annotationPresent = type.isAnnotationPresent(TableEntity.class);
         if (annotationPresent) {
             TableEntity tableEntity = type.getAnnotation(TableEntity.class);
-            tableName = tableEntity.name();
+            tableName = Objects.requireNonNull(tableEntity).name();
         }
         return ObjectUtils.isEmpty(tableName) ? convert(type.getSimpleName()) : tableName;
     }

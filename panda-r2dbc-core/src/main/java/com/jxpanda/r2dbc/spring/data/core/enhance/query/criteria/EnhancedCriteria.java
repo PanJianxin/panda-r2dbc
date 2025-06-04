@@ -17,6 +17,7 @@ import java.util.*;
  */
 @SuppressWarnings("unused")
 public class EnhancedCriteria implements CriteriaDefinition {
+
     static final EnhancedCriteria EMPTY = new EnhancedCriteria(SqlIdentifier.EMPTY, Comparator.INITIAL, null);
 
     private final @Nullable EnhancedCriteria previous;

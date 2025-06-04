@@ -24,3 +24,19 @@ panda:
       crud-entity:
         enable: true
         scan-packages: demo.model
+    proxy:
+      enable: true
+      log-level: info
+
+logging:
+  level:
+    # 打开连接池层的 DEBUG 日志，可以看到借出/归还/探测的流程
+    io.r2dbc.pool: DEBUG
+
+    # 打开底层 PostgreSQL 客户端的 DEBUG 日志，可以看到发送 SELECT 1 的细节
+    io.r2dbc.postgresql: DEBUG
+    io.asyncer.r2dbc.mysql: DEBUG
+
+    # 如果你也想跟踪 Spring Data R2DBC 执行 SQL 的过程，可额外打开：
+    org.springframework.r2dbc: DEBUG
+    org.springframework.r2dbc.core: DEBUG

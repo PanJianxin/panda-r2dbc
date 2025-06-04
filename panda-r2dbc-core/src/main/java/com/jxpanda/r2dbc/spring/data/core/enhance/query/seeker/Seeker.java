@@ -1,15 +1,16 @@
 package com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Extend;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Rule;
-import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.domain.Sorting;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Extend;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Rule;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Sorting;
+import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.model.Synapse;
 import lombok.Data;
 import lombok.NonNull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.relational.core.query.Criteria;
 import org.springframework.data.relational.core.query.Query;
 
 import java.util.ArrayList;
@@ -21,6 +22,9 @@ import java.util.stream.Collectors;
 @Data
 public class Seeker<T> {
 
+    /**
+     * 命令
+     */
     private final String cmd;
 
     /**
@@ -39,7 +43,7 @@ public class Seeker<T> {
     private final Pagination.Request pagination;
 
     @JsonIgnore
-    private Function<Criteria, Criteria> criteriaHandler = Function.identity();
+    private final List<Function<EnhancedCriteria, EnhancedCriteria>> criteriaHandlerChain = new ArrayList<>();
 
     @JsonIgnore
     private Function<Sort, Sort> sortHandler = Function.identity();
@@ -98,12 +102,21 @@ public class Seeker<T> {
     }
 
     public Seeker<T> addProbe(Rule rule, String field, Object value) {
-        getProbes().add(Probe.builder().field(field).value(value).rule(rule).build());
-        return this;
+        return addProbe(rule, field, value, Synapse.AND, Extend.NONE);
     }
 
-    public Seeker<T> addProbe(Rule rule, String field, Object value, Extend extend) {
-        getProbes().add(Probe.builder().field(field).value(value).rule(rule).extend(extend).build());
+    public Seeker<T> addProbe(Rule rule, String field, Object value, Synapse synapse) {
+        return addProbe(rule, field, value, synapse, Extend.NONE);
+    }
+
+    public Seeker<T> addProbe(Rule rule, String field, Object value, Synapse synapse, Extend extend) {
+        getProbes().add(Probe.builder()
+                .field(field)
+                .value(value)
+                .rule(rule)
+                .synapse(synapse)
+                .extend(extend)
+                .build());
         return this;
     }
 
@@ -143,6 +156,16 @@ public class Seeker<T> {
         return this;
     }
 
+    public Seeker<T> addCriteriaHandler(Function<EnhancedCriteria, EnhancedCriteria> handler) {
+        getCriteriaHandlerChain().add(handler);
+        return this;
+    }
+
+    public Seeker<T> clearCriteriaHandler() {
+        getCriteriaHandlerChain().clear();
+        return this;
+    }
+
     /**
      * 构建成mybatis-plus的QueryWrapper对象
      * 就可以利用mybatis-plus做查询了
@@ -150,11 +173,18 @@ public class Seeker<T> {
      * 用下来基本够用，暂时没必要优化
      */
     public Query buildQuery(Class<T> clazz) {
-        Criteria criteria = getCriteriaHandler().apply(buildCriteria(clazz));
+
+        // 1. 创建一个初始条件
+        EnhancedCriteria initCriteria = buildCriteriaFromProbes(clazz);
+        // 2. 用 reduce 把 initCriteria 和每个 handler 串起来
+        EnhancedCriteria finalCriteria = getCriteriaHandlerChain().stream()
+                .reduce(initCriteria,
+                        (criteria, handler) -> handler.apply(criteria),
+                        (c1, c2) -> c2);
 
         Sort sort = getSortHandler().apply(buildSort());
 
-        return Query.query(criteria)
+        return Query.query(finalCriteria)
                 .sort(sort)
                 .with(takePageable());
     }
@@ -170,11 +200,11 @@ public class Seeker<T> {
                         }));
     }
 
-    public Criteria buildCriteria(Class<T> clazz) {
-        return buildCriteria(Criteria.empty(), clazz);
+    public EnhancedCriteria buildCriteriaFromProbes(Class<T> clazz) {
+        return buildCriteriaFromProbes(EnhancedCriteria.empty(), clazz);
     }
 
-    public Criteria buildCriteria(Criteria criteria, Class<T> clazz) {
+    public EnhancedCriteria buildCriteriaFromProbes(EnhancedCriteria criteria, Class<T> clazz) {
         return this.getProbes()
                 .stream()
                 // 把SKIP掉或者字段名为空的过滤掉

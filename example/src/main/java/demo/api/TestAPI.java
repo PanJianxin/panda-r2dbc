@@ -1,14 +1,15 @@
 package demo.api;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.model.R2dbcPluginEnum;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.Seeker;
+import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcOperationOption;
 import com.jxpanda.r2dbc.spring.data.extension.service.ReactiveEntityService;
 import demo.Test2Service;
 import demo.model.*;
 import demo.model.join.InvoiceInfoCheck;
-import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
@@ -39,13 +40,44 @@ public class TestAPI {
     private final Test2Service test2Service;
 
 
+    @PostMapping("mask-save")
+    public Mono<?> saveTest(boolean update) {
+        Random random = new Random();
+        Test test1 = Test.builder()
+                .id(update ? "11" : null)
+                .viewScope(random.nextInt(16))
+                .build();
+
+        Test test2 = Test.builder()
+                .id(update ? "22" : null)
+                .viewScope(random.nextInt(16))
+                .build();
+
+        Test test3 = Test.builder()
+                .id(update ? "33" : null)
+                .viewScope(random.nextInt(16))
+                .build();
+//        return reactiveEntityTemplate.save(test1);
+        return reactiveEntityTemplate.saveBatch(List.of(test1, test2, test3), Test.class)
+                .collectList();
+//        return reactiveEntityTemplate.update(Test.class)
+//                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(1)))
+//                .apply(Update.update("creator_id", "1"));
+    }
+
     @GetMapping("mask-test")
     public Mono<List<Test>> maskTest(@RequestParam("mask") Integer mask) {
 //        return reactiveEntityTemplate.select(Test.class)
 //                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
 //                .all()
 //                .collectList();
-        return testReactiveService.list(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
+        return reactiveEntityTemplate.select(Test.class)
+//                .withOption(new R2dbcOperationOption()
+//                        .disablePlugin("TEST_RESULT_PLUGIN")
+//                        .disablePlugin(R2dbcPluginEnum.Name.LOGIC_DELETE.name())
+//                )
+                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
+                .all()
                 .collectList();
     }
 

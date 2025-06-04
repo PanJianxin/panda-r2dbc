@@ -207,47 +207,47 @@ public class R2dbcEntityTemplateAdapter extends R2dbcEntityTemplate {
     /**
      * 根据领域类型创建删除操作。
      *
-     * @param domainType 领域类型。
+     * @param entityType 领域类型。
      * @return 返回创建的删除操作的 ReactiveDelete 对象。
      */
     @Override
-    public ReactiveDelete delete(Class<?> domainType) {
-        return delegate.delete(domainType);
+    public ReactiveDelete delete(Class<?> entityType) {
+        return delegate.delete(entityType);
     }
 
     /**
      * 根据领域类型创建插入操作。
      *
      * @param <T>        领域类型。
-     * @param domainType 领域类型。
+     * @param entityType 领域类型。
      * @return 返回创建的插入操作的 ReactiveInsert 对象。
      */
     @Override
-    public <T> ReactiveInsert<T> insert(Class<T> domainType) {
-        return delegate.insert(domainType);
+    public <T> ReactiveInsert<T> insert(Class<T> entityType) {
+        return delegate.insert(entityType);
     }
 
     /**
      * 根据领域类型创建选择操作。
      *
      * @param <T>        领域类型。
-     * @param domainType 领域类型。
+     * @param entityType 领域类型。
      * @return 返回创建的选择操作的 ReactiveSelect 对象。
      */
     @Override
-    public <T> ReactiveSelect<T> select(Class<T> domainType) {
-        return delegate.select(domainType);
+    public <T> ReactiveSelect<T> select(Class<T> entityType) {
+        return delegate.select(entityType);
     }
 
     /**
      * 根据领域类型创建更新操作。
      *
-     * @param domainType 领域类型。
+     * @param entityType 领域类型。
      * @return 返回创建的更新操作的 ReactiveUpdate 对象。
      */
     @Override
-    public ReactiveUpdate update(Class<?> domainType) {
-        return delegate.update(domainType);
+    public ReactiveUpdate update(Class<?> entityType) {
+        return delegate.update(entityType);
     }
 
     /**

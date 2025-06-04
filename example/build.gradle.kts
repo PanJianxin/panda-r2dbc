@@ -12,7 +12,7 @@ dependencies {
     implementation(libs.spring.boot.starter)
     implementation(project(":panda-r2dbc-spring-boot:panda-r2dbc-spring-boot-starter"))
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-
+    implementation(libs.panda.infrastructure.core)
     runtimeOnly(libs.db.mysql.r2dbc)
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")

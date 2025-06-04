@@ -151,8 +151,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
             return value;
         }
 
-        Class<?> customWriteTarget = optionalWriteTarget
-                .orElseGet(() -> componentType.isEnum() ? String.class : componentType);
+        Class<?> customWriteTarget = optionalWriteTarget.orElse(String.class);
 
         // optimization: bypass identity conversion
         if (customWriteTarget.equals(componentType)) {
@@ -229,7 +228,7 @@ public class MappingReactiveConverter extends MappingR2dbcConverter {
 
         for (RelationalPersistentProperty property : entity) {
 
-            if (!property.isWritable() || !R2dbcMappingKit.isPropertyExists(property)) {
+            if (!property.isWritable() || !R2dbcMappingKit.isPropertyExists(entity, property)) {
                 continue;
             }
 

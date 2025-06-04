@@ -20,7 +20,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginExecutor;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
 import com.jxpanda.r2dbc.spring.data.core.operation.*;
-import com.jxpanda.r2dbc.spring.data.core.operation.support.*;
+import com.jxpanda.r2dbc.spring.data.core.operation.contract.*;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import io.r2dbc.spi.Statement;
@@ -160,36 +160,36 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
     // Methods dealing with org.springframework.data.r2dbc.core.FluentR2dbcOperations
     // -------------------------------------------------------------------------
 
-    public <T> R2dbcSelectOperation.R2dbcSelect<T> select(Class<T> domainType) {
+    public <T> R2dbcSelectOperation.R2dbcSelect<T> select(Class<T> entityType) {
         return new R2dbcSelectOperationSupport(this)
-                .select(domainType);
+                .select(entityType);
     }
 
-    public <T> R2dbcInsertOperation.R2dbcInsert<T> insert(Class<T> domainType) {
+    public <T> R2dbcInsertOperation.R2dbcInsert<T> insert(Class<T> entityType) {
         return new R2dbcInsertOperationSupport(this)
-                .insert(domainType);
+                .insert(entityType);
     }
 
     @Override
-    public R2dbcUpdateOperation.R2dbcUpdate<?> update(Class<?> domainType) {
+    public R2dbcUpdateOperation.R2dbcUpdate<?> update(Class<?> entityType) {
         return new R2dbcUpdateOperationSupport(this)
-                .update(domainType);
+                .update(entityType);
     }
 
-    public <T> R2dbcSaveOperation.R2dbcSave<T> save(Class<T> domainType) {
+    public <T> R2dbcSaveOperation.R2dbcSave<T> save(Class<T> entityType) {
         return new R2dbcSaveOperationSupport(this)
-                .save(domainType);
+                .save(entityType);
     }
 
     @Override
-    public R2dbcDeleteOperation.R2dbcDelete<?> delete(Class<?> domainType) {
+    public R2dbcDeleteOperation.R2dbcDelete<?> delete(Class<?> entityType) {
         return new R2dbcDeleteOperationSupport(this)
-                .delete(domainType);
+                .delete(entityType);
     }
 
-    public <T> R2dbcDestroyOperation.R2dbcDestroy<T> destroy(Class<T> domainType) {
+    public <T> R2dbcDestroyOperation.R2dbcDestroy<T> destroy(Class<T> entityType) {
         return new R2dbcDestroyOperationSupport(this)
-                .destroy(domainType);
+                .destroy(entityType);
     }
 
 
@@ -243,8 +243,8 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         return insert(R2dbcMappingKit.getRequiredEntity(entity).getType()).using(entity);
     }
 
-    public <T> Flux<T> insertBatch(Collection<T> entityList, Class<T> domainType) {
-        return insert(domainType).batch(entityList);
+    public <T> Flux<T> insertBatch(Collection<T> entityList, Class<T> entityType) {
+        return insert(entityType).batch(entityList);
     }
 
     public <T> Mono<T> update(T entity) throws DataAccessException {
@@ -253,9 +253,9 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
                 .using(entity);
     }
 
-    public <T> Flux<T> updateBatch(Collection<T> entityList, Class<T> domainType) throws DataAccessException {
+    public <T> Flux<T> updateBatch(Collection<T> entityList, Class<T> entityType) throws DataAccessException {
         return new R2dbcUpdateOperationSupport(this)
-                .update(domainType)
+                .update(entityType)
                 .batch(entityList);
     }
 
@@ -270,8 +270,8 @@ public class ReactiveEntityTemplate implements R2dbcEntityOperations {
         return save(R2dbcMappingKit.getRequiredEntity(entity).getType()).using(entity);
     }
 
-    public <T> Flux<T> saveBatch(Collection<T> entityList, Class<T> domainType) {
-        return save(domainType).batch(entityList);
+    public <T> Flux<T> saveBatch(Collection<T> entityList, Class<T> entityType) {
+        return save(entityType).batch(entityList);
     }
 
 

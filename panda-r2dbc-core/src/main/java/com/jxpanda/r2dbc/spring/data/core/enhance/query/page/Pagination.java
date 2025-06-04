@@ -2,10 +2,7 @@ package com.jxpanda.r2dbc.spring.data.core.enhance.query.page;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.lang.NonNull;
 
 import java.util.ArrayList;
@@ -31,7 +28,8 @@ public class Pagination<T> extends PageImpl<T> {
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public <U> Pagination<U> map(@NonNull Function<? super T, ? extends U> converter) {
-        return ((Pagination) super.map(converter));
+        Page<? extends U> mapped = super.map(converter);
+        return new Pagination(mapped.getContent(), mapped.getPageable(), mapped.getTotalElements());
     }
 
 

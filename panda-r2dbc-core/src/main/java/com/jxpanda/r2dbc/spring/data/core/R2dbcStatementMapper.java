@@ -16,6 +16,7 @@ import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.sql.*;
 import org.springframework.data.relational.core.sql.render.RenderContext;
 import org.springframework.data.relational.core.sql.render.SqlRenderer;
+import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.r2dbc.core.PreparedOperation;
 import org.springframework.r2dbc.core.binding.BindMarkers;
@@ -44,17 +45,18 @@ public class R2dbcStatementMapper implements StatementMapper {
         this.mappingContext = converter.getMappingContext();
     }
 
-
+    @NonNull
     @Override
-    public <T> TypedStatementMapper<T> forType(Class<T> type) {
+    public <T> TypedStatementMapper<T> forType(@NonNull Class<T> type) {
 
         Assert.notNull(type, "Type must not be null");
 
         return new DefaultTypedStatementMapper<>((RelationalPersistentEntity<T>) this.mappingContext.getRequiredPersistentEntity(type));
     }
 
+    @NonNull
     @Override
-    public PreparedOperation<?> getMappedObject(SelectSpec selectSpec) {
+    public PreparedOperation<?> getMappedObject(@NonNull SelectSpec selectSpec) {
         return getMappedObject(selectSpec, null);
     }
 
@@ -119,8 +121,9 @@ public class R2dbcStatementMapper implements StatementMapper {
         return mapped;
     }
 
+    @NonNull
     @Override
-    public PreparedOperation<Insert> getMappedObject(InsertSpec insertSpec) {
+    public PreparedOperation<Insert> getMappedObject(@NonNull InsertSpec insertSpec) {
         return getMappedObject(insertSpec, null);
     }
 
@@ -151,8 +154,9 @@ public class R2dbcStatementMapper implements StatementMapper {
         return new R2dbcStatementMapper.DefaultPreparedOperation<>(withBuild.build(), this.renderContext, bindings);
     }
 
+    @NonNull
     @Override
-    public PreparedOperation<Update> getMappedObject(UpdateSpec updateSpec) {
+    public PreparedOperation<Update> getMappedObject(@NonNull UpdateSpec updateSpec) {
         return getMappedObject(updateSpec, null);
     }
 
@@ -192,8 +196,9 @@ public class R2dbcStatementMapper implements StatementMapper {
         return new R2dbcStatementMapper.DefaultPreparedOperation<>(update, this.renderContext, bindings);
     }
 
+    @NonNull
     @Override
-    public PreparedOperation<Delete> getMappedObject(DeleteSpec deleteSpec) {
+    public PreparedOperation<Delete> getMappedObject(@NonNull DeleteSpec deleteSpec) {
         return getMappedObject(deleteSpec, null);
     }
 
@@ -254,11 +259,13 @@ public class R2dbcStatementMapper implements StatementMapper {
             this.bindings = bindings;
         }
 
+        @NonNull
         @Override
         public T getSource() {
             return this.source;
         }
 
+        @NonNull
         @Override
         public String toQuery() {
 
@@ -284,7 +291,7 @@ public class R2dbcStatementMapper implements StatementMapper {
         }
 
         @Override
-        public void bindTo(BindTarget to) {
+        public void bindTo(@NonNull BindTarget to) {
             this.bindings.apply(to);
         }
 
@@ -298,28 +305,33 @@ public class R2dbcStatementMapper implements StatementMapper {
             this.entity = entity;
         }
 
+        @NonNull
         @Override
-        public <TC> TypedStatementMapper<TC> forType(Class<TC> type) {
+        public <TC> TypedStatementMapper<TC> forType(@NonNull Class<TC> type) {
             return R2dbcStatementMapper.this.forType(type);
         }
 
+        @NonNull
         @Override
-        public PreparedOperation<?> getMappedObject(SelectSpec selectSpec) {
+        public PreparedOperation<?> getMappedObject(@NonNull SelectSpec selectSpec) {
             return R2dbcStatementMapper.this.getMappedObject(selectSpec, this.entity);
         }
 
+        @NonNull
         @Override
-        public PreparedOperation<?> getMappedObject(InsertSpec insertSpec) {
+        public PreparedOperation<?> getMappedObject(@NonNull InsertSpec insertSpec) {
             return R2dbcStatementMapper.this.getMappedObject(insertSpec, this.entity);
         }
 
+        @NonNull
         @Override
-        public PreparedOperation<?> getMappedObject(UpdateSpec updateSpec) {
+        public PreparedOperation<?> getMappedObject(@NonNull UpdateSpec updateSpec) {
             return R2dbcStatementMapper.this.getMappedObject(updateSpec, this.entity);
         }
 
+        @NonNull
         @Override
-        public PreparedOperation<?> getMappedObject(DeleteSpec deleteSpec) {
+        public PreparedOperation<?> getMappedObject(@NonNull DeleteSpec deleteSpec) {
             return R2dbcStatementMapper.this.getMappedObject(deleteSpec, this.entity);
         }
 

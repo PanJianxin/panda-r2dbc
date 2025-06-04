@@ -1,8 +1,7 @@
 package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2DbcLogicDeletePlugin;
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginContext;
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.model.R2dbcPluginContext;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.model.R2dbcPluginEnum;
 import com.jxpanda.r2dbc.spring.data.core.kit.QueryKit;
 import org.springframework.data.mapping.IdentifierAccessor;
 import org.springframework.data.mapping.MappingException;
@@ -10,67 +9,74 @@ import org.springframework.data.r2dbc.core.StatementMapper;
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
-import org.springframework.data.relational.core.query.Update;
 import org.springframework.data.relational.core.sql.SqlIdentifier;
-import org.springframework.data.util.Pair;
 import org.springframework.r2dbc.core.PreparedOperation;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 public class R2dbcDeleteExecutor<T, R> extends R2dbcOperationExecutor.WriteExecutor<T, R> {
 
 
-    private R2dbcDeleteExecutor(R2dbcOperationParameter<T, R> operationParameter, Function<R2dbcOperationParameter<T, R>, Query> queryHandler) {
-        super(operationParameter, queryHandler);
+    private R2dbcDeleteExecutor(R2dbcOperationContext<T, R> operationContext, Function<R2dbcOperationContext<T, R>, Query> queryHandler) {
+        super(operationContext, queryHandler);
     }
 
     public static <T, R> R2dbcDeleteExecutorBuilder<T, R> builder() {
         return new R2dbcDeleteExecutorBuilder<>();
     }
 
-    @Override
-    protected Mono<R> fetch(R2dbcOperationParameter<T, R> parameter) {
-
-        // 尝试执行逻辑删除插件
-        R2dbcPluginContext<T, R, Update> pluginContext = parameter.createPluginContext(R2dbcPluginName.LOGIC_DELETE, Update.class);
-        Optional<Update> logicDeleteUpdate = pluginExecutor().run(pluginContext).takeResult();
-        // 如果插件执行成功的话，则直接执行更新操作
-        if (logicDeleteUpdate.isPresent()) {
-            return swap(R2dbcUpdateExecutor::builder)
-                    .updateSupplier(() -> R2DbcLogicDeletePlugin.handleUpdate(parameter.getDomainType()))
-                    .build()
-                    .fetch(parameter);
+    private Mono<R2dbcPluginContext<T, R>> fetchBefore(R2dbcOperationContext<T, R> operationContext) {
+        R2dbcOperationContext<T, R> context = operationContext;
+        if (operationContext.getEntity() != null) {
+            context = operationContext.rebuilder()
+                    .query(getByIdQuery(operationContext.getEntity(), Objects.requireNonNull(operationContext.getRelationalPersistentEntity())))
+                    .build();
         }
+        return pluginExecutor().runBefore(context.createPluginContext(this));
+    }
 
-        StatementMapper statementMapper = parameter.getStatementMapper();
-        SqlIdentifier tableName = parameter.getTableName();
-        Query query = parameter.getQuery();
+    private Mono<R> fetchAfter(R2dbcOperationContext<T, R> operationContext, R2dbcPluginContext<T, R> pluginContext) {
+        return pluginExecutor().runAfter(pluginContext)
+                .mapNotNull(R2dbcPluginContext::getResult)
+                .doOnSuccess(operationContext::withResult);
 
-        StatementMapper.DeleteSpec deleteSpec = statementMapper.createDelete(tableName);
-
-        Optional<CriteriaDefinition> criteria = query.getCriteria();
-        if (criteria.isPresent()) {
-            deleteSpec = criteria.map(deleteSpec::withCriteria).orElse(deleteSpec);
-        }
-
-        PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
-        return this.databaseClient()
-                .sql(operation)
-                .filter(template().getStatementFilterFunction())
-                .fetch()
-                .rowsUpdated()
-                .defaultIfEmpty(0L)
-                .cast(parameter.getReturnType());
     }
 
     @Override
-    protected Mono<R> fetch(T domainEntity, R2dbcOperationParameter<T, R> parameter) {
-        R2dbcOperationParameter<T, R> newParameter = parameter.rebuild()
-                .query(getByIdQuery(domainEntity, parameter.getRelationalPersistentEntity()))
-                .build();
-        return fetch(newParameter);
+    protected Mono<R> fetch(R2dbcOperationContext<T, R> operationContext) {
+        return fetchBefore(operationContext)
+                .flatMap(pluginContext -> {
+                    Mono<R> fetchMono;
+                    if (pluginContext.isPluginExecuted(R2dbcPluginEnum.Name.LOGIC_DELETE.name()) && pluginContext.getUpdate() != null) {
+                        fetchMono = swap(R2dbcUpdateExecutor::builder)
+                                .updateSupplier(pluginContext::getUpdate)
+                                .build()
+                                .fetch(operationContext);
+                    } else {
+                        StatementMapper statementMapper = operationContext.getStatementMapper();
+                        SqlIdentifier tableName = operationContext.getTableName();
+                        Query query = operationContext.getQuery();
+                        StatementMapper.DeleteSpec deleteSpec = statementMapper.createDelete(tableName);
+                        Optional<CriteriaDefinition> criteria = query.getCriteria();
+                        if (criteria.isPresent()) {
+                            deleteSpec = criteria.map(deleteSpec::withCriteria).orElse(deleteSpec);
+                        }
+                        PreparedOperation<?> operation = statementMapper.getMappedObject(deleteSpec);
+                        fetchMono = this.databaseClient()
+                                .sql(operation)
+                                .filter(template().getStatementFilterFunction())
+                                .fetch()
+                                .rowsUpdated()
+                                .defaultIfEmpty(0L)
+                                .cast(operationContext.getResultType());
+                    }
+                    return fetchMono.map(result -> pluginContext.withResult(this, result));
+                })
+                .flatMap(pluginContext -> fetchAfter(operationContext, pluginContext));
+
     }
 
     private <E> Query getByIdQuery(E entity, RelationalPersistentEntity<E> persistentEntity) {
@@ -89,7 +95,7 @@ public class R2dbcDeleteExecutor<T, R> extends R2dbcOperationExecutor.WriteExecu
     public static final class R2dbcDeleteExecutorBuilder<T, R> extends R2dbcOperationExecutor.R2dbcExecutorBuilder<T, R, R2dbcDeleteExecutor<T, R>, R2dbcDeleteExecutorBuilder<T, R>> {
 
         public R2dbcDeleteExecutor<T, R> buildExecutor() {
-            return new R2dbcDeleteExecutor<>(operationParameter, queryHandler);
+            return new R2dbcDeleteExecutor<>(operationContext, queryHandler);
         }
 
         @Override

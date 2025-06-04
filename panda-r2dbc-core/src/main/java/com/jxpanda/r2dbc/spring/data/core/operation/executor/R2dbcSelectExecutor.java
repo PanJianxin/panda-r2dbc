@@ -3,10 +3,9 @@ package com.jxpanda.r2dbc.spring.data.core.operation.executor;
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableColumn;
 import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableReference;
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginContext;
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.R2dbcPluginName;
+import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.model.R2dbcPluginContext;
 import com.jxpanda.r2dbc.spring.data.core.kit.R2dbcMappingKit;
-import com.jxpanda.r2dbc.spring.data.core.operation.R2dbcSelectOperation;
+import com.jxpanda.r2dbc.spring.data.core.operation.contract.R2dbcSelectOperation;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.CollectionKit;
 import com.jxpanda.r2dbc.spring.data.infrastructure.kit.ReflectionKit;
 import io.r2dbc.spi.Row;
@@ -21,7 +20,6 @@ import org.springframework.data.relational.core.conversion.AbstractRelationalCon
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity;
 import org.springframework.data.relational.core.mapping.RelationalPersistentProperty;
 import org.springframework.data.relational.core.query.Criteria;
-import org.springframework.data.relational.core.query.CriteriaDefinition;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.data.relational.core.sql.*;
 import org.springframework.data.relational.domain.RowDocument;
@@ -34,6 +32,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import java.beans.FeatureDescriptor;
 import java.util.Collection;
@@ -50,82 +50,92 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
 
     private static final String SQL_AS = " AS ";
 
-    private final Function<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec> specBuilder;
+    private final Function<R2dbcOperationContext<T, R>, StatementMapper.SelectSpec> specBuilder;
 
-    private final BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, Optional<CriteriaDefinition>> criteriaHandler;
+    private final Function<R2dbcOperationContext<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder;
 
-    private final BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, PreparedOperation<?>> preparedOperationBuilder;
-
-    private final Function<R2dbcOperationParameter<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder;
-
-    private R2dbcSelectExecutor(R2dbcOperationParameter<T, R> operationParameter,
-                                Function<R2dbcOperationParameter<T, R>, Query> queryHandler,
-                                Function<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec> specBuilder,
-                                BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, Optional<CriteriaDefinition>> criteriaHandler,
-                                BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, PreparedOperation<?>> preparedOperationBuilder,
-                                Function<R2dbcOperationParameter<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder) {
-        super(operationParameter, queryHandler);
+    private R2dbcSelectExecutor(R2dbcOperationContext<T, R> operationContext,
+                                Function<R2dbcOperationContext<T, R>, Query> queryHandler,
+                                Function<R2dbcOperationContext<T, R>, StatementMapper.SelectSpec> specBuilder,
+                                Function<R2dbcOperationContext<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder) {
+        super(operationContext, queryHandler);
         this.specBuilder = specBuilder != null ? specBuilder : defaultSpecBuilder();
-        this.criteriaHandler = criteriaHandler != null ? criteriaHandler : defaultCriteriaHandler();
-        this.preparedOperationBuilder = preparedOperationBuilder != null ? preparedOperationBuilder : defaultPreparedOperationBuilder();
         this.rowMapperBuilder = rowMapperBuilder != null ? rowMapperBuilder : defaultRowMapperBuilder();
-    }
-
-    private BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, PreparedOperation<?>> defaultPreparedOperationBuilder() {
-        return (parameter, selectSpec) -> parameter.getStatementMapper().getMappedObject(selectSpec);
     }
 
     public static <T, R> R2dbcSelectExecutorBuilder<T, R> builder() {
         return new R2dbcSelectExecutorBuilder<>();
     }
 
-    // TODO: 这个函数的结构希望能重新组织一下，现在有点乱
     @Override
-    protected <P extends Publisher<R>> P fetch(R2dbcOperationParameter<T, R> parameter, Function<RowsFetchSpec<R>, P> resultHandler) {
-
-        StatementMapper.SelectSpec selectSpec = specBuilder.apply(parameter);
-        Optional<CriteriaDefinition> criteriaDefinitionOptional = criteriaHandler.apply(parameter, selectSpec);
-        R2dbcPluginContext<T, R, CriteriaDefinition> pluginContext = parameter.createPluginContext(R2dbcPluginName.LOGIC_DELETE, CriteriaDefinition.class, criteriaDefinitionOptional.orElse(Criteria.empty()));
-        selectSpec = pluginExecutor().run(pluginContext).takeResult()
-                .map(selectSpec::withCriteria)
-                .orElse(selectSpec);
-
-        PreparedOperation<?> preparedOperation = preparedOperationBuilder.apply(parameter, selectSpec);
-
-        DatabaseClient.GenericExecuteSpec executeSpec = databaseClient().sql(preparedOperation)
-                .filter(template().getStatementFilterFunction()
-                        .andThen(parameter.getFilterFunction()));
-
-        RowsFetchSpec<R> rowsFetchSpec;
-
-        // avoid top-level null values if the read type is a simple one (e.g. SELECT MAX(age) via Integer.class)
-        if (parameter.isSimpleReturnType()) {
-            rowsFetchSpec = new UnwrapOptionalFetchSpecAdapter<>(executeSpec
-                    .map((row, metadata) -> Optional.ofNullable(rowMapperBuilder.apply(parameter).apply(row, metadata))));
-        } else {
-            rowsFetchSpec = executeSpec.map(rowMapperBuilder.apply(parameter));
-        }
-
-        // 执行
-        P publisher = resultHandler.apply(rowsFetchSpec);
-        if (publisher instanceof Mono<?> mono) {
-            Mono<R> monoResult = mono.flatMap(result -> selectReference(parameter, ReflectionKit.cast(result)))
-                    .flatMap(it -> template().maybeCallAfterConvert(it, parameter.getTableName()));
-            return ReflectionKit.cast(monoResult);
-
-        } else if (publisher instanceof Flux<?> flux) {
-            Flux<R> fluxResult = flux.flatMap(result -> selectReference(parameter, ReflectionKit.cast(result)))
-                    .flatMap(it -> template().maybeCallAfterConvert(it, parameter.getTableName()));
-            return ReflectionKit.cast(fluxResult);
+    @SuppressWarnings("unchecked")
+    protected <P extends Publisher<R>> P fetch(R2dbcOperationContext<T, R> operationContext, Function<RowsFetchSpec<R>, P> resultHandler) {
+        P publisher = resultHandler.apply(new FetchSpecTypeReference<>());
+        if (publisher instanceof Mono<?>) {
+            return (P) doFetchMono(operationContext, (Function<RowsFetchSpec<R>, Mono<R>>) resultHandler);
+        } else if (publisher instanceof Flux<?>) {
+            return (P) doFetchFlux(operationContext, (Function<RowsFetchSpec<R>, Flux<R>>) resultHandler);
         }
         return publisher;
     }
 
-    private Function<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec> defaultSpecBuilder() {
-        return parameter -> {
-            Query query = parameter.getQuery();
-            StatementMapper.SelectSpec selectSpec = parameter.getStatementMapper().createSelect(parameter.getTableName())
-                    .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, parameter.getDomainType(), parameter.getReturnType())));
+    private Mono<R> doFetchMono(R2dbcOperationContext<T, R> operationContext, Function<RowsFetchSpec<R>, Mono<R>> resultHandler) {
+        return beforeFetch(operationContext)
+                .flatMap(tuple -> resultHandler.apply(tuple.getT1())
+                        .map(result -> tuple.getT2().withResult(this, result)))
+                .flatMap(pluginContext -> afterFetch(operationContext, pluginContext));
+
+    }
+
+    private Flux<R> doFetchFlux(R2dbcOperationContext<T, R> operationContext, Function<RowsFetchSpec<R>, Flux<R>> resultHandler) {
+        return beforeFetch(operationContext)
+                .flatMapMany(tuple -> resultHandler.apply(tuple.getT1())
+                        .map(result -> tuple.getT2().withResult(this, result)))
+                .flatMap(pluginContext -> afterFetch(operationContext, pluginContext));
+
+    }
+
+    private Mono<R> afterFetch(R2dbcOperationContext<T, R> operationContext, R2dbcPluginContext<T, R> pluginContext) {
+        return selectReference(operationContext, pluginContext.getResult())
+                .flatMap(result -> template().maybeCallAfterConvert(result, operationContext.getTableName()))
+                .flatMap(result -> pluginExecutor().runAfter(pluginContext.withResult(this, result)))
+                .mapNotNull(R2dbcPluginContext::getResult)
+                .doOnSuccess(operationContext::withResult);
+    }
+
+    private Mono<Tuple2<RowsFetchSpec<R>, R2dbcPluginContext<T, R>>> beforeFetch(R2dbcOperationContext<T, R> operationContext) {
+        return pluginExecutor().runBefore(operationContext.createPluginContext(this))
+                .flatMap(pluginContext -> {
+                    StatementMapper.SelectSpec selectSpec = specBuilder.apply(operationContext);
+                    if (pluginContext.getCriteria() != null) {
+                        selectSpec = selectSpec.withCriteria(pluginContext.getCriteria());
+                    }
+
+                    PreparedOperation<?> preparedOperation = operationContext.getStatementMapper().getMappedObject(selectSpec);
+
+                    DatabaseClient.GenericExecuteSpec executeSpec = databaseClient().sql(preparedOperation)
+                            .filter(template().getStatementFilterFunction()
+                                    .andThen(operationContext.getFilterFunction()));
+
+                    RowsFetchSpec<R> rowsFetchSpec;
+
+                    if (operationContext.isSimpleResultType()) {
+                        rowsFetchSpec = new UnwrapOptionalFetchSpecAdapter<>(executeSpec
+                                .map((row, metadata) -> Optional.ofNullable(rowMapperBuilder.apply(operationContext).apply(row, metadata))));
+                    } else {
+                        rowsFetchSpec = executeSpec.map(rowMapperBuilder.apply(operationContext));
+                    }
+                    return Mono.just(rowsFetchSpec)
+                            .zipWith(Mono.just(pluginContext));
+                });
+    }
+
+
+    private Function<R2dbcOperationContext<T, R>, StatementMapper.SelectSpec> defaultSpecBuilder() {
+        return operationContext -> {
+            Query query = operationContext.getQuery();
+            StatementMapper.SelectSpec selectSpec = operationContext.getStatementMapper().createSelect(operationContext.getTableName())
+                    .doWithTable((table, spec) -> spec.withProjection(getSelectProjection(table, query, operationContext.getEntityType(), operationContext.getResultType())));
             if (query.getLimit() > 0) {
                 selectSpec = selectSpec.limit(query.getLimit());
             }
@@ -140,25 +150,25 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
     }
 
     @SuppressWarnings({"unchecked"})
-    private Function<R2dbcOperationParameter<T, R>, BiFunction<Row, RowMetadata, R>> defaultRowMapperBuilder() {
-        return parameter -> {
-            Class<R> returnType = parameter.getReturnType();
-            Class<T> domainType = parameter.getDomainType();
-            boolean simpleType = parameter.isSimpleReturnType();
+    private Function<R2dbcOperationContext<T, R>, BiFunction<Row, RowMetadata, R>> defaultRowMapperBuilder() {
+        return operationContext -> {
+            Class<R> resultType = operationContext.getResultType();
+            Class<T> entityType = operationContext.getEntityType();
+            boolean simpleType = operationContext.isSimpleResultType();
 
             BiFunction<Row, RowMetadata, R> rowMapper;
 
             // Bridge-code: Consider Converter<Row, T> until we have fully migrated to RowDocument
             if (converter() instanceof AbstractRelationalConverter relationalConverter
-                && relationalConverter.getConversions().hasCustomReadTarget(Row.class, returnType)) {
+                && relationalConverter.getConversions().hasCustomReadTarget(Row.class, resultType)) {
                 ConversionService conversionService = relationalConverter.getConversionService();
-                rowMapper = (row, rowMetadata) -> (R) conversionService.convert(row, returnType);
+                rowMapper = (row, rowMetadata) -> (R) conversionService.convert(row, resultType);
             } else if (simpleType) {
-                rowMapper = new EntityRowMapper<>(returnType, converter());
+                rowMapper = new EntityRowMapper<>(resultType, converter());
             } else {
-                EntityProjection<R, T> projection = converter().introspectProjection(returnType, domainType);
-                Class<R> typeToRead = projection.isProjection() ? returnType
-                        : returnType.isInterface() ? (Class<R>) domainType : returnType;
+                EntityProjection<R, T> projection = converter().introspectProjection(resultType, entityType);
+                Class<R> typeToRead = projection.isProjection() ? resultType
+                        : resultType.isInterface() ? (Class<R>) entityType : resultType;
 
                 rowMapper = (row, rowMetadata) -> {
                     RowDocument document = dataAccessStrategy().toRowDocument(typeToRead, row, rowMetadata.getColumnMetadatas());
@@ -170,16 +180,9 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
 
     }
 
-    /**
-     * 创建查询单元，加入了逻辑删除的判断
-     */
-    private BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, Optional<CriteriaDefinition>> defaultCriteriaHandler() {
-        return ((operationParameter, selectSpec) -> operationParameter.getQuery().getCriteria());
-    }
 
-
-    private Mono<R> selectReference(R2dbcOperationParameter<T, R> parameter, R result) {
-        RelationalPersistentEntity<T> entity = parameter.getRelationalPersistentEntity();
+    private Mono<R> selectReference(R2dbcOperationContext<T, R> operationContext, R result) {
+        RelationalPersistentEntity<T> entity = operationContext.getRelationalPersistentEntity();
         List<RelationalPersistentProperty> referenceProperties = R2dbcMappingKit.getReferenceProperties(entity);
         if (referenceProperties.isEmpty()) {
             return Mono.just(result);
@@ -192,15 +195,15 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
     }
 
 
-    private <E, RT> List<Expression> getSelectProjection(Table table, Query query, Class<E> entityClass, Class<RT> returnType) {
+    private <E, RT> List<Expression> getSelectProjection(Table table, Query query, Class<E> entityClass, Class<RT> resultType) {
         if (!query.getColumns().isEmpty()) {
             return query.getColumns().stream()
                     .map(table::column)
                     .map(Expression.class::cast)
                     .toList();
         }
-        if (returnType.isInterface()) {
-            ProjectionInformation projectionInformation = this.projectionFactory().getProjectionInformation(returnType);
+        if (resultType.isInterface()) {
+            ProjectionInformation projectionInformation = this.projectionFactory().getProjectionInformation(resultType);
             if (projectionInformation.isClosed()) {
                 return projectionInformation.getInputProperties().stream()
                         .map(FeatureDescriptor::getName)
@@ -212,7 +215,7 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
         RelationalPersistentEntity<E> entity = R2dbcMappingKit.getRequiredEntity(entityClass);
         boolean isAggregateEntity = R2dbcMappingKit.isAggregateEntity(entityClass);
         return StreamUtils.createStreamFromIterator(entity.iterator())
-                .filter(R2dbcMappingKit::isPropertyExists)
+                .filter(property -> R2dbcMappingKit.isPropertyExists(entity, property))
                 .map(property -> isAggregateEntity ? createFunction(property) : createColumn(property, table))
                 .toList();
     }
@@ -330,6 +333,28 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
 
     }
 
+    private record FetchSpecTypeReference<T>() implements RowsFetchSpec<T> {
+
+
+        @NonNull
+        @Override
+        public Mono<T> one() {
+            return Mono.empty();
+        }
+
+        @NonNull
+        @Override
+        public Mono<T> first() {
+            return Mono.empty();
+        }
+
+        @NonNull
+        @Override
+        public Flux<T> all() {
+            return Flux.empty();
+        }
+    }
+
     private record UnwrapOptionalFetchSpecAdapter<T>(
             RowsFetchSpec<Optional<T>> delegate) implements RowsFetchSpec<T> {
 
@@ -353,36 +378,23 @@ public class R2dbcSelectExecutor<T, R> extends R2dbcOperationExecutor.ReadExecut
     }
 
     public static final class R2dbcSelectExecutorBuilder<T, R> extends R2dbcOperationExecutor.R2dbcExecutorBuilder<T, R, R2dbcSelectExecutor<T, R>, R2dbcSelectExecutorBuilder<T, R>> {
-        private Function<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec> specBuilder;
+        private Function<R2dbcOperationContext<T, R>, StatementMapper.SelectSpec> specBuilder;
 
-        private BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, Optional<CriteriaDefinition>> criteriaHandler;
+        private Function<R2dbcOperationContext<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder;
 
-        private BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, PreparedOperation<?>> preparedOperationBuilder;
-
-        private Function<R2dbcOperationParameter<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder;
-
-        public R2dbcSelectExecutorBuilder<T, R> specBuilder(Function<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec> specBuilder) {
+        public R2dbcSelectExecutorBuilder<T, R> specBuilder(Function<R2dbcOperationContext<T, R>, StatementMapper.SelectSpec> specBuilder) {
             this.specBuilder = specBuilder;
             return this;
         }
 
-        public R2dbcSelectExecutorBuilder<T, R> criteriaHandler(BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, Optional<CriteriaDefinition>> criteriaHandler) {
-            this.criteriaHandler = criteriaHandler;
-            return this;
-        }
 
-        public R2dbcSelectExecutorBuilder<T, R> preparedOperationBuilder(BiFunction<R2dbcOperationParameter<T, R>, StatementMapper.SelectSpec, PreparedOperation<?>> preparedOperationBuilder) {
-            this.preparedOperationBuilder = preparedOperationBuilder;
-            return this;
-        }
-
-        public R2dbcSelectExecutorBuilder<T, R> rowMapperBuilder(Function<R2dbcOperationParameter<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder) {
+        public R2dbcSelectExecutorBuilder<T, R> rowMapperBuilder(Function<R2dbcOperationContext<T, R>, BiFunction<Row, RowMetadata, R>> rowMapperBuilder) {
             this.rowMapperBuilder = rowMapperBuilder;
             return this;
         }
 
         public R2dbcSelectExecutor<T, R> buildExecutor() {
-            return new R2dbcSelectExecutor<>(operationParameter, queryHandler, specBuilder, criteriaHandler, preparedOperationBuilder, rowMapperBuilder);
+            return new R2dbcSelectExecutor<>(operationContext, queryHandler, specBuilder, rowMapperBuilder);
         }
 
         @Override

@@ -4,6 +4,7 @@ import com.jxpanda.r2dbc.spring.data.core.enhance.annotation.TableId;
 import com.jxpanda.r2dbc.spring.data.core.enhance.strategy.ValidationStrategy;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -29,6 +30,5 @@ public class StandardEntity implements Entity {
     public boolean isEffective() {
         return !ObjectUtils.isEmpty(getId());
     }
-
 
 }
