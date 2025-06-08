@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * @author Panda
  */
-public interface ReactiveEntityService<T extends Entity> {
+public interface ReactiveEntityRepository<T extends Entity> {
 
     ReactiveEntityTemplate getReactiveEntityTemplate();
 
@@ -95,7 +95,7 @@ public interface ReactiveEntityService<T extends Entity> {
     default Mono<T> update(T entity, Query query) {
         return update()
                 .matching(query)
-                .apply(ReactiveEntityServiceHelper.buildUpdate(entity))
+                .apply(ReactiveEntityRepositoryHelper.buildUpdate(entity))
                 .thenReturn(entity);
     }
 

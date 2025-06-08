@@ -8,14 +8,13 @@ import lombok.Getter;
  * @author Panda
  */
 @Getter
-@SuppressWarnings("ClassCanBeRecord")
-public class DefaultReactiveEntityService<T extends Entity> implements ReactiveEntityService<T> {
+public class DefaultReactiveEntityRepository<T extends Entity> implements ReactiveEntityRepository<T> {
 
     private final ReactiveEntityTemplate reactiveEntityTemplate;
 
     private final Class<T> entityClass;
 
-    public DefaultReactiveEntityService(ReactiveEntityTemplate reactiveEntityTemplate, Class<T> entityClass) {
+    public DefaultReactiveEntityRepository(ReactiveEntityTemplate reactiveEntityTemplate, Class<T> entityClass) {
         this.reactiveEntityTemplate = reactiveEntityTemplate;
         this.entityClass = entityClass;
     }

@@ -37,6 +37,7 @@ public class R2dbcProxyPostProcessor implements BeanPostProcessor {
                     .log("👉 Executed SQL: {}", fullSql);
         }
     };
+
     private final ProxyConfig proxyConfig = ProxyConfig.builder()
             .listener(listener)
             .build();

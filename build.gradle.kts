@@ -10,7 +10,7 @@ plugins {
 
 object Project {
     const val GROUP = "com.jxpanda.r2dbc"
-    const val VERSION = "1.7.3"
+    const val VERSION = "1.7.6"
 }
 
 allprojects {
@@ -44,6 +44,17 @@ configure(subprojects.filter { it.name.startsWith("panda-r2dbc") }) {
                 from(components["java"])
                 groupId = Project.GROUP
                 artifactId = tasks.jar.get().archiveBaseName.get()
+            }
+        }
+
+        // 云标-云效制品库地址
+        repositories {
+            this.maven {
+                url = URI("https://packages.aliyun.com/6825856bf9ff7623b1ecd70a/maven/starship-release")
+                credentials {
+                    username = "68258526c7c99a91a4d7f4ba"
+                    password = "J)h7ptbn]2Gb"
+                }
             }
         }
     }

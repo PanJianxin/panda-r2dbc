@@ -2,8 +2,8 @@ package com.jxpanda.r2dbc.spring.data.extension.component;
 
 import com.jxpanda.r2dbc.spring.data.extension.config.properties.ExtensionProperties;
 import com.jxpanda.r2dbc.spring.data.extension.entity.CrudEntity;
-import com.jxpanda.r2dbc.spring.data.extension.service.DefaultReactiveEntityService;
-import com.jxpanda.r2dbc.spring.data.extension.service.EntityServiceNameResolver;
+import com.jxpanda.r2dbc.spring.data.extension.service.DefaultReactiveEntityRepository;
+import com.jxpanda.r2dbc.spring.data.extension.service.ReactiveEntityRepositoryNameResolver;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -84,7 +84,7 @@ public class CrudEntityRegistrar
                 // 3. 只保留 CrudEntity 的子类
                 .filter(CrudEntity.class::isAssignableFrom)
                 // 4. 生成 (beanName, entityClass) 对
-                .map(entityClass -> Pair.of(EntityServiceNameResolver.resolve(entityClass), entityClass))
+                .map(entityClass -> Pair.of(ReactiveEntityRepositoryNameResolver.resolve(entityClass), entityClass))
                 // 5. 跳过用户自定义的同名 Bean
                 .filter(pair -> !registry.containsBeanDefinition(pair.getFirst()))
                 // 6. 注册剩下的 BeanDefinition
@@ -93,7 +93,7 @@ public class CrudEntityRegistrar
                     Class<?> entityClass = pair.getSecond();
 
                     GenericBeanDefinition gbd = new GenericBeanDefinition();
-                    gbd.setBeanClass(DefaultReactiveEntityService.class);
+                    gbd.setBeanClass(DefaultReactiveEntityRepository.class);
                     gbd.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_CONSTRUCTOR);
                     // 等同于 @Qualifier(beanName)
                     gbd.addQualifier(new AutowireCandidateQualifier(Qualifier.class, beanName));

@@ -1,15 +1,14 @@
 package demo.api;
 
 import com.jxpanda.r2dbc.spring.data.core.ReactiveEntityTemplate;
-import com.jxpanda.r2dbc.spring.data.core.enhance.plugin.model.R2dbcPluginEnum;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.criteria.EnhancedCriteria;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.page.Pagination;
 import com.jxpanda.r2dbc.spring.data.core.enhance.query.seeker.Seeker;
-import com.jxpanda.r2dbc.spring.data.core.operation.executor.R2dbcOperationOption;
-import com.jxpanda.r2dbc.spring.data.extension.service.ReactiveEntityService;
-import demo.Test2Service;
+import com.jxpanda.r2dbc.spring.data.extension.service.ReactiveEntityRepository;
+import demo.Test2Repository;
 import demo.model.*;
 import demo.model.join.InvoiceInfoCheck;
+import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.relational.core.query.Criteria;
@@ -35,9 +34,11 @@ public class TestAPI {
 
     private final R2dbcEntityTemplate r2dbcEntityTemplate;
 
-    private final ReactiveEntityService<Test> testReactiveService;
+    @Resource
+    private ReactiveEntityRepository<Test> testReactiveRepository;
 
-    private final Test2Service test2Service;
+    @Resource
+    private ReactiveEntityRepository<Test2> test2ReactiveRepository;
 
 
     @PostMapping("mask-save")
@@ -71,23 +72,15 @@ public class TestAPI {
 //                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
 //                .all()
 //                .collectList();
-        return reactiveEntityTemplate.select(Test.class)
+
+        return testReactiveRepository.select()
+//        return reactiveEntityTemplate.select(Test.class)
 //                .withOption(new R2dbcOperationOption()
 //                        .disablePlugin("TEST_RESULT_PLUGIN")
 //                        .disablePlugin(R2dbcPluginEnum.Name.LOGIC_DELETE.name())
 //                )
-                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
+                .matching(Query.query(EnhancedCriteria.where("view_scope").matchesAnyBit(mask)))
                 .all()
-                .collectList();
-    }
-
-    @GetMapping("mask-test2")
-    public Mono<List<Test2>> maskTest2(@RequestParam("mask") Integer mask) {
-//        return reactiveEntityTemplate.select(Test.class)
-//                .matching(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
-//                .all()
-//                .collectList();
-        return test2Service.list(Query.query(EnhancedCriteria.where(Test::getViewScope).matchesAnyBit(mask)))
                 .collectList();
     }
 

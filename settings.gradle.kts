@@ -10,7 +10,7 @@ include("panda-r2dbc-spring-boot:panda-r2dbc-spring-boot-starter")
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
-            from("com.jxpanda:version-catalog:1.0.13")
+            from("com.jxpanda:version-catalog:1.0.20")
         }
     }
 }

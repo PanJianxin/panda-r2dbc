@@ -15,12 +15,12 @@ import java.util.function.Predicate;
 /**
  * @author Panda
  */
-public final class ReactiveEntityServiceHelper {
+public final class ReactiveEntityRepositoryHelper {
 
     /**
      * 工具类，禁用构造方法
      */
-    private ReactiveEntityServiceHelper() {
+    private ReactiveEntityRepositoryHelper() {
 
     }
 
@@ -144,7 +144,7 @@ public final class ReactiveEntityServiceHelper {
      * @return 返回指定索引的泛型类型Class对象。
      */
     public static <X> Class<X> takeGenericType(Class<?> clazz, int index) {
-        return ReflectionKit.getSuperClassGenericType(clazz, ReactiveEntityService.class, index);
+        return ReflectionKit.getSuperClassGenericType(clazz, ReactiveEntityRepository.class, index);
     }
 
 
